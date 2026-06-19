@@ -12,7 +12,8 @@ const names = {
 	lifeform = "lifeform" :: "lifeform",
 	meta = "meta" :: "meta",
 	await = "await" :: "await",
-	asset = "asset" :: "asset"
+	asset = "asset" :: "asset",
+	human = "human" :: "human",
 }
 
 export type names_dictionary = typeof(names)

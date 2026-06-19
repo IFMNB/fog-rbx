@@ -3,7 +3,7 @@ const class_names = require('@game/ReplicatedStorage/code/static/class_names')
 const private = {};
 const class = {};
 
-export type class = typeof(class.new({__index=class}))
+export type class = setmetatable<{}, {__index: typeof(class)}>
 
 class.__index = class -- fast-link
 class.type = class_names.object;
@@ -57,7 +57,7 @@ function class:watch_free_event(func: ()->())
 	table.insert(this_list,func)
 end
 
-function class:is(classname: string)
+function class:is(classname: string|class_names.class_names)
 	const this = self :: class
 	const meta = getmetatable(this) :: any
 	
@@ -76,6 +76,44 @@ function class:is(classname: string)
 	end
 	
 	return false
+end
+
+function class:do_for_base (func: (class) -> (), recursive: boolean?, invert: boolean?)
+	const this = self :: class
+	local index = private.get__index_class(this)
+
+	print(this.type)
+
+	while (index) do
+				print(index)
+		if (type(index.type) == "string" and class_names[index.type]) then
+			if (not invert) then
+				func(index)
+			end
+
+			if (recursive) then
+				index = private.get__index_class(index)
+				continue
+			end
+
+			if (invert) then
+				func(index)
+			end
+		end
+	end
+end
+
+function private.get__index_class (this: class)
+	const metatable = getmetatable(this) :: {[unknown]: unknown}
+	if (type(metatable) == "table") then
+		const index = metatable.__index
+		
+		if (type(index) == "table") then
+			return index
+		end
+	end
+
+	return nil
 end
 
 

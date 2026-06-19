@@ -2,6 +2,7 @@
 
 const object = require('../../object')
 const class_names = require('@game/ReplicatedStorage/code/static/class_names')
+const Connection = require("../connection/Connection")
 const Event = require("../event/Event")
 const Meta = require("../meta/Meta")
 const NodeProcessState = require('../../enums/NodeProcessState') -- TODO
@@ -15,7 +16,7 @@ export type class = typeof(class.new())
 
 class.type = class_names.node
 class.name = class.type :: string
-class.changed = (nil::any) :: Event.generic<any, any>?
+class.changed = (nil::any) :: Event.class
 class.process_state = NodeProcessState.operational
 
 private.to_ready = setmetatable({}::{class}, {__mode = 'vs'})
@@ -199,7 +200,7 @@ function private.wrap_class (this: class, changed_event_controller: Event.class1
 
 	new_meta.__index = __index
 	new_meta.__newindex = new_meta:wrap_newindex(__newindex, function(arg1, arg2, arg3)
-		
+		changed_event_controller:emit(arg2, arg3)
 	end)
 end
 
@@ -207,6 +208,8 @@ function class:initiate(as: Instance)
 	const this = self :: class
 	const changed_event_controller = Event.new()
 	const changed_event = changed_event_controller:get_event()
+
+	warn(this.type)
 	
 	this.changed = changed_event
 	this:watch_free_event(private.process_auto_remove(this))
@@ -218,7 +221,55 @@ function class:initiate(as: Instance)
 	
 	table.insert(private.to_ready, this)
 	table.insert(private.to_process, this)
-	private.instantiate(this)
+	const blacklist : {string} = {}
+
+	this:do_for_base(function(a0)
+		private.set_instance_attributes(this, a0, blacklist)
+		print(a0)
+	end, true, true)
+
+	as.Destroying:Once(function() this:free() end)
+end
+
+function private.set_instance_attributes (this: class, from: object.class, blacklist: {string})
+	const instance = this.get_instance() :: Instance
+	const to_free : {RBXScriptConnection} = {}
+	const to_free_event : {Connection.class} = {}
+
+	for i,v in (from :: {[unknown]: unknown}) do
+		const attribute_name = private.get_attribute_expected_name_of(i)
+
+		if (attribute_name) then
+			table.insert(blacklist, attribute_name)
+
+			const callback = function () (this :: {[unknown]: unknown})[i] = instance:GetAttribute(attribute_name) end
+			const rollout = function (arg1: any, arg2: any)
+				if (arg1 ~= attribute_name) then
+					return
+				end
+				
+				const attribute_value = instance:GetAttribute(attribute_name)
+				if (attribute_value ~= arg2) then
+					instance:SetAttribute(attribute_name, arg2)
+				end
+			end
+			const attribute = instance:GetAttributeChangedSignal(attribute_name)
+			const connection = attribute:Connect(callback)
+			const event_connection =	this.changed:connect(rollout)
+
+			table.insert(to_free_event, event_connection);
+			table.insert(to_free, connection)
+		end
+	end
+
+	this:watch_free_event(function()
+		for i,v in to_free do
+			v:Disconnect()
+		end
+		for i,v in to_free_event do
+			v:disconnect()
+		end
+	end)
 end
 
 -- По умолчанию это виртуальная функция которая ничего не выполняет. Для работы замените на исполняемый код.
@@ -230,48 +281,7 @@ function class:process (base: class, delta_time: number)
 	
 end
 
-function private.set_instance_attributes (this: class, index: {[unknown]: unknown})
-	const instance = this.get_instance() :: Instance
-	const to_free : {RBXScriptConnection} = {}
 
-	for i,v in index do
-		const attribute_name = private.get_attribute_expected_name_of(v)
-
-		if (attribute_name) then
-			instance:SetAttribute(attribute_name, v)
-
-			const attribute_signal = instance:GetAttributeChangedSignal(attribute_name)
-			const set_new_value_from_attribute = function(new_value: any) 
-				(this::{[unknown]:unknown})[i] = new_value
-			end
-			const connection = attribute_signal:Connect(set_new_value_from_attribute)
-
-			table.insert(to_free, connection)
-		end
-	end
-
-	this:watch_free_event(function() 
-		for i,v in to_free do
-			if v.Connected then
-				v:Disconnect()
-			end
-		end
-	end)
-end
-
-function private.instantiate_iter (this: class, underground: {})
-	const metatable = getmetatable(underground) :: unknown|{[unknown]:unknown}
-	const type_meta = type(metatable)
-
-	if (type_meta == "table") then
-		local index = (metatable :: {[unknown]: unknown}).__index
-
-		if (type(index) == "table") then
-			local class = index :: {[unknown]: unknown}
-			private.set_instance_attributes(this, class)
-		end
-	end
-end
 
 private.classtag = "@node"
 
@@ -290,21 +300,6 @@ end
 function private.set_nodeclass_tag (to: Instance, with: string) 
 	to:AddTag(private.classtag)
 	to:AddTag(with)
-end
-
--- Инстанцирование выводит все поля и свойства экземпляра в аттрибуты скрипта-instance (aka self.instance). Обратное присваивание не поддерживается (только через студию)
-function private.instantiate (this: class)
-	const instance = this.get_instance()
-	
-	if (not instance) then
-		error("instance does not exists")
-	end
-	
-	if (not private.get_nodeclass_tag(instance)) then
-		private.set_nodeclass_tag(instance, this.type)
-	end
-	
-	private.instantiate_iter(this, this)
 end
 
 private.handle_nodes()

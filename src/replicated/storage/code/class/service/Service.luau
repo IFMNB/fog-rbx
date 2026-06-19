@@ -1,4 +1,4 @@
-const object = require('../../object')
+const object = require("@game/ServerStorage/code/object")
 
 const class = {}
 class.__index = object
