@@ -81,25 +81,26 @@ end
 function class:do_for_base (func: (class) -> (), recursive: boolean?, invert: boolean?)
 	const this = self :: class
 	local index = private.get__index_class(this)
-
-	print(this.type)
+	local next_index
 
 	while (index) do
-				print(index)
-		if (type(index.type) == "string" and class_names[index.type]) then
+		if (index.type and class_names[index.type] ~= nil) then
 			if (not invert) then
 				func(index)
 			end
 
 			if (recursive) then
-				index = private.get__index_class(index)
-				continue
+				next_index = private.get__index_class(index)
 			end
 
 			if (invert) then
-				func(index)
+				if (next_index) then
+					func(next_index)
+				end
 			end
 		end
+		
+		index = next_index
 	end
 end
 

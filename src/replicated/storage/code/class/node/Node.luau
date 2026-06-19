@@ -21,6 +21,7 @@ class.process_state = NodeProcessState.operational
 
 private.to_ready = setmetatable({}::{class}, {__mode = 'vs'})
 private.to_process = setmetatable({}::{class}, {__mode = 'vs'})
+private.classtag = "@node"
 private.process_delta_time = setmetatable({}::{[class]:number}, {__mode = 'ks'})
 private.base_nodes = setmetatable({}::{[class]: class}, {__mode='ks'})
 private.node_attribute = setmetatable({}::{[class]:{RBXScriptSignal}}, {__mode = 'ks'})
@@ -208,9 +209,8 @@ function class:initiate(as: Instance)
 	const this = self :: class
 	const changed_event_controller = Event.new()
 	const changed_event = changed_event_controller:get_event()
-
-	warn(this.type)
 	
+
 	this.changed = changed_event
 	this:watch_free_event(private.process_auto_remove(this))
 	this:watch_free_event(private.on_free_node_destroy_instance(this))
@@ -225,9 +225,9 @@ function class:initiate(as: Instance)
 
 	this:do_for_base(function(a0)
 		private.set_instance_attributes(this, a0, blacklist)
-		print(a0)
 	end, true, true)
 
+	private.set_nodeclass_tag(this)
 	as.Destroying:Once(function() this:free() end)
 end
 
@@ -237,10 +237,16 @@ function private.set_instance_attributes (this: class, from: object.class, black
 	const to_free_event : {Connection.class} = {}
 
 	for i,v in (from :: {[unknown]: unknown}) do
+		if (i == "type") then
+			continue
+		end
+
 		const attribute_name = private.get_attribute_expected_name_of(i)
 
-		if (attribute_name) then
+		if (attribute_name and private.get_attribute_expected_name_of(v)) then
 			table.insert(blacklist, attribute_name)
+
+			instance:SetAttribute(attribute_name, v)
 
 			const callback = function () (this :: {[unknown]: unknown})[i] = instance:GetAttribute(attribute_name) end
 			const rollout = function (arg1: any, arg2: any)
@@ -272,19 +278,6 @@ function private.set_instance_attributes (this: class, from: object.class, black
 	end)
 end
 
--- По умолчанию это виртуальная функция которая ничего не выполняет. Для работы замените на исполняемый код.
-function class:ready (base: class)
-	
-end
--- По умолчанию это виртуальная функция которая ничего не выполняет. Для работы замените на исполняемый код.
-function class:process (base: class, delta_time: number)
-	
-end
-
-
-
-private.classtag = "@node"
-
 function private.get_nodeclass_tag (of: Instance) 
 	const tags : {string} = of:GetTags()
 
@@ -297,12 +290,25 @@ function private.get_nodeclass_tag (of: Instance)
 	return false
 end
 
-function private.set_nodeclass_tag (to: Instance, with: string) 
+function private.set_nodeclass_tag (this: class) 
+	const to = this.get_instance() :: Instance
 	to:AddTag(private.classtag)
-	to:AddTag(with)
+	to:AddTag(this.type)
 end
 
-private.handle_nodes()
+-- По умолчанию это виртуальная функция которая ничего не выполняет. Для работы замените на исполняемый код.
+function class:ready (base: class)
+	
+end
+-- По умолчанию это виртуальная функция которая ничего не выполняет. Для работы замените на исполняемый код.
+function class:process (base: class, delta_time: number)
+	
+end
 
+
+
+
+
+task.defer(private.handle_nodes)
 table.freeze(class :: any)
 return class
