@@ -2,6 +2,7 @@
 
 const object = require('../../object')
 const class_names = require('@game/ReplicatedStorage/code/static/class_names')
+const project_settings = require("../../static/project_settings")
 const Connection = require("../connection/Connection")
 const Event = require("../event/Event")
 const Meta = require("../meta/Meta")
@@ -93,7 +94,7 @@ function private.process_handler()
 			continue
 		end
 		
-		if (rawget(v :: {[string]: any}, "process") == nil) then
+		if (v.process == nil or v.process == class.process) then
 			continue
 		end
 		
@@ -136,8 +137,12 @@ function class.new(rbx_instance: Instance?, init: boolean?)
 	return object.new(class, true)
 end
 
-function class.get_instance() : Instance?
-	return nil
+function class.get_instance() : Instance
+	if (project_settings.DebugMode) then
+		return error("Cannot get instance, node should be initiated")
+	else
+		return nil :: never
+	end
 end
 
 function class.is_initiated ()
@@ -309,6 +314,6 @@ end
 
 
 
-task.defer(private.handle_nodes)
+private.handle_nodes()
 table.freeze(class :: any)
 return class

@@ -1,13 +1,14 @@
 const object = require("@game/ServerStorage/code/object")
+const class_names = require("../../static/class_names")
 
-const class = {}
-class.__index = object
+const class = {__index = object}
 setmetatable(class, class)
 
+class.type = class_names.service
+
 function class.new ()
-	error("new() is not allowed")
+	return error("new() is not allowed")
 end
 
-
-table.freeze(class :: any)
+table.freeze(class)
 return class

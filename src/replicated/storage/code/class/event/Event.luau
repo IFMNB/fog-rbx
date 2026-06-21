@@ -18,7 +18,9 @@ export type generic <T0 = never, T1 = never, T2 = never, T3 = never, U = never> 
 	__index: typeof(object),
 	type: typeof(class.type),
 	connect: (class, (T0,T1,T2,T3,...U) -> ()) -> connection.class,
-	once: (class, (T0,T1,T2,T3,...U) -> ()) -> connection.class
+	once: (class, (T0,T1,T2,T3,...U) -> ()) -> connection.class,
+	new: () -> class1,
+	wait: (class) -> (T0,T1,T2,T3,U)
 }, typeof(object)>
 
 class.type = class_names.event
@@ -51,6 +53,17 @@ function class:connect (func: () -> ())
 	
 	return new_connection
 	
+end
+
+function class:wait () : never
+	const this = self :: class
+	const running_coroutine = coroutine.running()
+
+	this:once(function(...)
+		coroutine.resume(running_coroutine, ...)
+	end)
+
+	return coroutine.yield()
 end
 
 function class:once (func: () -> ())
