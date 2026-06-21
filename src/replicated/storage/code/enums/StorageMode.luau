@@ -1,5 +1,6 @@
-const enum = require("@game/ServerStorage/code/enum")
-const struct = {}
+const enum = require("@game/ReplicatedStorage/code/enum")
+const struct = {__index = enum}
+setmetatable(struct, struct)
 
 struct.LazyKeys = enum.new()
 struct.LazyValues = enum.new()

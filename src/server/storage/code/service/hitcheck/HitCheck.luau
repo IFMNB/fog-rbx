@@ -13,7 +13,7 @@ export type class = typeof(class)
 
 class.type = class_names.hitcheck
 
-private.uid_events = {} :: {[string]: event.class1}
+private.uid_events = {} :: {[string]: event.ctrl_class}
 
 function class:get_tag(instance: BasePart) : string
 	const this = self :: class

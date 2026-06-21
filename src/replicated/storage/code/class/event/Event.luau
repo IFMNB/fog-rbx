@@ -4,15 +4,15 @@ const object = require "@game/ReplicatedStorage/code/object"
 const class_names = require('@game/ReplicatedStorage/code/static/class_names')
 const connection = require("../connection/Connection")
 const connection_state = require('../../enums/ConnectionState')
-const project_settings = require("../../static/project_settings")
+const project = require("../../static/project")
 
 const private = {}
 const class = {__index = object}
 setmetatable(class,class);
 
 const private1 = {}
-const class1 = {__index = object}
-setmetatable(class1,class1)
+const ctrl_class = {__index = object}
+setmetatable(ctrl_class,ctrl_class)
 
 export type class = typeof(object.new(class))
 export type generic <T0 = never, T1 = never, T2 = never, T3 = never, U = never> = setmetatable<{
@@ -20,7 +20,7 @@ export type generic <T0 = never, T1 = never, T2 = never, T3 = never, U = never> 
 	type: typeof(class.type),
 	connect: (class, (T0,T1,T2,T3,...U) -> ()) -> connection.class,
 	once: (class, (T0,T1,T2,T3,...U) -> ()) -> connection.class,
-	new: () -> class1,
+	new: () -> ctrl_class,
 	wait: (class) -> (T0,T1,T2,T3,U)
 }, typeof(object)>
 
@@ -30,7 +30,7 @@ private.events_listeners = setmetatable({}::{[class]:{[connection.class]: ()->()
 
 function class.new ()
 	const self = object.new(class)
-	const event_controller = class1.new(self)
+	const event_controller = ctrl_class.new(self)
 	private.events_listeners[self] = {}
 	
 	return event_controller
@@ -79,15 +79,15 @@ end
 
 
 
-export type class1 = typeof(class1.new(nil::any))
+export type ctrl_class = typeof(ctrl_class.new(nil::any))
 
-class1.type = "event_controller" :: "event_controller"
-class1.deferred = project_settings.default_event_behavior_is_deferred
+ctrl_class.type = "event_controller" :: "event_controller"
+ctrl_class.deferred = project.default_event_behavior_is_deferred
 
-private1.events = setmetatable({}::{[class1]: class}, {__mode = "ks"})
+private1.events = setmetatable({}::{[ctrl_class]: class}, {__mode = "ks"})
 
-function class1.new (of_event: class)
-	const new = object.new(class1, true)
+function ctrl_class.new (of_event: class)
+	const new = object.new(ctrl_class, true)
 	private1.events[new] = of_event
 	
 	new:watch_free_event(function() 
@@ -103,18 +103,18 @@ function class1.new (of_event: class)
 	return new
 end
 
-function class1:get_event()
-	const this = self :: class1
+function ctrl_class:get_event()
+	const this = self :: ctrl_class
 	return private1.events[this]
 end
 
-function class1:is_exists()
-	const this = self :: class1
+function ctrl_class:is_exists()
+	const this = self :: ctrl_class
 	return this:get_event() ~= nil
 end
 
-function class1:clear_all()
-	const this = self :: class1
+function ctrl_class:clear_all()
+	const this = self :: ctrl_class
 	const event = this:get_event()
 	
 	if event then
@@ -128,8 +128,8 @@ function class1:clear_all()
 	end
 end
 
-function class1:emit(...: any)
-	const this = self :: class1
+function ctrl_class:emit(...: any)
+	const this = self :: ctrl_class
 	const event = assert(this:get_event())
 	const connections = private.events_listeners[event]
 	const to_clear : {connection.class} = {}
@@ -161,5 +161,5 @@ function class1:emit(...: any)
 end
 
 table.freeze(class :: any)
-table.freeze(class1 :: any)
+table.freeze(ctrl_class :: any)
 return class

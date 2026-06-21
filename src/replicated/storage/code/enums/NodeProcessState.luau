@@ -1,8 +1,8 @@
-const enum = require('../enum')
+const enum = require("@game/ReplicatedStorage/code/enum")
+const struct = {__index = enum}
+setmetatable(struct, struct)
 
-const enums = {};
+struct.operational = enum.new()
+struct.disabled = enum.new()
 
-enums.operational = enum.new(enums, "operational")
-enums.disabled = enum.new(enums, "disabled")
-
-return table.freeze(enums);
+return table.freeze(struct);

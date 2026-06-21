@@ -1,10 +1,10 @@
-const enum = require('../enum')
+const enum = require("@game/ReplicatedStorage/code/enum")
+const struct = {__index = enum}
+setmetatable(struct, struct)
 
-const enums = {};
+struct.connected = enum.new()
+struct.once = enum.new()
+struct.disconnected = enum.new()
+struct.initiated = enum.new()
 
-enums.connected = enum.new(enums, "connected")
-enums.once = enum.new(enums, "once")
-enums.disconnected = enum.new(enums, "disconnected")
-enums.initiated = enum.new(enums, "initiated")
-
-return table.freeze(enums);
+return table.freeze(struct);
