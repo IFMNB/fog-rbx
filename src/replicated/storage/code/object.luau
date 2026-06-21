@@ -3,10 +3,14 @@ const class_names = require('@game/ReplicatedStorage/code/static/class_names')
 const private = {};
 const class = {};
 
-export type class = setmetatable<{}, {__index: typeof(class)}>
+type base = typeof(class)
+type class_base = setmetatable<{}, {__index: base}>
+export type class <T = any> = setmetatable<{}, {__index: base|T}>
+-- TODO сигнатуры ожидающие object.class несовместимы с более специфичными типами (невозможен каст T.class в object.class)
 
 class.__index = class -- fast-link
 class.type = class_names.object;
+class.is_free = false
 
 private.on_clean_event = setmetatable({} :: {[class]: {()->()}}, {__mode='ks'}) 
 private.allowed_clean = setmetatable({} :: {[class]: boolean}, {__mode='vs'})
@@ -41,7 +45,10 @@ function class:free()
 	private.is_allowed_clean(this)
 	
 	for i, v in this_list do
-		task.defer(v)
+		const state, err = pcall(v)
+		if (not state) then
+			warn(err)
+		end
 	end
 	
 	
@@ -55,6 +62,12 @@ function class:watch_free_event(func: ()->())
 	const this = self :: class
 	const this_list = private.get_clean_list(this)
 	table.insert(this_list,func)
+end
+
+function class:unwatch_free_event(func: () -> ())
+	const this : class = self
+	const this_list = private.get_clean_list(this)
+	table.remove(this_list, table.find(this_list, func))
 end
 
 function class:is(classname: string|class_names.class_names)
@@ -102,6 +115,17 @@ function class:do_for_base (func: (class) -> (), recursive: boolean?, invert: bo
 		
 		index = next_index
 	end
+end
+
+function class:get_base () : class_base?
+	const this = self :: class_base
+	const index = private.get__index_class(this)
+
+	if (index.type and class_names[index.type] ~= nil) then
+		return index
+	end
+
+	return nil
 end
 
 function private.get__index_class (this: class)
