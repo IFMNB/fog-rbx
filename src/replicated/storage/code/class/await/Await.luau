@@ -1,7 +1,7 @@
 --!strict
 
 const RunService = game:GetService("RunService")
-const object = require("../../object")
+const object = require "@game/ReplicatedStorage/code/object"
 const class_names = require("../../static/class_names")
 
 const private = {}

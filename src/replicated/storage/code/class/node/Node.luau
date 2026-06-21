@@ -1,6 +1,6 @@
 --!strict
 
-const object = require('../../object')
+const object = require "@game/ReplicatedStorage/code/object"
 const class_names = require('@game/ReplicatedStorage/code/static/class_names')
 const project_settings = require("../../static/project_settings")
 const Connection = require("../connection/Connection")
@@ -59,7 +59,7 @@ function private.ready_handler()
 		const state, out = pcall(v.ready, v, private.base_nodes[v])
 
 		if (not state) then
-			if (ProjectSettings.DebugMode) then
+			if (ProjectSettings.debug_mode) then
 				error("node.ready() error"..tostring(out))
 			else
 				warn("node.ready() error, skipped", out)
@@ -122,7 +122,7 @@ end
 
 function private.handle_nodes ()
 	return task.spawn(function()
-		while task.wait(ProjectSettings.NodeProcessHertz) do
+		while task.wait(ProjectSettings.node_process_hertz) do
 			debug.profilebegin("node.handlers")
 
 			private.ready_handler()
@@ -138,7 +138,7 @@ function class.new(rbx_instance: Instance?, init: boolean?)
 end
 
 function class.get_instance() : Instance
-	if (project_settings.DebugMode) then
+	if (project_settings.debug_mode) then
 		return error("Cannot get instance, node should be initiated")
 	else
 		return nil :: never

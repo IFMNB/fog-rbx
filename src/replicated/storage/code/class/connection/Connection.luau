@@ -1,4 +1,4 @@
-const object = require('../../object')
+const object = require "@game/ReplicatedStorage/code/object"
 const class_names = require('@game/ReplicatedStorage/code/static/class_names')
 const connection_state = require('../../enums/ConnectionState')
 

@@ -14,6 +14,13 @@ const names = {
 	await = "await" :: "await",
 	asset = "asset" :: "asset",
 	human = "human" :: "human",
+	phys = "phys" :: "phys",
+	storage = "storage" :: "storage",
+
+	server = "server" :: "server",
+	round = "round" :: "round",
+	warfare = "warfare" :: "warfare",
+	faction = "faction" :: "faction",
 }
 
 export type names_dictionary = typeof(names)

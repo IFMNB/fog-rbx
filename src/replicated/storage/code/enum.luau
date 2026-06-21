@@ -28,7 +28,7 @@ function private.check_name(name: string?)
 	end
 end
 
-function class.new(class: {}, _: string?, id: number?) : item
+function class.new(_: {}?, _: string?, id: number?) : item
 	if (id) then
 		return id
 	else

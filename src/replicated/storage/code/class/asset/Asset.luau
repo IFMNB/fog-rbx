@@ -1,5 +1,5 @@
-const object = require("../../object")
-const class_names = require("../../static/class_names")
+const object = require "@game/ReplicatedStorage/code/object"
+const class_names = require "@game/ReplicatedStorage/code/static/class_names"
 
 const class = {}
 setmetatable(class, {__index = object})

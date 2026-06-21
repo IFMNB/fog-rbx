@@ -1,9 +1,10 @@
 --!strict
 
-const object = require('../../object');
+const object = require "@game/ReplicatedStorage/code/object"
 const class_names = require('@game/ReplicatedStorage/code/static/class_names')
 const connection = require("../connection/Connection")
 const connection_state = require('../../enums/ConnectionState')
+const project_settings = require("../../static/project_settings")
 
 const private = {}
 const class = {__index = object}
@@ -81,7 +82,7 @@ end
 export type class1 = typeof(class1.new(nil::any))
 
 class1.type = "event_controller" :: "event_controller"
-class1.deferred = false
+class1.deferred = project_settings.default_event_behavior_is_deferred
 
 private1.events = setmetatable({}::{[class1]: class}, {__mode = "ks"})
 
