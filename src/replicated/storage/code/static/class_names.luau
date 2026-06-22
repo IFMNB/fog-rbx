@@ -16,6 +16,9 @@ const names = {
 	human = "human" :: "human",
 	phys = "phys" :: "phys",
 	storage = "storage" :: "storage",
+	timer = "timer" :: "timer",
+	world = "world" :: "world",
+	processor = "processor" :: "processor",
 
 	server = "server" :: "server",
 	round = "round" :: "round",

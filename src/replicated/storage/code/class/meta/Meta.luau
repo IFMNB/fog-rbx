@@ -1,5 +1,6 @@
 const object = require "@game/ReplicatedStorage/code/object"
-const class_names = require("../../static/class_names")
+const project = require("@game/ReplicatedStorage/code/static/project")
+const class_names = require("@game/ReplicatedStorage/code/static/class_names")
 
 const class = {}
 setmetatable(class, {__index = object})
@@ -62,8 +63,13 @@ function class:wrap_newindex (__newindex: __newindex, set: (arg1: table, arg2: a
                 __newindex(arg1,arg2,arg3)
             end
         end
+    elseif (type_newindex == "nil") then
+        return nil :: never
     else
-        error("unexpected __newindex type")
+        if (project.debug_mode) then
+            error("unexpected __newindex type")
+        end
+        return nil :: never
     end
 end
 

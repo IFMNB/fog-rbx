@@ -1,13 +1,14 @@
 --!strict
 
 const object = require "@game/ReplicatedStorage/code/object"
+const StorageMode = require("@game/ReplicatedStorage/code/enums/StorageMode")
+const Storage = require("@game/ReplicatedStorage/code/service/storage/Storage")
 const class_names = require('@game/ReplicatedStorage/code/static/class_names')
-const project_settings = require("../../static/project_settings")
-const Connection = require("../connection/Connection")
-const Event = require("../event/Event")
-const Meta = require("../meta/Meta")
-const NodeProcessState = require('../../enums/NodeProcessState') -- TODO
-const ProjectSettings = require('@game/ReplicatedStorage/code/static/project_settings')
+const project = require("@game/ReplicatedStorage/code/static/project")
+const Upload = require("@game/ReplicatedStorage/code/class/upload/Upload")
+const Connection = require("@game/ReplicatedStorage/code/class/connection/Connection")
+const Event = require("@game/ReplicatedStorage/code/class/event/Event")
+const Meta = require("@game/ReplicatedStorage/code/class/meta/Meta")
 
 const private = {}
 const class = {__index = object}
@@ -17,277 +18,223 @@ export type class = typeof(class.new())
 
 class.type = class_names.node
 class.name = class.type :: string
-class.changed = (nil::any) :: Event.class
-class.process_state = NodeProcessState.operational
+class.changed = project.default_not_exists :: Event.class
+class.tag = "@node"
 
-private.to_ready = setmetatable({}::{class}, {__mode = 'vs'})
-private.to_process = setmetatable({}::{class}, {__mode = 'vs'})
-private.classtag = "@node"
-private.process_delta_time = setmetatable({}::{[class]:number}, {__mode = 'ks'})
-private.base_nodes = setmetatable({}::{[class]: class}, {__mode='ks'})
-private.node_attribute = setmetatable({}::{[class]:{RBXScriptSignal}}, {__mode = 'ks'})
+private.node_attribute = Storage.create_table_with(StorageMode.LazyKeys) :: {[class]: RBXScriptSignal}
+private.metadata = Storage.create_table_with(StorageMode.LazyKeys) :: {[class]: {
+	lazy_initiate: Upload.class?
+}}
 
-function private.get_delta_time(this: class)
-	const delta = private.process_delta_time[this]
-	const time_new = os.clock()
-	if (delta) then
-		private.process_delta_time[this] = time_new
-		return time_new - delta
+function class.new(rbx_instance: Instance?)
+	const this = object.new(class, true)
+	if (rbx_instance) then
+		this:initiate(rbx_instance)
+	end
+	return this
+end
+
+-- Событие испускает сигнал только если
+function class:get_initiate_event () : Event.class
+	const this = self :: class
+	local metadata = private.metadata[this]
+	if (not metadata) then private.metadata[this] = {}; metadata = private.metadata[this] end
+
+	if (this:is_initiated()) then
+		if (project.debug_mode) then
+			error("")
+		end
 	else
-		private.process_delta_time[this] = time_new
-		return time_new - time_new
+		local lazy_initiate = metadata.lazy_initiate :: Upload.class
+		if (not lazy_initiate) then
+			lazy_initiate = Upload.new()
+			this:watch_free_event(function ()
+				lazy_initiate:free()
+			end)
+		end
+		
+		metadata.lazy_initiate = lazy_initiate
+		return lazy_initiate:fetch_class("initiate", Event):get_event()
 	end
-end
 
-function private.ready_handler()
-	debug.profilebegin("node.ready_handler()")
-	
-	const to_clear : {class} = {}
-	
-	for i,v in private.to_ready do
-		
-		if (not v.get_instance()) then
-			continue
-		end
-		
-		if (v.process ~= nil and type(v.ready) ~= "function") then
-			warn("unexpected node.ready() type, removed")
-			v:free()
-			continue
-		end
-		
-		const state, out = pcall(v.ready, v, private.base_nodes[v])
-
-		if (not state) then
-			if (ProjectSettings.debug_mode) then
-				error("node.ready() error"..tostring(out))
-			else
-				warn("node.ready() error, skipped", out)
-			end
-		end
-		
-		table.insert(to_clear,v)
-	end
-	
-	for i,v in to_clear do
-		table.remove(private.to_ready, table.find(private.to_ready,v))
-	end	
-	
-	debug.profileend()
-end
-
-function private.process_handler()
-	debug.profilebegin("node.process_handler()")
-	
-	const to_clear : {class} = {}
-	
-	for i,v in private.to_process do
-		if (table.find(private.to_ready, v)) then
-			continue
-		end
-		
-		if (not v.get_instance()) then
-			continue
-		end
-
-		if (v.process_state == NodeProcessState.disabled) then
-			continue
-		end
-		
-		if (v.process == nil or v.process == class.process) then
-			continue
-		end
-		
-		if (type(v.process) ~= "function") then
-			table.insert(to_clear, v)
-			warn("unexpected node.process() type, removed")
-			continue
-		end
-		
-		const delta_time = private.get_delta_time(v)
-		const state, out = pcall(v.process :: any, v, delta_time, private.base_nodes[v])
-
-		
-		if (not state) then
-			warn(v, "node.process() error", out)
-		end
-	end
-	
-	for i,v in to_clear do
-		table.remove(private.to_process, table.find(private.to_process, v))
-	end
-	
-	debug.profileend()
-end
-
-function private.handle_nodes ()
-	return task.spawn(function()
-		while task.wait(ProjectSettings.node_process_hertz) do
-			debug.profilebegin("node.handlers")
-
-			private.ready_handler()
-			private.process_handler()
-
-			debug.profileend()
-		end
-	end)
-end
-
-function class.new(rbx_instance: Instance?, init: boolean?)
-	return object.new(class, true)
+	return nil :: never
 end
 
 function class.get_instance() : Instance
-	if (project_settings.debug_mode) then
+	if (project.debug_mode) then
 		return error("Cannot get instance, node should be initiated")
 	else
 		return nil :: never
 	end
 end
 
-function class.is_initiated ()
-	return false
-end
+do -- InitiateRegion
 
-function private.true_initiated ()
-	return true
-end
+	function class:initiate(as: Instance)
+		const this = self :: class
+		local metadata = private.metadata[this]
+		if (not metadata) then private.metadata[this] = {}; metadata = private.metadata[this] end
+		const changed_event_controller = Event.new()
+		const changed_event = changed_event_controller:get_event()
+		const upload_initiate = metadata.lazy_initiate
 
-function private.lock_initiated (arg1)
-	error(string.format("already initiated, but got %s", arg1));
-end
-
-function private.set_base (this: class)
-	const meta = getmetatable(this)
-	const index = meta.__index
-	if (type(index) == "table") then
-		if (index.process and index.ready) then
-			private.base_nodes[this] = index
-		end
-	end
-end
-
-function private.process_auto_remove (this: class)
-	return function() 
-		local id = table.find(private.to_process, this)
-		if (id) then
-			table.remove(private.to_process, id)
+		if (class.is_node_instance(as)) then
+			error("cannot initiate a new node object, this is because instance already is node-instance")
 		end
 
-		private.base_nodes[this] = nil
-	end
-end
-
-function private.on_free_node_destroy_instance (this: class)
-	return function ()
-		const instance = this.get_instance()
-		if (instance) then
-			instance:Destroy()
-		end
-	end
-end
-
-function private.get_attribute_expected_name_of(i: any) : string?
-	const T = typeof(i)
-	if (T == "string" or T == "boolean" or T == "number" or T == "nil" or T == "Vector3" or T == "Vector2") then
-		return tostring(i)
-	else
-		return nil	
-	end
-end
-
-function private.wrap_class (this: class, changed_event_controller: Event.class1)
-	const new_meta = Meta.new()
-	const meta = getmetatable(this) :: {[unknown]: unknown}
-	const __index = meta.__index
-	const __newindex = meta.__newindex
-
-	setmetatable(this, new_meta)
-
-	new_meta.__index = __index
-	new_meta.__newindex = new_meta:wrap_newindex(__newindex, function(arg1, arg2, arg3)
-		changed_event_controller:emit(arg2, arg3)
-	end)
-end
-
-function class:initiate(as: Instance)
-	const this = self :: class
-	const changed_event_controller = Event.new()
-	const changed_event = changed_event_controller:get_event()
-	
-
-	this.changed = changed_event
-	this:watch_free_event(private.process_auto_remove(this))
-	this:watch_free_event(private.on_free_node_destroy_instance(this))
-	this.initiate = private.lock_initiated
-	this.get_instance = function () return as end
-	this.is_initiated = private.true_initiated
-	private.set_base(this)
-	
-	table.insert(private.to_ready, this)
-	table.insert(private.to_process, this)
-	const blacklist : {string} = {}
-
-	this:do_for_base(function(a0)
-		private.set_instance_attributes(this, a0, blacklist)
-	end, true, true)
-
-	private.set_nodeclass_tag(this)
-	as.Destroying:Once(function() this:free() end)
-end
-
-function private.set_instance_attributes (this: class, from: object.class, blacklist: {string})
-	const instance = this.get_instance() :: Instance
-	const to_free : {RBXScriptConnection} = {}
-	const to_free_event : {Connection.class} = {}
-
-	for i,v in (from :: {[unknown]: unknown}) do
-		if (i == "type") then
-			continue
+		this.changed = changed_event
+		private.wrap_class(this, changed_event_controller)
+		this:watch_free_event(private.on_free_node_destroy_instance(this))
+		this.initiate = private.lock_initiated
+		this.get_instance = function () return as end
+		this.is_initiated = private.true_initiated
+		if (upload_initiate and upload_initiate:is_exists("initiate")) then
+			const event_controller = upload_initiate:get("initiate") :: Event.ctrl_class
+			event_controller:emit()
+			upload_initiate:free()
+			metadata.lazy_initiate = nil
 		end
 
-		const attribute_name = private.get_attribute_expected_name_of(i)
+		this:do_for_all_inheritance(function(a0)
+			private.set_instance_attributes(this, a0)
+		end, true, true)
 
-		if (attribute_name and private.get_attribute_expected_name_of(v)) then
-			table.insert(blacklist, attribute_name)
+		private.set_nodeclass_tag(this)
+		as.Destroying:Once(function() 
+			if (this.is_free == false) then
+				this:free()
+			end
+		end)
+	end
 
-			instance:SetAttribute(attribute_name, v)
+	function private.set_instance_attributes (this: class, from: object.class)
+		const instance = this.get_instance() :: Instance
+		const to_free : {RBXScriptConnection} = {}
+		const to_free_event : {Connection.class} = {}
 
-			const callback = function () (this :: {[unknown]: unknown})[i] = instance:GetAttribute(attribute_name) end
-			const rollout = function (arg1: any, arg2: any)
-				if (arg1 ~= attribute_name) then
-					return
+		for i,v in (from :: {[unknown]: unknown}) do
+			if (i == "type" or i == "tag") or i == "is_free" then
+				continue
+			end
+
+			const attribute_name = private.get_attribute_expected_name_of(i)
+
+			if (attribute_name and private.get_attribute_expected_name_of(v)) then
+				instance:SetAttribute(attribute_name, v)
+
+				const attribute = instance:GetAttributeChangedSignal(attribute_name)
+
+				if (project.debug_mode) then
+					const callback = function ()
+						(this :: {[unknown]: unknown})[i] = instance:GetAttribute(attribute_name)
+					end
+					const connection = attribute:Connect(callback)
+
+					table.insert(to_free, connection)
 				end
 				
-				const attribute_value = instance:GetAttribute(attribute_name)
-				if (attribute_value ~= arg2) then
-					instance:SetAttribute(attribute_name, arg2)
+				const rollout = function (arg1: any, arg2: any)
+					if (arg1 ~= attribute_name) then
+						return
+					end
+					
+					const attribute_value = instance:GetAttribute(attribute_name)
+					if (attribute_value ~= arg2) then
+						instance:SetAttribute(attribute_name, arg2)
+					end
 				end
-			end
-			const attribute = instance:GetAttributeChangedSignal(attribute_name)
-			const connection = attribute:Connect(callback)
-			const event_connection =	this.changed:connect(rollout)
+				const event_connection =	this.changed:connect(rollout)
 
-			table.insert(to_free_event, event_connection);
-			table.insert(to_free, connection)
+				table.insert(to_free_event, event_connection);
+			end
+		end
+
+		this:watch_free_event(function()
+			for i,v in to_free do
+				v:Disconnect()
+			end
+			for i,v in to_free_event do
+				v:disconnect()
+			end
+		end)
+	end
+
+	function private.lock_initiated (arg1)
+		error(string.format("already initiated, but got %s", arg1));
+	end
+
+	function class.is_initiated ()
+		return false
+	end
+
+	function private.true_initiated ()
+		return true
+	end
+
+	function private.on_free_node_destroy_instance (this: class)
+		return function ()
+			const instance = this.get_instance()
+			if (instance) then
+				instance:Destroy()
+			end
 		end
 	end
 
-	this:watch_free_event(function()
-		for i,v in to_free do
-			v:Disconnect()
+	private.attribute_expected_types = table.freeze ({
+		string = true,
+		boolean = true,
+		number = true,
+		Vector3 = true,
+		Vector2 = true,
+		CFrame = true,
+		Color3 = true,
+		UDim = true,
+		UDim2 = true,
+		BrickColor = true,
+		NumberSequence = true,
+		ColorSequence = true,
+		NumberRange = true,
+		Font = true,
+		Rect = true
+	}) :: {[string]: boolean}
+
+	function private.get_attribute_expected_name_of(i: any) : string?
+		const T = typeof(i)
+		const value = private.attribute_expected_types[T]
+		if (value == true) then
+			return tostring(i)
+		else
+			return nil	
 		end
-		for i,v in to_free_event do
-			v:disconnect()
-		end
-	end)
+	end
+
+	function private.wrap_class (this: class, changed_event_controller: Event.ctrl_class)
+		const new_meta = Meta.new()
+		const meta = getmetatable(this) :: {[unknown]: unknown}
+		const __index = meta.__index
+		const __newindex = meta.__newindex
+
+		setmetatable(this, new_meta)
+
+		new_meta.__index = __index
+		new_meta.__newindex = new_meta:wrap_newindex(__newindex, function(arg1, arg2, arg3)
+			changed_event_controller:emit(arg2, arg3)
+		end)
+	end
+
+	function private.set_nodeclass_tag (this: class) 
+		const to: Instance = this.get_instance() :: Instance
+		to:AddTag(this.tag)
+		to:AddTag(this.type)
+	end
+
 end
 
-function private.get_nodeclass_tag (of: Instance) 
+function class.is_node_instance (of: Instance) 
 	const tags : {string} = of:GetTags()
 
 	for i,v in tags do
-		if v == private.classtag then
+		if v == class.tag then
 			return true
 		end
 	end
@@ -295,25 +242,6 @@ function private.get_nodeclass_tag (of: Instance)
 	return false
 end
 
-function private.set_nodeclass_tag (this: class) 
-	const to = this.get_instance() :: Instance
-	to:AddTag(private.classtag)
-	to:AddTag(this.type)
-end
 
--- По умолчанию это виртуальная функция которая ничего не выполняет. Для работы замените на исполняемый код.
-function class:ready (base: class)
-	
-end
--- По умолчанию это виртуальная функция которая ничего не выполняет. Для работы замените на исполняемый код.
-function class:process (base: class, delta_time: number)
-	
-end
-
-
-
-
-
-private.handle_nodes()
 table.freeze(class :: any)
 return class

@@ -1,4 +1,5 @@
 const class_names = require('@game/ReplicatedStorage/code/static/class_names')
+const project = require("./static/project")
 
 const private = {};
 const class = {};
@@ -91,29 +92,39 @@ function class:is(classname: string|class_names.class_names)
 	return false
 end
 
-function class:do_for_base (func: (class) -> (), recursive: boolean?, invert: boolean?)
+function class:do_for_all_inheritance (func: (class) -> (), recursive: boolean?, invert: boolean?)
 	const this = self :: class
-	local index = private.get__index_class(this)
-	local next_index
+	local index = this
+	const see = {} :: {any}
 
 	while (index) do
-		if (index.type and class_names[index.type] ~= nil) then
-			if (not invert) then
-				func(index)
+		if (not invert) then
+			func(index)
+		end
+
+		if (recursive) then
+			table.insert(see, index)
+			index = private.get__index_class(index, true)
+			
+			if (not index) then
+				return
 			end
 
-			if (recursive) then
-				next_index = private.get__index_class(index)
-			end
-
-			if (invert) then
-				if (next_index) then
-					func(next_index)
+			if (table.find(see, index)) then
+				if (index.type == "object") then
+					return
+				else
+					if (project.debug_mode) then
+						error(string.format ("cycle oop dependency \n%s", index.type ))
+					end
+					return
 				end
 			end
 		end
-		
-		index = next_index
+
+		if (invert) then
+			func(index)
+		end
 	end
 end
 
@@ -128,13 +139,21 @@ function class:get_base () : class_base?
 	return nil
 end
 
-function private.get__index_class (this: class)
-	const metatable = getmetatable(this) :: {[unknown]: unknown}
+function private.get__index_class (this: class, force_next_class_by_index: boolean?)
+	const metatable = getmetatable(this) :: {[unknown]: unknown}?
 	if (type(metatable) == "table") then
-		const index = metatable.__index
-		
-		if (type(index) == "table") then
-			return index
+		if (class_names[rawget(metatable, "type")] and not force_next_class_by_index) then
+			return metatable
+		else
+			const index = metatable.__index
+			if (type(index) == "table") then
+				return index
+			else
+				if (project.debug_mode) then
+					error("cannot iterate over __index function type (or type isn't a table)")
+				end
+				return nil :: never
+			end
 		end
 	end
 
