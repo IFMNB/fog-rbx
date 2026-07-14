@@ -10,3 +10,4 @@ sourcemap.json
 *.blend
 *.png
 *.jpg
+.vscode/
