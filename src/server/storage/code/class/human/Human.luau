@@ -1,17 +1,17 @@
+const Disposable = require("@game/ReplicatedStorage/code/Disposable")
 const object = require("@game/ReplicatedStorage/code/object")
-const class_names = require("@game/ReplicatedStorage/code/static/class_names")
-const lifeform = require('@game/ServerStorage/code/class/lifeform/Lifeform')
+const namefield = require("@game/ReplicatedStorage/code/static/namefield")
+const lifeform = require("@game/ServerStorage/code/class/lifeform/Lifeform")
 
-const private = {};
-const class = {__index = lifeform};
-setmetatable(class,class);
+const private = {}
+const class = { __index = lifeform }
+setmetatable(class, class)
 
-class.type = class_names.human
+class.type = namefield.human
+class.classname = "Humanoid"
 
-function class.new ()
-    return object.new(class, true)
+function class.new()
+	return Disposable.new(class, true)
 end
 
-
-table.freeze(class :: any)
-return class
+return table.freeze(class)

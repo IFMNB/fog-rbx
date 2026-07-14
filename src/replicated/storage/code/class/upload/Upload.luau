@@ -1,59 +1,90 @@
-const object = require("@game/ReplicatedStorage/code/object")
+--!strict
+
+const Disposable = require("../../Disposable")
 const StorageMode = require("../../enums/StorageMode")
-const Storage = require("@game/ReplicatedStorage/code/service/storage/Storage")
-const class_names = require("@game/ReplicatedStorage/code/static/class_names")
+const object = require("../../object")
+const namefield = require("../../static/namefield")
+const Storage = require("../storage/Storage")
 
 const private = {}
 const class = {}
-setmetatable(class, {__index = object})
+setmetatable(class, {__index = Disposable})
 
-export type class = typeof(class.new())
+export type class = object.class<typeof(class)>
 
-class.type = class_names.upload
-
-private.metadata = Storage.create_table_with(StorageMode.LazyKeys) :: {[class]: {
-    lazy: {[unknown]: unknown}
-}}
+--[=[
+    `Upload` - Lazy-хранилище и ленивый загрузчик одновременно
+]=]
+class.type = namefield.upload
 
 function class.new ()
-    const this = object.new(class, true)
-    private.metadata[this] = {
-        lazy = {}
-    }
+    const this = Disposable.new(class, true)
     return this
 end
 
-function class:is_exists(key)
-    const this :class = self
-    const metadata = private.metadata[this]
-    return metadata.lazy[key] ~= nil
+--[=[
+    Вернет требуемое значение если оно есть, а если его нет то создаст
+    при помощи переданного значения и запишет его в таблицу
+
+    Может быть также применен как `Upload.class :fetch()`, поскольку каждый
+    `Upload.class` имеет собственный реестр данных и может внутри хранит 
+    ключ-значение пары вида:
+
+    `[object.class]: unknown`
+]=]
+function class.fetch <T,U> (from: {[unknown]: unknown?}|class, key: U, reserved: (...any) -> T|T) : T
+    const value = from[key]
+    if (value) then
+        return value
+    end
+
+    if (object.is(from, class.type)) then
+        return class.fetch(private.upvalues:fetch(from), key, reserved)
+    end
+
+    const T = type(reserved)
+    const T_do = private.type_do[T] or private.type_do["any"]
+    const result = T_do(from, key, reserved)
+
+    return result :: T
 end
 
-function class:get(key)
-    const this : class = self
-    const metadata = private.metadata[this]
-    return metadata.lazy[key]
+
+--[=[
+    Проверяет нахождение ключа в собственном реестре
+]=]
+function class:is_exists (key: unknown)
+    const this = self :: class
+    const upvalues = private.upvalues:fetch(this)
+    return upvalues[key] ~= nil
 end
 
-function class:fetch_class <T> (key, class: {new: () -> T}) : T
-    const this : class = self
-    const metadata= private.metadata[this]
-    local lazy_instance = metadata.lazy[key]
-    const new = class.new
-
-    if (lazy_instance) then
-        return lazy_instance
+--[=[
+    Очищает ключ и его значение из собственного реестра данных
+]=]
+function class:clear (key: unknown?)
+    const this = self :: class
+    const upvalues = private.upvalues:fetch(this)
+    
+    if (key == nil) then
+        table.clear(upvalues)
     else
-        const new_instance = new()
-
-        class:watch_free_event(function()
-            new_instance:free()
-            metadata.lazy_event[key] = nil
-        end)
-
-        metadata.lazy_event[key] = new_instance
-        return new_instance
+        upvalues[key] = nil
     end
 end
+
+private.type_do = table.freeze {
+    ["function"] = function (this, key, func)
+        const new = func()
+        this[key] = new
+        return new
+    end,
+    ["any"] = function (this, key, reserved)
+        this[key] = reserved
+        return reserved
+    end
+} :: {[string]: (...any) -> unknown}
+
+private.upvalues = Storage.new(StorageMode.LazyAll)
 
 return table.freeze(class)

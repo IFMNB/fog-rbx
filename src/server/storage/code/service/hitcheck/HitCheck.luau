@@ -1,7 +1,9 @@
+--LEGACY
+
 const collection_service = game:GetService("CollectionService")
 const http_service = game:GetService("HttpService")
 const service = require('@game/ReplicatedStorage/code/class/service/Service')
-const class_names = require('@game/ReplicatedStorage/code/static/class_names')
+const namefield = require('@game/ReplicatedStorage/code/static/namefield')
 const event = require('@game/ReplicatedStorage/code/class/event/Event')
 const connection_state = require('@game/ReplicatedStorage/code/enums/ConnectionState')
 
@@ -11,9 +13,9 @@ setmetatable(class, class)
 
 export type class = typeof(class)
 
-class.type = class_names.hitcheck
+class.type = namefield.hitcheck
 
-private.uid_events = {} :: {[string]: event.ctrl_class}
+private.uid_events = {} :: {[string]: event.class}
 
 function class:get_tag(instance: BasePart) : string
 	const this = self :: class
@@ -48,7 +50,7 @@ function class:get_tag_event(uid: string) : event.class?
 	const event_controller = private.uid_events[uid]
 	
 	if (event_controller) then
-		return event_controller:get_event()
+		return event_controller:get_face()
 	else
 		return nil
 	end
