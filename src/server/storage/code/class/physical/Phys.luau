@@ -12,7 +12,7 @@ setmetatable(class, class)
 
 export type class = object.class<typeof(class)>
 
-class.type = namefield.physicalmanipulator
+class.type = namefield.physics
 class.attention_transform = CFrame.identity
 class.pursue_attention_pos = false
 class.pursue_attention_rot = false
