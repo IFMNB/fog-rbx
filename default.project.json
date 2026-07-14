@@ -5,7 +5,7 @@
 
     "ReplicatedStorage": {
         "$path": "src/replicated/storage",
-        
+
         "dependency": {
           "$path": "Packages"
         }
@@ -17,11 +17,15 @@
 
     "ServerScriptService": {
         "$path": "src/server/service"
-        
+
     },
 
     "ServerStorage": {
-      "$path": "src/server/storage"
+      "$path": "src/server/storage",
+
+      "server-dependency": {
+          "$path": "ServerPackages"
+        }
     },
 
     "StarterPlayer": {
@@ -38,7 +42,7 @@
       "$properties": {
         "FilteringEnabled": true
       }
-      
+
     },
 
     "Lighting": {
@@ -54,7 +58,7 @@
         "Technology": "Voxel"
       }
     },
-    
+
     "SoundService": {
       "$properties": {
         "RespectFilteringEnabled": true
