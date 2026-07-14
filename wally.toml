@@ -1,0 +1,20 @@
+[package]
+name = "ifmnb/forgotten-grave"
+version = "0.0.1"
+license = "MIT"
+authors = ["Aftersky"]
+descripiton = "Source code of ForgottenGrave game"
+
+repository = "https://github.com/IFMNB/fog-rbx"
+registry = "https://github.com/UpliftGames/wally-index"
+private = true
+realm = "shared"
+
+[dependencies]
+Concur = "sleitnick/concur@0.1.2"
+Quaternion = "sleitnick/quaternion@0.2.3"
+Videlib = "centau/vide@0.4.1"
+
+[server-dependencies]
+
+[dev-dependencies]

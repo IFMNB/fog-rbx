@@ -1,23 +1,25 @@
-const object = require("@game/ServerStorage/code/object")
-const class_names = require("../../static/class_names")
+const object = require "@game/ReplicatedStorage/code/object"
+const project = require("@game/ReplicatedStorage/code/static/project")
+const Disposable = require("../../Disposable")
+const namefield = require("@game/ReplicatedStorage/code/static/namefield")
 
 const class = {}
-setmetatable(class, {__index = object})
+setmetatable(class, {__index = Disposable})
 
-export type class = typeof(class.new())
+export type class = object.class<typeof(class)>
 type table = setmetatable<{[any]:any}, {[any]:any}>
 type __index = (table|(table,any) -> any|unknown)?
 type __newindex = (table|(table,any,any)->()|unknown)?
 
 
-class.type = class_names.meta
+class.type = namefield.meta
 class.__index = nil :: __index
 class.__newindex = nil :: __newindex
 class.__metatable = nil :: any
 class.override_newindex = false
 
 function class.new ()
-    return object.new(class, true)
+    return Disposable.new(class, true)
 end
 
 function class:wrap_index (__index: __index?, set: (arg1: table, arg2: any) -> ()) : __index
@@ -62,8 +64,13 @@ function class:wrap_newindex (__newindex: __newindex, set: (arg1: table, arg2: a
                 __newindex(arg1,arg2,arg3)
             end
         end
+    elseif (type_newindex == "nil") then
+        return nil :: never
     else
-        error("unexpected __newindex type")
+        if (project.debug_mode) then
+            error("unexpected __newindex type")
+        end
+        return nil :: never
     end
 end
 
@@ -71,7 +78,7 @@ function class:lock()
     const this = self :: class
     const meta = getmetatable(this)
 
-    this.__metatable = "@class meta"
+    this.__metatable = "Meta.class @object"
     table.freeze(this)
     
     if (meta) then
@@ -79,5 +86,46 @@ function class:lock()
     end
 end
 
-table.freeze(class :: any)
-return class
+function class:wrap (that: {})
+    const this = self :: class
+    const metatable = getmetatable(that)
+
+    if (type(metatable) ~= "table") then
+        project.console_output "cannot wrap this table, because of __metatable field"
+        return
+    end
+
+    if (metatable) then
+        if (object.is(metatable, class.type)) then
+            project.console_output "cannot wrap already wrapped table"  
+        else
+            for i,v in metatable :: {[unknown]: unknown} do
+                if (v == "__index") then
+                    if (this.__index) then
+                        this:wrap_index(v,this.__index)
+                    else
+                        this.__index = v
+                    end
+                    continue
+                end
+
+                if (v == "__newindex") then
+                    if (this.__newindex) then
+                        this:wrap_newindex(v,this.__newindex)
+                    else
+                        this.__newindex = v
+                    end
+                    continue
+                end
+
+                this[i] = v
+            end
+        end
+    else
+        setmetatable(that,this)
+    end
+
+    return
+end
+
+return table.freeze(class)

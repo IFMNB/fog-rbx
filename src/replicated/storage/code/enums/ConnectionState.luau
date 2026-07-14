@@ -1,10 +1,15 @@
-const enum = require('../enum')
+const enum = require("@game/ReplicatedStorage/code/enum")
+const struct = {__index = enum}
+setmetatable(struct, struct)
 
-const enums = {};
+--[=[
+    Соединение является живым
+]=]
+struct.Alive = enum.new("Alive")
 
-enums.connected = enum.new(enums, "connected")
-enums.once = enum.new(enums, "once")
-enums.disconnected = enum.new(enums, "disconnected")
-enums.initiated = enum.new(enums, "initiated")
+--[=[
+    Соединение было разорвано и может быть освобождено в любом случае
+]=]
+struct.Dead = enum.new("Dead")
 
-return table.freeze(enums);
+return table.freeze(struct);
