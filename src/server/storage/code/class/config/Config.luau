@@ -8,7 +8,7 @@ const object = require("@game/ReplicatedStorage/code/object")
 const namefield = require("@game/ReplicatedStorage/code/static/namefield")
 const project = require("@game/ReplicatedStorage/code/static/project")
 const Result = require("@game/ReplicatedStorage/code/struct/Result")
-const config_names = require("../../static/config_names")
+const configs = require("../../static/configs")
 
 const private = {}
 const class = {}
@@ -19,7 +19,7 @@ export type class <T=unknown> = object.generic<Value.get_set_funcs<T>, {__index:
 class.type = namefield.config
 class.updateable = project.default_config_update_override_value
 
-function class.new (associate_with: string|config_names.config_names?, default: unknown?)
+function class.new (associate_with: string|configs.names?, default: unknown?)
     const this = Disposable.new(class, true)
     if (associate_with) then
         this:set_association(associate_with)
@@ -47,13 +47,13 @@ function class:get_update_event ()
     return private.update_event:get_face()
 end
 
-function class:set_association (with: string|config_names.config_names)
+function class:set_association (with: string|configs.names)
     const this = self :: class
     const metadata = private.metadata:fetch(this)
     metadata.associate_with = with
 end
 
-function class:get_association () : string|config_names.config_names
+function class:get_association () : string|configs.names
     const this = self :: class
     const metadata = private.metadata:fetch(this)
     return metadata.associate_with or ""
