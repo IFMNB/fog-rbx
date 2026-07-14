@@ -9,4 +9,5 @@ sourcemap.json
 *.7z
 *.blend
 *.png
-*.jpg.vscode/
+*.jpg
+.vscode/
