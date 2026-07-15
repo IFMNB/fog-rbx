@@ -41,6 +41,36 @@
 
 Если для собственного рабочего процесса требуется изменить параметры редактора, рекомендуется использовать пользовательские настройки Visual Studio Code (`User Settings`), а не настройки рабочей области.
 
+```json
+  {
+    "[lua]": {
+        "editor.defaultFormatter": "JohnnyMorganz.stylua",
+        "editor.formatOnSave": true,
+    },
+    "[luau]": {
+        "editor.defaultFormatter": "JohnnyMorganz.stylua",
+        "editor.formatOnSave": true,
+    },
+    
+    "stylua.targetReleaseVersion": "latest",
+
+    "luau-lsp.fflags.enableNewSolver": true,
+    "luau-lsp.server.crashReporting.enabled": true,
+    "luau-lsp.completion.autocompleteEnd": true,
+    "luau-lsp.completion.imports.stringRequires.enabled": true,
+    "luau-lsp.completion.imports.useConst": true,
+    "luau-lsp.diagnostics.strictDatamodelTypes": true,
+    "luau-lsp.diagnostics.workspace": true,
+    "luau-lsp.hover.showTableKinds": true,
+    "luau-lsp.inlayHints.functionReturnTypes": true,
+    "luau-lsp.inlayHints.parameterTypes": true,
+    "luau-lsp.inlayHints.parameterNames": "literals",
+    "luau-lsp.inlayHints.typeHintMaxLength": 500,
+    "luau-lsp.inlayHints.variableTypes": true,
+    "luau-lsp.types.robloxSecurityLevel": "LocalUserSecurity",
+  }
+```
+
 ## Formatting
 
 Исходный код проекта должен сохранять единый стиль оформления независимо от автора изменений.
