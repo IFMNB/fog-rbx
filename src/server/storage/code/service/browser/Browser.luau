@@ -14,7 +14,7 @@ const namefield = require("@game/ReplicatedStorage/code/static/namefield")
 const project = require("@game/ReplicatedStorage/code/static/project")
 const Content = require("@game/ReplicatedStorage/code/struct/Content")
 const Result = require("@game/ReplicatedStorage/code/struct/Result")
-const config_names = require("../../static/config_names")
+const configs = require("../../static/configs")
 const Config = require("../../class/config/Config")
 const Job = require("../../class/job/Job")
 const ServerNotification = require("../../enums/ServerNotification")
@@ -46,9 +46,9 @@ class.allow_join = project.default_browser_joining_from_outside
 class.allow_move = project.default_browser_joining_from_inside
 class.allow_join_to_pending_shutdown = project.browser_allow_joining_to_pending_shutdown
 
-class.browser_size = Config.new(config_names.browser_list_size, 30) :: Config.class<number>
-class.environment_update_time = Config.new(config_names.browser_environment_update_time, 10) :: Config.class<number>
-class.browser_update_time = Config.new(config_names.browser_list_update_time, 5) :: Config.class<number>
+class.browser_size = Config.new(configs.browser_list_size, 30) :: Config.class<number>
+class.environment_update_time = Config.new(configs.browser_environment_update_time, 10) :: Config.class<number>
+class.browser_update_time = Config.new(configs.browser_list_update_time, 5) :: Config.class<number>
 
 class.move_retry_attempts = 5
 

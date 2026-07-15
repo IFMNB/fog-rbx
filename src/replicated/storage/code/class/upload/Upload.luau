@@ -17,6 +17,10 @@ export type class = object.class<typeof(class)>
 ]=]
 class.type = namefield.upload
 
+--[=[
+    Создает ленивое хранилище данных в виде пары "Ключ - Значение".
+    Обладает функциями для ленивого создания и вызова функций, объектов, т.д
+]=]
 function class.new ()
     const this = Disposable.new(class, true)
     return this
@@ -49,6 +53,24 @@ function class.fetch <T,U> (from: {[unknown]: unknown?}|class, key: U, reserved:
     return result :: T
 end
 
+--[=[
+    Если по указанному ключу существует функция, то она 
+    будет вызвана с переданными аргументами. Иначе ничего
+    не произойдет 
+]=]
+function class.ecall <T,U,E...> (from: {[unknown|U]: unknown}|class, key: U, ...: T) : ...unknown
+	const value : unknown = from[key]
+	if value and type (value) == "function" then
+		return (value :: (...T) -> E...)(...)
+	end
+
+    -- TODO
+    -- Типизацию добавить
+
+	if object.is(from, class.type) then
+		return class.ecall(private.upvalues:fetch(from), key, ...)
+	end
+end
 
 --[=[
     Проверяет нахождение ключа в собственном реестре
