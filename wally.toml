@@ -3,7 +3,7 @@ name = "ifmnb/forgotten-grave"
 version = "0.0.1"
 license = "MIT"
 authors = ["Aftersky"]
-descripiton = "Source code of ForgottenGrave game"
+description = "Source code of ForgottenGrave game"
 
 repository = "https://github.com/IFMNB/fog-rbx"
 registry = "https://github.com/UpliftGames/wally-index"
@@ -14,6 +14,8 @@ realm = "shared"
 Concur = "sleitnick/concur@0.1.2"
 Quaternion = "sleitnick/quaternion@0.2.3"
 Videlib = "centau/vide@0.4.1"
+Lori = "kyrorblx/lori@0.1.7" # Debug manager
+Konsole = "kyrorblx/konsole@0.1.9" # Console manager
 
 [server-dependencies]
 Cmdr = "evaera/cmdr@1.12.0"

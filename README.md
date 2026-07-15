@@ -25,6 +25,8 @@
 > sleitnick/concur@0.1.2"
 > sleitnick/quaternion@0.2.3"
 > centau/vide@0.4.1"
+> kyrorblx/konsole@0.1.9
+> kyrorblx/lori@0.1.7
 
 
 ## Building

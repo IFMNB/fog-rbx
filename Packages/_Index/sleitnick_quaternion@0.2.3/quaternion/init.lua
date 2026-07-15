@@ -1,5 +1,4 @@
 --!strict
---!native
 
 --[[
 	Algorithmic credit: https://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/index.htm
