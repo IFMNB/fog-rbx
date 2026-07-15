@@ -1,5 +1,7 @@
 const Service = require("../../Service")
+const Event = require("../../class/event/Event")
 const Upload = require("../../class/upload/Upload")
+
 const object = require("../../object")
 const namefield = require("../../static/namefield")
 

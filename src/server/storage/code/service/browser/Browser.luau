@@ -10,7 +10,7 @@ const Timer = require("@game/ReplicatedStorage/code/class/timer/Timer")
 const Upload = require("@game/ReplicatedStorage/code/class/upload/Upload")
 const object = require("@game/ReplicatedStorage/code/object")
 const HttpRequest = require("../../class/httprequest/HttpRequest")
-const class_names = require("@game/ReplicatedStorage/code/static/class_names")
+const namefield = require("@game/ReplicatedStorage/code/static/namefield")
 const project = require("@game/ReplicatedStorage/code/static/project")
 const Content = require("@game/ReplicatedStorage/code/struct/Content")
 const Result = require("@game/ReplicatedStorage/code/struct/Result")
@@ -40,7 +40,7 @@ type package <T = {}?> = {Data: T, Sent: number}
 type notification_package = package<{session_id: number, notification: number}>
 export type class = typeof(private.singletone)
 
-class.type = class_names.browser
+class.type = namefield.browser
 class.api_access_key = project.interversion_searching and project.api_interversion_key or project.version
 class.allow_join = project.default_browser_joining_from_outside
 class.allow_move = project.default_browser_joining_from_inside

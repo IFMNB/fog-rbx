@@ -1,5 +1,5 @@
 {
-  "name": "Untilted",
+  "name": "ForgottenGrave",
   "tree": {
     "$className": "DataModel",
 
@@ -25,7 +25,11 @@
 
       "server-dependency": {
           "$path": "ServerPackages"
-        }
+        },
+
+      "dev-dependency": {
+        "$path": "DevPackages"
+      }
     },
 
     "StarterPlayer": {
@@ -39,30 +43,11 @@
     },
 
     "Workspace": {
-      "$properties": {
-        "FilteringEnabled": true
-      }
 
-    },
-
-    "Lighting": {
-      "$properties": {
-        "Ambient": [
-          0,
-          0,
-          0
-        ],
-        "Brightness": 2,
-        "GlobalShadows": true,
-        "Outlines": false,
-        "Technology": "Voxel"
-      }
     },
 
     "SoundService": {
-      "$properties": {
-        "RespectFilteringEnabled": true
-      }
+
     }
   }
 }
