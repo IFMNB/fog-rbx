@@ -9,8 +9,19 @@ export type class = object.class<typeof(class)>
 
 class.type = namefield.enum
 class.arch_new = error
+
+--[=[
+	Стандартное значение для всех неизвестных вариантов енумераторов
+]=]
 class.Unknown = 0
 
+--[=[
+	Генерирует hashcode для конкретной строки на основе hashlink.
+	Могут быть коллизии, не гарантирует их отсутствия
+
+	Поскольку енумераторы не являются объектами в привычном смысле,
+	они представляют из себя immutable объекты с константами внутри
+]=]
 function class.new(hashlink: string?)
 	private.id_counter += 1
 	hashlink = tostring(hashlink) or class.type
@@ -23,6 +34,19 @@ function class.new(hashlink: string?)
 	end
 
 	return hval
+end
+
+function class:is_my_enumitem(that: number)
+	const this = self :: class
+	const list = this:get_enums_list()
+
+	for _,v in list do
+		if (that == v) then
+			return true
+		end
+	end
+
+	return false
 end
 
 function class.get_enums_ever_created()

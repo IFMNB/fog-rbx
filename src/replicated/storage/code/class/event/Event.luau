@@ -150,7 +150,7 @@ function class:get_face()
 		end
 
 		new.wait = private.wait
-
+		new.owner_identity = this.identity
 		return new:immutable()
 	end) :: Face.class
 end

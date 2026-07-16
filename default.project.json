@@ -8,6 +8,10 @@
 
         "dependency": {
           "$path": "Packages"
+        },
+
+        "shared": {
+          "$path": "src/replicated/shared"
         }
     },
 
@@ -23,22 +27,32 @@
     "ServerStorage": {
       "$path": "src/server/storage",
 
-      "server-dependency": {
+      "server_dependency": {
           "$path": "ServerPackages"
         },
 
-      "dev-dependency": {
+      "project_dev_dependency": {
         "$path": "DevPackages"
+      },
+
+      "server_runtime": {
+        "$path": "src/server/runtime"
       }
     },
 
     "StarterPlayer": {
+      "$path": "src/client/stored",
+
       "StarterPlayerScripts": {
-        "$path": "src/client/on_player"
+        "$path": "src/client/service"
       },
 
       "StarterCharacterScripts": {
-        "$path": "src/client/on_character"
+        "$path": "src/client/local"
+      },
+
+      "client_runtime": {
+        "$path": "src/client/runtime"
       }
     },
 

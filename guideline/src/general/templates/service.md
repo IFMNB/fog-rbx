@@ -92,12 +92,13 @@ end
 
 
 do --initiate_region
-    const browser = Upload.fetch(private, "singletone", object.new(class, false))
+    const browser = object.new(class, class.type)
 
     --[=[
         В этом do end блоке происходит инициализация сервиса: подписки на соединения, включение jobs и тп
     ]=]
 
+    private.singletone = browser
     table.freeze(class)
     -- table.freeze(private) -- если сам private не изменяется, но этим можно принебречь
 end
