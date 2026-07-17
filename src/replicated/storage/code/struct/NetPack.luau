@@ -150,6 +150,12 @@ function class:get_players(): {Player}
     return players
 end
 
+--[=[
+    Быстрый шорткат для проверки кто отправитель
+
+    Не рекомендется для безопасных чеккеров контента напрямую с клиентов, как
+    и вообще использовать ивенты и функции напрямую, а не через `SharedNet.class`
+]=]
 function class:is_me_sender (): boolean
     const this = self :: class
     

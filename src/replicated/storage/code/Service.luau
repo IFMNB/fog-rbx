@@ -18,5 +18,7 @@ class.arch_new = class.new
 --
 -- Результат возвращать не требуется
 
+
+
 table.freeze(class)
 return class

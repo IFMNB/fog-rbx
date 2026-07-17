@@ -3,16 +3,19 @@ const struct = { __index = enum }
 setmetatable(struct, struct)
 
 --[=[
-    Для общения с клиентами через UnreliableRemoteEvent
+    Канал для внешнего небезопасного, но быстрого общения с клиентами
+    через `UnreliableRemoteEvent`
 ]=]
 struct.Unsafe = enum.new("Unsafe")
 --[=[
-    Для общения с клиентами через RemoteEvent
+    Канал для внешнего безопасного, но медленного общения с клиентами
+    через `RemoteEvent`
 ]=]
 struct.Safe = enum.new("Safe")
 
 --[=[
-    Для внутреннего общения
+    Канал для внутреннего общения внутри сети, потому что работает на
+    основе `BindableEvent`
 ]=]
 struct.Internal = enum.new "Internal"
 

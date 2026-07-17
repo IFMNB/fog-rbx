@@ -90,6 +90,10 @@ function class:get_name(by: number): string | "Unknown"
 	return "Unknown"
 end
 
+function class.get_enums_ever_created ()
+	return private.id_counter
+end
+
 private.id_counter = 1
 
 return table.freeze(class)

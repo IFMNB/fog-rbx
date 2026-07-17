@@ -1,3 +1,6 @@
+--[=[ TODO
+	Для линков сделать верицикацию объектов по ожидаемым типам
+]=]
 --!strict
 
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -56,7 +59,7 @@ end
    Если событие существует и если оно доступено из этого `Face.class`, будет совершен
    вызов с переданными аргументами.
 ]=]
-function class:emit_event(face: Face.class<NetPack.class> | string, netpack: NetPack.class?)
+function class:emit_event(face: Face.class<NetPack.class> | string, netpack: NetPack.class?): boolean
 	const this = self :: class
 	const event = private.direct[object.is(face, Face.type) and (face :: Face.class).owner_identity or face :: string]
 
@@ -70,10 +73,13 @@ function class:emit_event(face: Face.class<NetPack.class> | string, netpack: Net
         end
 
 		this.emited += 1
+        return true
 	else
 		this.errors += 1
 		project.console_output("unknown Face.class, abort")
 	end
+
+    return false
 end
 
 private.emitter_variants = table.freeze({
