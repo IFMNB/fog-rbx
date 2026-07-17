@@ -88,7 +88,7 @@ function class:get_face()
 			Часть функциональности устроена на стороне `Connection.class`, подробности там
 		]=]
 		new.connect = function(self: unknown, F: (...any) -> (), expected: number?): Connection.class
-			if not object.is_valid(this) then
+			if not class.is_valid(this) then
 				project.console_output("event isn't valid")
 				return
 			end
@@ -123,7 +123,7 @@ function class:get_face()
 			Часть функциональности устроена на стороне `Connection.class`, подробности там
 		]=]
 		new.once = function(self: unknown, F: (...any) -> (), expected: number?): Connection.class
-			if not object.is_valid(this) then
+			if not class.is_valid(this) then
 				project.console_output("event isn't valid")
 				return
 			end
@@ -268,7 +268,7 @@ do --private_region
 		enum: number?
 	)
 		for i, v in table.clone(connections) do
-			if not private.is_expected_for_connection_equals_to_received(enum, v) then
+			if not private.is_expected_for_connection_equals_to_received(enum, v.connection) then
 				continue
 			end
 
@@ -288,7 +288,7 @@ do --private_region
 		end
 	end
 
-	function private.is_expected_for_connection_equals_to_received(enum: number?, v: { read expected: unknown })
+	function private.is_expected_for_connection_equals_to_received(enum: number?, v: Connection.class)
 		return enum == nil or enum == v.expected
 	end
 

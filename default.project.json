@@ -31,10 +31,6 @@
           "$path": "ServerPackages"
         },
 
-      "project_dev_dependency": {
-        "$path": "DevPackages"
-      },
-
       "server_runtime": {
         "$path": "src/server/runtime"
       }

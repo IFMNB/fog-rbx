@@ -14,6 +14,7 @@ const StorageMode = require("../../enums/StorageMode")
 const object = require("../../object")
 const namefield = require("../../static/namefield")
 const project = require("../../static/project")
+const Liberator = require("../../struct/Liberator")
 const NetPack = require("../../struct/NetPack")
 
 const private = {}
@@ -21,17 +22,26 @@ const class = {}
 setmetatable(class, { __index = Service })
 
 export type class = object.class<typeof(class)>
+type metadata = {
+	variant: number,
+	link: number,
+	event: BaseRemoteEvent,
+}
 
 class.type = namefield.sharednet
-class.timeout = 60
+class.timeout = 3
+class.errors = 0
+class.generated = 0
+class.emited = 0
+class.access = 0
 
-function class.get_current_shared (): Instance
-    return Upload.fetch(private, "current_shared", function()
-        const new_shared = Instance.new "Folder"
+function class.get_current_shared(): Instance
+	return Upload.fetch(private, "current_shared", function()
+		const new_shared = Instance.new("Folder")
 		new_shared.Name = "shared"
-        new_shared.Parent = ReplicatedStorage
-        return new_shared
-    end)
+		new_shared.Parent = ReplicatedStorage
+		return new_shared
+	end)
 end
 
 --[=[
@@ -46,13 +56,69 @@ end
    Если событие существует и если оно доступено из этого `Face.class`, будет совершен
    вызов с переданными аргументами.
 ]=]
-function class:emit_event (face: Face.class<...any>, ...: unknown)
-    
+function class:emit_event(face: Face.class<NetPack.class> | string, netpack: NetPack.class?)
+	const this = self :: class
+	const event = private.direct[object.is(face, Face.type) and (face :: Face.class).owner_identity or face :: string]
+
+	if event then
+		const metadata = private.metadata_by(event)
+		const emitter = private.emitter_variants[metadata.variant]
+		emitter(this, event, metadata, netpack or NetPack.new())
+
+        if (private.is_server and netpack) then
+            netpack.from = NetSource.FromServer
+        end
+
+		this.emited += 1
+	else
+		this.errors += 1
+		project.console_output("unknown Face.class, abort")
+	end
 end
 
-function private.event_fire(this: class, variant: number, link: number, ...: unknown)
-    
-end
+private.emitter_variants = table.freeze({
+	[SharedNetVariant.Internal] = function(this: class, event: Event.class, metadata: metadata, netpack: NetPack.class)
+		const flat = netpack:get_flat()
+		if netpack.rpc then
+			const that: BindableEvent = metadata.event :: any
+			that:Fire(flat)
+		else
+			if netpack.expected then
+				event:launch(netpack.expected :: number, flat)
+			else
+				event:emit(flat)
+			end
+		end
+	end,
+	[SharedNetVariant.Safe] = function(this: class, event: Event.class, metadata: metadata, netpack: NetPack.class)
+		const that: RemoteEvent = metadata.event :: any
+		const players = netpack:get_players()
+		const flat = netpack:get_flat()
+
+		for _, player in players do
+            if (private.is_server) then
+			    that:FireClient(player, flat)
+            else
+                that:FireServer(flat)
+            end
+		end
+
+		if netpack.rpc then
+			if netpack.expected then
+				event:launch(netpack.expected :: number, flat)
+			else
+				event:emit(flat)
+			end
+		end
+	end,
+	[SharedNetVariant.Unsafe] = function(this: class, event: Event.class, metadata: metadata, netpack: NetPack.class)
+		return private.emitter_variants[SharedNetVariant.Safe](this, event, metadata, netpack)
+	end,
+	[SharedNetVariant.Unknown] = function(this: class, event: Event.class, metadata: metadata, netpack: NetPack.class)
+		project.console_output("unexpected SharedNetVariant")
+		return
+	end,
+}) :: { (class, Event.class, metadata, NetPack.class) -> () }
 
 --[=[
     Возвращает транспортировочное событие, которое привязано к экземпляру
@@ -61,105 +127,165 @@ end
     Транспортировочное событие не гарантирует мгновенной привязки к экземпляру
     на клиенте, поскольку созданием и управлением ими занимается сервер
 ]=]
-function class:get_event(variant: number, link: number) : Face.class<NetPack.class>
+function class:get_event(link: number?, variant: number?): Face.class<NetPack.class>
 	const this = self :: class
 
-	assert(SharedNetVariant:is_my_enumitem(variant), "unexpected SharedNetVariant")
-	assert(SharedNetLink:is_my_enumitem(link), "unexpected SharedNetLink")
+	variant = variant or SharedNetVariant.Safe
+	link = link or SharedNetLink.Unknown
 
-	return private.fetch_event(this, variant, link):get_face()
-end
+	const correct = SharedNetVariant:is_my_enumitem(variant) and SharedNetLink:is_my_enumitem(link)
 
-function private.fetch_event (this: class, variant: number, link: number) : Event.class
-    return Upload.fetch(private.remotes:fetch(variant), link, function()
-		const new_event = Event.new()
-
-		task.defer(function()
-			if private.is_server then
-                private.setup_serverside_event(this, variant, link, new_event)
-			else
-                private.setup_clientside_event(this, variant, link, new_event)
-			end
-		end)
-
-		return new_event
-	end)
-end
-
-function private.setup_clientside_event (this: class, variant: number, link: number, new: Event.class)
-    const name = private.get_name_of_event_by(variant, link)
-    const instance = this.get_current_shared():WaitForChild(name, this.timeout)
-    if (not instance) then
-        project.console_output "unable to fetch SharedNet :event, maybe your shared folder terminated?"
-        return
-    else
-        if (not instance:IsA "BaseRemoteEvent") then
-            project.console_output "unexpected instance for SharedNet"
-            return
-        end
-
-        const signal :RBXScriptSignal<...any> = private.get_signal_from_unknown_subtype_remote(instance)
-        signal:Connect(function(replicated_enum: number?, ...: any)
-			if replicated_enum then
-				new:launch(replicated_enum, NetPack.new(NetSource.FromClient))
-			else
-				new:emit(...)
-			end
-        end)
-    end
-end
-
-function private.setup_serverside_event (this: class, variant: number, link: number, new: Event.class)
-	const classname: string? = SharedNetVariant.get_variant(variant)
-
-	if classname then
-		const new_remote = Instance.new(classname) :: BaseRemoteEvent
-		const signal = private.get_signal_from_unknown_subtype_remote(new_remote)
-		new_remote.Name = private.get_name_of_event_by(variant, link)
-		new_remote.Parent = this.get_current_shared()
-		signal:Connect(function(a0: Player, replicated_enum: number?, ...: any)
-            if (replicated_enum) then
-                new:launch(replicated_enum, a0, ...)
-            else
-                new:emit(a0, ...)
-            end
-        end)
+	if not correct then
+		this.errors += 1
+        project.console_output "unexpected SharedNetVariant or SharedNetLink"
+		return Face.new()
 	else
-		project.console_output(string.format("unexpected classname for SharedNetVariant %s", tostring(classname)))
+		this.access += 1
+		return private.fetch_event(this, variant, link):get_face()
 	end
 end
 
-function private.get_name_of_event_by(variant: number, link: number): string
-    return tostring(variant).."_runtime_"..tostring(link)
-end
+do --get_event_private
+	function private.fetch_event(this: class, variant: number, link: number): Event.class
+		return Upload.fetch(private.remotes:fetch(variant), link, function()
+			const new_event = Event.new()
+			const remote = private.create_instance(variant, link)
 
-function private.get_signal_from_unknown_subtype_remote(get: BaseRemoteEvent): RBXScriptSignal<...any>
-    if (get:IsA "RemoteEvent") then
-        const that = get :: RemoteEvent
-        if (private.is_server) then
-            return that.OnServerEvent
-        else 
-            return that.OnClientEvent
-        end
-    elseif (get:IsA "UnreliableRemoteEvent") then
-        const that = get :: UnreliableRemoteEvent
-		if private.is_server then
-			return that.OnServerEvent
-		else
-			return that.OnClientEvent
+			private.setup_behaviour(new_event, remote)
+			private.metadata_by(new_event, variant, link, remote)
+			private.direct[new_event.identity] = new_event
+			new_event:watch_free_event(Liberator.new(private.direct, new_event.identity, true))
+
+			return new_event
+		end)
+	end
+
+	function private.metadata_by(that: Event.class, variant: number?, link: number?, remote: BaseRemoteEvent?)
+		return private.metadata:fetch(that, function()
+			return {
+				variant = variant or SharedNetVariant.Unknown,
+				link = link or SharedNetLink.Unknown,
+				event = remote,
+			} :: metadata
+		end)
+	end
+
+	function private.setup_behaviour(new: Event.class, remote: BaseRemoteEvent)
+		if remote:IsA "BindableEvent" then
+			private.setup_internal_event(new, remote)
+		elseif remote:IsA "RemoteEvent" or remote:IsA "UnreliableRemoteEvent" then
+			if private.is_server then
+				private.setup_serverside_event(new, remote)
+			else
+				private.setup_clientside_event(new, remote)
+			end
 		end
-    end
+	end
 
-    return project.console_output "unexpected Instance for expected BaseRemoteEvent"
+	function private.setup_internal_event(new: Event.class, remote: BaseRemoteEvent)
+		return private.setup_clientside_event(new, remote)
+	end
+
+	function private.setup_clientside_event(new: Event.class, remote: BaseRemoteEvent)
+		const signal = private.get_signal_from_unknown_subtype_remote(remote)
+		signal:Connect(function(a0: NetPack.flat, ...)
+			const netpack = NetPack.convert_flat(a0)
+			if netpack.expected then
+				new:launch(netpack.expected :: number, netpack)
+			else
+				new:emit(netpack)
+			end
+		end)
+	end
+
+	function private.setup_serverside_event(new: Event.class, remote: BaseRemoteEvent)
+		const signal = private.get_signal_from_unknown_subtype_remote(remote)
+		signal:Connect(function(sender: Player, a0: NetPack.flat, ...)
+			const netpack= NetPack.convert_flat(a0) :: any
+            
+            if (netpack.from == NetSource.FromServer) then
+                sender:Kick "nuh uh, dear, you're warned from that thing for now. I'm dissapointed in you. Do not replace my netpack.from, that's not allowed "
+                return
+            else
+                netpack.from = NetSource.FromClient
+            end
+
+            netpack.sender = sender.User:ToString()
+
+			if netpack.expected then
+				new:launch(netpack.expected :: number, netpack)
+			else
+				new:emit(netpack)
+			end
+		end)
+	end
+
+	function private.create_instance(variant: number, link: number)
+		const name = private.get_name_of_event_by(variant, link)
+		const instance_class = variant == SharedNetVariant.Internal and "BindableEvent"
+			or variant == SharedNetVariant.Safe and "RemoteEvent"
+			or variant == SharedNetVariant.Unsafe and "UnreliableRemoteEvent"
+			or variant == SharedNetVariant.Unknown and "RemoteEvent"
+			or "RemoteEvent"
+		const placement = private.singletone.get_current_shared()
+
+		local result: BaseRemoteEvent
+		if private.is_server then
+			const instance = Instance.new(instance_class) :: BaseRemoteEvent
+			instance.Name = name
+			instance.Parent = placement
+			result = instance
+		else
+			const needle = placement:WaitForChild(name, private.singletone.timeout) or game
+			result = (needle:IsA "BaseRemoteEvent" and needle or nil) :: BaseRemoteEvent
+			if not result then
+				const replacement = Instance.new("BindableEvent") :: any
+				replacement.Name = name .. "error"
+				replacement.Parent = game.StarterPlayer.client_runtime
+				result = replacement :: BaseRemoteEvent
+				project.console_output("unexpected event type, replaced")
+			end
+		end
+
+		return result
+	end
+
+	function private.get_name_of_event_by(variant: number, link: number): string
+		return tostring(variant) .. "_runtime_" .. tostring(link)
+	end
+
+	function private.get_signal_from_unknown_subtype_remote(get: BaseRemoteEvent): RBXScriptSignal<...any>
+		if get:IsA("RemoteEvent") then
+			const that = get :: RemoteEvent
+			if private.is_server then
+				return that.OnServerEvent
+			else
+				return that.OnClientEvent
+			end
+		elseif get:IsA("UnreliableRemoteEvent") then
+			const that = get :: UnreliableRemoteEvent
+			if private.is_server then
+				return that.OnServerEvent
+			else
+				return that.OnClientEvent
+			end
+		elseif get:IsA("BindableEvent") then
+			const that = get :: BindableEvent
+			return that.Event
+		end
+
+		return project.console_output("unexpected Instance for expected BaseRemoteEvent")
+	end
 end
 
 do --init_region
 	const sharednet = object.new(class, "")
 
-    private.direct = Storage.new(StorageMode.LazyValues) -- {[identity]: Event.class}
+	private.metadata = Upload.new()
+	private.direct = Storage.create_table_with(StorageMode.LazyValues) :: { [typeof(object.identity)]: Event.class? }
 	private.remotes = Storage.new() -- {[variant]: {link: EventInstance}}
 	private.is_server = RunService:IsServer()
-    private.current_shared = ReplicatedStorage.shared :: Instance?
+	private.current_shared = ReplicatedStorage.shared :: Instance?
 	private.singletone = sharednet
 end
 

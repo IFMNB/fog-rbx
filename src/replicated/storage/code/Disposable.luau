@@ -336,7 +336,7 @@ do --collect_region
 			return "object"
 		end
 		private.parsers["userdata"] = function(userdata: any)
-			if game.IsA(userdata, "Instance") then
+			if userdata:IsA "Instance" then
 				return private.parsers["instance"](userdata :: Instance)
 			end
 

@@ -2,8 +2,7 @@
 const project = {}
 
 do --data
-
-    --[=[
+	--[=[
     	Используется как ключ доступа в сервисах управления сервером
 
         Старые api могут иметь отличия от нового, поэтому перемещение меж серверами с 1 версии на другую пока недоступно
@@ -11,12 +10,12 @@ do --data
     ]=]
 	project.version = "unreleased"
 
-    --[=[
+	--[=[
         Общий ключ, по которому совместимые версии могут соединяться друг с другом
     ]=]
 	project.api_interversion_key = "Aftersky-chan" :: string | "Aftersky-chan"
 
-    --[[
+	--[[
         Дескриптор, сообщающий о возможной параллельности внутри этого контекта
         выполнения. Проще говоря, если это свойство имеет состояние `true`, то
         значит можно вызывать параллельные методы типа `ConnectParallel` или
@@ -30,44 +29,42 @@ do --data
 		task.desynchronize()
 		task.synchronize()
 	end)
-
 end
 
 do --defaults
-
-    --[=[
+	--[=[
         Максимальная скорость ограничена 60Hz независимо от желаемого уровня
     ]=]
 	project.default_processor_hertz = 1 / 30
 
-    --[=[
+	--[=[
         Ивенты все равно могут выполняться как захотят, это лишь стандартное поведение
 
     	*Возможно об этом будет указано там, где поведение отличается*
     ]=]
 	project.default_behavior_is_deferred = false
 
-    --[=[
+	--[=[
         Шанс использования default близится к 0, но никогда ему не равен
 
         На самом деле это практически никогда не используется
     ]=]
 	project.default_timer_time_to_wait = 1 :: number | DateTime
 
-    --[=[
+	--[=[
         `Timer.class` выполняет шаг каждую секунду, модификатор умножает шаг,
         который сам по себе равен единице
     ]=]
 	project.default_timer_time_stepped_modificator = 1
 
-    --[=[
+	--[=[
         Стандартное поведение `Config.class`, при котором если значение было overrided,
         то новое обновление всей конфигурации будет касаться этого значения или нет,
         даже если это апдейт касается именно него
     ]=]
 	project.default_config_update_override_value = false
 
-    --[=[
+	--[=[
         К серверам можно подключиться через синглтон `Browser.class` из этого сервера в другой?
 
         Это не свойство проекта, потому что сервер в ходе игрового процесса или
@@ -76,7 +73,7 @@ do --defaults
     ]=]
 	project.default_browser_joining_from_inside = true
 
-    --[=[
+	--[=[
         К этому серверу можно подключиться через синглтон `Browser.class` из другого сервера в этот?
 
         Это не свойство проекта, потому что сервер в ходе игрового процесса или
@@ -85,13 +82,13 @@ do --defaults
     ]=]
 	project.default_browser_joining_from_outside = false
 
-    --[=[
+	--[=[
         Ивентам можно выставить задержку на выполнение `Event.class :emit()`
     	Если значение будет отрицательным, то задержки не будет.
     ]=]
 	project.default_event_time_before_emit = -1
 
-    --[=[
+	--[=[
     	Стандартное количество шагов повторения `Event.class :emit()` вызова
 
 	    Мультиплицированное поле позволяет вызывать ивент столько, сколько
@@ -101,14 +98,13 @@ do --defaults
 end
 
 do --properties
-
-    --[=[
+	--[=[
         При `true` включается повышенная отладка: любая ошибка выводится как `error()`,
 	    никаких `warn()` не позволяется к выполнению, любые потери данных недопустимы
     ]=]
 	project.debug_mode = game["Run Service"]:IsStudio()
 
-    --[=[
+	--[=[
 	    Выделенный объект при `true` придется освобождать вручную,
 	    GarbageCollector больше не сможет его уничтожить из-за
         постоянной сильной ссылки в памяти
@@ -119,7 +115,7 @@ do --properties
     ]=]
 	project.disposable_gc_collectable = false
 
-    --[[
+	--[[
         Во время парсинга таблиц все обработанные значения после выполнения их подпарсинга
 	    будут заменяться на `nil` прямо в таблице, а иначе не будут
 	    
@@ -244,7 +240,7 @@ do --properties
     ]=]
 	project.storage_watching_objects_free_event = false
 
-    --[=[
+	--[=[
 	    Рекомендуется к включению при `project.disposable_gc_collectable == true`
 	
         При состоянии этого свойства `true` все `private.metadata[Storage.class].StorageMode_table[object.class]`
@@ -257,103 +253,102 @@ do --properties
     ]=]
 	project.storage_watching_objects_free_event_inside_mode_table = false
 
-    --[=[
+	--[=[
         Если `true`, то из браузера будет запрещено подключаться к серверам, находящимся в состоянии
         `ServerState.PendingShutdown`.
 
         `ServerState.PendingShutdown` и так переводит Matchmaking атрибут сервера в высокую стоимость.
         Настройка влияет на возможность из браузера подключиться к другому серверу с таким атрибутом.
     ]=]
-    project.browser_allow_joining_to_pending_shutdown = false
+	project.browser_allow_joining_to_pending_shutdown = false
 
-    --[=[
+	--[=[
         Если `true`, то будет использоваться `project.api_interversion_key` как ключ к общему пулу серверов
         для поиска между разными версиями
 
         API между разными версиями серверов может отличаться до неузнаваемости.
         Включать только если есть уверенность, что API не изменится долгое время
     ]=]
-    project.interversion_searching = false
+	project.interversion_searching = false
 
-    --[=[
+	--[=[
         Если `true`, то при shutdown сначала сохранится вся информация обо всех текущих игроках,
         и только затем будут кикнуты все, иначе наоборот
 
         Информация о новых игроках (те кто зашли во время shutdown) не будет сохранена,
         как и информация после начала процесса
     ]=]
-    project.shutdown_kicks_players_deferred = false
+	project.shutdown_kicks_players_deferred = false
 
-    --[=[
+	--[=[
         Если `true`, то вместо стандартного Animator (скрипт Roblox с изменениями для работы в плейсе)
         будет использоваться сервис `Anime.class`
     ]=]
-    project.anime_service = false
+	project.anime_service = false
 
-    --[=[
+	--[=[
         Если `true`, то репликация будет отдана в работу библиотеке Chrono насколько это возможно.
         Возможно может быть добавлена поддержка RobloxServerSimulation*
     ]=]
-    project.chrono = false
-
+	project.chrono = false
 end
 
 do --game
-    --[=[
+	--[=[
         Если `true`, то сервер будет сохранять статистику S/D (Spawns/Deaths) и предоставлять ее
         клиентам при запросе для конкретного класса.
     ]=]
-    project.data_save_classinfo = false
+	project.data_save_classinfo = false
 
-    --[=[
+	--[=[
         Если `true`, то сервер будет сохранять статистику K/D/AA (AverageAccuracy) и предоставлять
         ее клиентам при запросе для конкретного оружия
     ]=]
-    project.data_save_weaponinfo = false
+	project.data_save_weaponinfo = false
 
-    --[=[
+	--[=[
         Если `true`, то сервер будет сохранять статистику K/D/AA (AverageAccuracy) и предоставлять
         ее клиентам при запросе
     ]=]
-    project.data_save_statsinfo = false
+	project.data_save_statsinfo = false
 
-    --[=[
+	--[=[
         Если `true`, то сервер будет сохранять статистику SR/F/U/AU
         (Success Rate/Failure/Used/AverageUsage) и при запросе предоставлять ее клиентам
         на конкретную способность
     ]=]
-    project.data_save_abilityinfo = false
+	project.data_save_abilityinfo = false
 
-    --[=[
+	--[=[
         Если `true`, то позволяет сохранять лоадауты классов (их экипировку/оружие) и автоматически
         подгружать его для каждого клиента
 
         В состоянии этого свойства `false` будет использоваться стандартный лоадаут класса
     ]=]
-    project.data_save_loadout_for_class = false
+	project.data_save_loadout_for_class = false
 
-    --[=[
+	--[=[
         Если `true`, то позволяет сохранять выбранные способности классов и автоматически подгружать
         их для каждого клиента
 
         В состоянии этого свойства `false` будет использоваться стандартный пул способностей класса
     ]=]
-    project.data_save_abilities_for_class = false
+	project.data_save_abilities_for_class = false
 
-    --[=[
+	--[=[
         Если `true`, то сервер будет разрешать добавлять в список возможных способностей для
         конкретного класса вообще все способности, что у него есть, а не только те, что созданы
         для конкретного класса
     ]=]
-    project.allow_global_abilities = false
+	project.allow_global_abilities = false
 
-    --[=[
+	--[=[
         Если `true`, то сервер будет разрешать изменять способности класса и будет предоставлять
         лист возможных способностей для конкретного класса
     ]=]
-    project.allow_changing_class_abilities = false
+	project.allow_changing_class_abilities = false
 
-    --[=[
+	--[=[
         Если `true`, то сервер будет разрешать изменять оружие на классы, иначе все классы будут
         иметь фиксированное оружие, даже если это было переопределено в сохраненной data клиента
         (это будет проигнорировано)
@@ -361,35 +356,37 @@ do --game
         При состоянии этого свойства `true` и `project.data_save_loadout_for_class == true`
         лоадауты классов не будут перезаписываться
     ]=]
-    project.allow_changing_weapons = false
+	project.allow_changing_weapons = false
 
-    --[=[
+	--[=[
         Если `true`, то сервер будет разрешать выкидывать любое оружие клиента
     ]=]
-    project.allow_drop_weapons = false
+	project.allow_drop_weapons = false
 
-    --[=[
+	--[=[
         Если `true`, то сервер будет разрешать Reset персонажа клиента, если он есть
     ]=]
-    project.allow_suicide = false
+	project.allow_suicide = false
 
-    --[=[
+	--[=[
         Если `true`, то при отсутствии анимации будет проигрываться tpose анимация
 
         Поведение при `project.debug_mode == true` будет соответствовать как "Отсутствие данных",
         а значит такие анимации будут вызывать `error()`
     ]=]
-    project.set_tpose_when_no_animation = false
+	project.set_tpose_when_no_animation = false
 
-    --[=[
+	--[=[
         Если `true` и это допустимо, вместо IKControl анимаций будут использоваться обычные анимации.
         
         При состоянии этого свойства `true` обычные анимации все равно будут использоваться
     ]=]
-    project.allow_ikcontrol = false
+	project.allow_ikcontrol = false
 end
 
 function project.console_output(write: unknown, ...: unknown): never
+	write = write ~= nil and write or "*unknown error message*"
+
 	if project.debug_mode then
 		local line: string = ""
 
@@ -401,6 +398,33 @@ function project.console_output(write: unknown, ...: unknown): never
 	else
 		warn(string.format("%s\n", debug.traceback()), write, ...)
 	end
+end
+
+function project.this(who: unknown, is: string): boolean
+	const T = typeof(who)
+	const simple_T = type(who)
+	if (T == is) then
+		print(T, is, T == is)
+		return true
+	else
+		if (simple_T == "table") then
+			if (type(who.is) == "function") then
+				return who.is(who, is)
+			else
+				if (who.type) then
+					return who.type == is
+				end
+			end
+		elseif (simple_T == "class") then
+			project.console_output "class api (from real Luau classes) isn't supported now"
+		elseif (simple_T == "userdata") then
+			if (T == "Instance") then
+				return who:IsA(is) or who.ClassName == is
+			end
+		end
+	end
+
+	return false
 end
 
 function project.try(

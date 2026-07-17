@@ -44,7 +44,7 @@ function class:get_direction(that: number)
         attachment.WorldPosition = bound_pos
         --attachment.Orientation = direction
 
-        const wrapper = Wrapper.get_global_wrap(attachment) :: Wrapper.generic<Attachment>
+        const wrapper = Wrapper.get_global_wrap(attachment) :: Wrapper.class<Attachment>
         return wrapper:get_holder() :: Attachment
     end)
 end

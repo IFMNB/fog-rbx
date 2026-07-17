@@ -40,7 +40,7 @@ function class.get_by_instance (to: Instance)
 end
 
 function class.get_by_this (this: object.generic)
-    const linked_instance_global = private.stored:fetch(this, error) :: Wrapper.generic<Instance>
+    const linked_instance_global = private.stored:fetch(this, error) :: Wrapper.class<Instance>
     return linked_instance_global:get_holder() :: Instance
 end
 

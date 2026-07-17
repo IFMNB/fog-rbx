@@ -10,8 +10,7 @@ const private = {}
 const class = {}
 setmetatable(class, {__index = Disposable})
 
-export type class = object.class<typeof(class)>
-export type generic<T = Instance> = object.generic<{
+export type class<T = Instance> = object.generic<{
     hold: (self: unknown, that: T) -> (),
     get_holder: (self: unknown) -> T?
     -- NOTE: T ~= T? || T -> T?

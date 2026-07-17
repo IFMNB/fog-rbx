@@ -1,5 +1,5 @@
 const object = require("@game/ReplicatedStorage/code/object")
-const namefield = require("../../static/namefield")
+const namefield = require("@game/ReplicatedStorage/code/static/namefield")
 
 const class = {__index = object}
 setmetatable(class, class)

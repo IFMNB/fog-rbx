@@ -44,7 +44,7 @@ function class:on_initiate (base: Node.class?)
     const this = self :: class
     const team = this:get_instance() :: Team
     const metadata = private.metadata:fetch(this)
-    const to_load : {Wrapper.generic<Player>} = metadata.load_when_initiated
+    const to_load : {Wrapper.class<Player>} = metadata.load_when_initiated
     if (to_load) then
         for i,v in to_load do
             v:get_holder().Team = team
@@ -52,7 +52,7 @@ function class:on_initiate (base: Node.class?)
         metadata.load_when_initiated = nil
     end
 
-    const players : {Wrapper.generic<Player>} = Upload.fetch(metadata,"players", Storage.create_table_with(StorageMode.LazyValues))
+    const players : {Wrapper.class<Player>} = Upload.fetch(metadata,"players", Storage.create_table_with(StorageMode.LazyValues))
 
     team.PlayerAdded:Connect(function(a0: Player)
         if (not Wrapper.find_wrapper_that_holds_that(a0, players)) then
@@ -96,10 +96,10 @@ function class:get_player_removed_event()
 end
 
 
-function class:get_players () : {Wrapper.generic<Player>}
+function class:get_players () : {Wrapper.class<Player>}
     const this = self :: class
     const metadata = private.metadata:fetch(this)
-    const players : {Wrapper.generic<Player>} = Upload.fetch(metadata,"players", Storage.create_table_with(StorageMode.LazyValues))
+    const players : {Wrapper.class<Player>} = Upload.fetch(metadata,"players", Storage.create_table_with(StorageMode.LazyValues))
     const unpacked = {}
 
     for i,v in players do
@@ -112,9 +112,9 @@ end
 function class:add_player (player: Player|number)
     const this = self :: class
     const metadata = private.metadata:fetch(this)
-    const players : {Wrapper.generic<Player>} = Upload.fetch(metadata,"players", Storage.create_table_with(StorageMode.LazyValues))
-    const wrap = Wrapper.new() :: Wrapper.generic<Player>
-    const instance_player : Player? = game.IsA(player, "Player") and player or Players:GetPlayerByUserId(player) or nil
+    const players : {Wrapper.class<Player>} = Upload.fetch(metadata,"players", Storage.create_table_with(StorageMode.LazyValues))
+    const wrap = Wrapper.new() :: Wrapper.class<Player>
+    const instance_player : Player? = (player or game):IsA "Player" and player or Players:GetPlayerByUserId(player) or nil
     if (not instance_player) then
         return
     end
@@ -146,8 +146,8 @@ end
 function class:remove_player (player: Player|number)
     const this = self :: class
     const metadata = private.metadata:fetch(this)
-    const players : {Wrapper.generic<Player>} = Upload.fetch(metadata,"players", Storage.create_table_with(StorageMode.LazyValues))
-    const instance_player : Player? = game.IsA(player, "Player") and player or Players:GetPlayerByUserId(player) or nil
+    const players : {Wrapper.class<Player>} = Upload.fetch(metadata,"players", Storage.create_table_with(StorageMode.LazyValues))
+    const instance_player : Player? = (player or game):IsA "Player" and player or Players:GetPlayerByUserId(player) or nil
     const is_initiated = this:is_initiated()
 
     if (is_initiated) then
@@ -161,7 +161,7 @@ function class:remove_player (player: Player|number)
         return
     end
 
-    const wrap = Wrapper.find_wrapper_that_holds_that(instance_player, players) :: Wrapper.generic<Player>?
+    const wrap = Wrapper.find_wrapper_that_holds_that(instance_player, players) :: Wrapper.class<Player>?
     if (wrap) then
         table.remove(players, table.find(players, wrap))
        

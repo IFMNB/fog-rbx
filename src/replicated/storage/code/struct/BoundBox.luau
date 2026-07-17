@@ -360,7 +360,7 @@ function struct.from_model(variant: number?, ...: Model)
 		const parts: { BasePart } = {}
 
 		for _, instance in mdl:GetDescendants() do
-			if game.IsA(instance, "BasePart") then
+			if instance:IsA "BasePart" then
 				table.insert(parts, instance :: BasePart)
 			end
 		end

@@ -90,7 +90,7 @@ end
 
 function class:move(who: Player|number, to_session: string)
     const this = self :: class
-    const player = assert(game.IsA(who :: Object, "Player") and who :: Player or Players:GetPlayerByUserId(who :: number), "this is not a player")
+    const player = assert((who or game):IsA "Player" and who :: Player or Players:GetPlayerByUserId(who :: number), "this is not a player")
     const options = Instance.new "TeleportOptions"
 
     assert(this.allow_move, "moving isn't allowed")

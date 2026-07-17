@@ -56,7 +56,7 @@ end
 function class:hold (that: Actor?)
     const this = self :: class
     
-    if (that and not game.IsA(that, "Actor")) then
+    if (that and not that:IsA "Actor") then
         project.console_output "unexpected instance type, i want @Actor"
         return
     end
@@ -95,7 +95,7 @@ function class:get_holder () : Actor?
 end
 
 function class:get_global_wrap (to: Actor)
-    if (not game.IsA(to, "Actor")) then
+    if (not to:IsA "Actor") then
         project.console_output "unexpected instance type, i want @Actor"
     end
 

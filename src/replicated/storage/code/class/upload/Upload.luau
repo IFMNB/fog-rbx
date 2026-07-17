@@ -58,8 +58,8 @@ end
     будет вызвана с переданными аргументами. Иначе ничего
     не произойдет 
 ]=]
-function class.ecall <T,U,E...> (from: {[unknown|U]: unknown}|class, key: U, ...: T) : ...unknown
-	const value : unknown = from[key]
+function class.ecall <T,U,E...> (from: {[unknown|U]: unknown}|class|unknown, key: U, ...: T) : ...unknown
+	const value : unknown = type(from) == "table" and (from :: {[unknown]: unknown})[key]
 	if value and type (value) == "function" then
 		return (value :: (...T) -> E...)(...)
 	end
