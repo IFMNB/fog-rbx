@@ -11,3 +11,4 @@ sourcemap.json
 *.png
 *.jpg
 .vscode/
+*.luau_
