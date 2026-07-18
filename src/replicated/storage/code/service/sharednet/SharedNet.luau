@@ -1,8 +1,3 @@
---[=[ TODO
-	Для линков сделать верицикацию объектов по ожидаемым типам
-]=]
---!strict
-
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const RunService = game:GetService("RunService")
 const Service = require("../../Service")
@@ -29,15 +24,35 @@ type metadata = {
 	variant: number,
 	link: number,
 	event: BaseRemoteEvent,
+	types: { string },
 }
 
 class.type = namefield.sharednet
+
+--[=[
+	Регулирует внутренние таймауты в секундах
+]=]
 class.timeout = 3
-class.errors = 0
+
+--[=[
+	Сколько раз за сессию к сервису `SharedNet` был совершен вызов `:get_event()`
+	с учетом генерации с нуля. По сути, сколько ивентов было создано за сессию
+]=]
 class.generated = 0
+
+--[=[
+	Сколько раз за сессию к сервису `SharedNet` был совершен вызов `:emit_event()`
+]=]
 class.emited = 0
+
+--[=[
+	Сколько раз за сессию к сервису `SharedNet` был совершен вызов `:get_event()`
+]=]
 class.access = 0
 
+--[=[
+	Возвращает текущий `shared` экземпляр, в котором будут создаваться все события `SharedNet`
+]=]
 function class.get_current_shared(): Instance
 	return Upload.fetch(private, "current_shared", function()
 		const new_shared = Instance.new("Folder")
@@ -48,12 +63,13 @@ function class.get_current_shared(): Instance
 end
 
 --[=[
-    ?TODO
+	Для указания конкретной директории, в которой будут создаваться все события `SharedNet`
 
-    function class.set_current_shared (to: Instance?)
-        private.current_shared = to
-    end
+	Это нужно для параллельной работы нескольких `SharedNet` в одном проекте, чтобы не было коллизий имен
 ]=]
+function class.set_current_shared (to: Instance?)
+	private.current_shared = to
+end
 
 --[=[
    Если событие существует и если оно доступено из этого `Face.class`, будет совершен
@@ -63,23 +79,70 @@ function class:emit_event(face: Face.class<NetPack.class> | string, netpack: Net
 	const this = self :: class
 	const event = private.direct[object.is(face, Face.type) and (face :: Face.class).owner_identity or face :: string]
 
+	this.actions += 1
+
 	if event then
+		netpack = netpack or NetPack.new()
 		const metadata = private.metadata_by(event)
 		const emitter = private.emitter_variants[metadata.variant]
-		emitter(this, event, metadata, netpack or NetPack.new())
+		
+		if (not private.check_types(metadata, netpack)) then
+			project.console_output("type mismatch")
+			return false
+		end
 
-        if (private.is_server and netpack) then
-            netpack.from = NetSource.FromServer
-        end
+		emitter(this, event, metadata, netpack)
+
+		if private.is_server and netpack then
+			netpack.from = NetSource.FromServer
+		end
 
 		this.emited += 1
-        return true
+
+		return true
 	else
 		this.errors += 1
 		project.console_output("unknown Face.class, abort")
 	end
 
-    return false
+	return false
+end
+
+function private.check_types(metadata: metadata, netpack: NetPack.class): boolean
+	if not metadata.types then
+		return true
+	end
+
+	const payload: { unknown } = netpack.loaded
+	for i, v in metadata.types do
+		if typeof(payload[i]) ~= v then
+			return false
+		end
+	end
+
+	return true
+end
+
+--[=[
+	Устанавливает ожидаемые типы для `NetPack` в событии, которое привязано к `Face.class`
+
+	Если только это событие было создано через `SharedNet`, то есть оно было получено через `:get_event()`
+]=]
+function class:set_expected_types(face: Face.class<NetPack.class> | string, types: { string }): boolean
+	const this = self :: class
+	const event = private.direct[object.is(face, Face.type) and (face :: Face.class).owner_identity or face :: string]
+
+	this.actions += 1
+
+	if event then
+		const metadata = private.metadata_by(event)
+		metadata.types = types
+		return true
+	else
+		this.errors += 1
+		project.console_output("unknown Face.class, abort")
+		return false
+	end
 end
 
 private.emitter_variants = table.freeze({
@@ -102,11 +165,11 @@ private.emitter_variants = table.freeze({
 		const flat = netpack:get_flat()
 
 		for _, player in players do
-            if (private.is_server) then
-			    that:FireClient(player, flat)
-            else
-                that:FireServer(flat)
-            end
+			if private.is_server then
+				that:FireClient(player, flat)
+			else
+				that:FireServer(flat)
+			end
 		end
 
 		if netpack.rpc then
@@ -136,14 +199,19 @@ private.emitter_variants = table.freeze({
 function class:get_event(link: number?, variant: number?): Face.class<NetPack.class>
 	const this = self :: class
 
+	this.actions += 1
+
 	variant = variant or SharedNetVariant.Safe
 	link = link or SharedNetLink.Unknown
 
-	const correct = SharedNetVariant:is_my_enumitem(variant) and SharedNetLink:is_my_enumitem(link)
+	-- Не создавайте проверку на `link`, чтобы не заниматься постоянным дополнением `SharedNetLink`
+	-- на предмет новых значений  (QoL)
+
+	const correct = SharedNetVariant:is_my_enumitem(variant)
 
 	if not correct then
 		this.errors += 1
-        project.console_output "unexpected SharedNetVariant or SharedNetLink"
+		project.console_output("unexpected SharedNetVariant or SharedNetLink")
 		return Face.new()
 	else
 		this.access += 1
@@ -177,9 +245,9 @@ do --get_event_private
 	end
 
 	function private.setup_behaviour(new: Event.class, remote: BaseRemoteEvent)
-		if remote:IsA "BindableEvent" then
+		if remote:IsA("BindableEvent") then
 			private.setup_internal_event(new, remote)
-		elseif remote:IsA "RemoteEvent" or remote:IsA "UnreliableRemoteEvent" then
+		elseif remote:IsA("RemoteEvent") or remote:IsA("UnreliableRemoteEvent") then
 			if private.is_server then
 				private.setup_serverside_event(new, remote)
 			else
@@ -207,16 +275,16 @@ do --get_event_private
 	function private.setup_serverside_event(new: Event.class, remote: BaseRemoteEvent)
 		const signal = private.get_signal_from_unknown_subtype_remote(remote)
 		signal:Connect(function(sender: Player, a0: NetPack.flat, ...)
-			const netpack= NetPack.convert_flat(a0) :: any
-            
-            if (netpack.from == NetSource.FromServer) then
-                sender:Kick "nuh uh, dear, you're warned from that thing for now. I'm dissapointed in you. Do not replace my netpack.from, that's not allowed "
-                return
-            else
-                netpack.from = NetSource.FromClient
-            end
+			const netpack = NetPack.convert_flat(a0) :: any
 
-            netpack.sender = sender.User:ToString()
+			if netpack.from == NetSource.FromServer then
+				sender:Kick("nuh uh, dear, you're warned from that thing for now. I'm dissapointed in you. Do not replace my netpack.from, that's not allowed ")
+				return
+			else
+				netpack.from = NetSource.FromClient
+			end
+
+			netpack.sender = sender.User:ToString()
 
 			if netpack.expected then
 				new:launch(netpack.expected :: number, netpack)
@@ -242,14 +310,24 @@ do --get_event_private
 			instance.Parent = placement
 			result = instance
 		else
-			const needle = placement:WaitForChild(name, private.singletone.timeout) or game
-			result = (needle:IsA "BaseRemoteEvent" and needle or nil) :: BaseRemoteEvent
-			if not result then
-				const replacement = Instance.new("BindableEvent") :: any
-				replacement.Name = name .. "error"
-				replacement.Parent = game.StarterPlayer.client_runtime
-				result = replacement :: BaseRemoteEvent
-				project.console_output("unexpected event type, replaced")
+			if instance_class == "BindableEvent" then
+				const needle = Instance.new(instance_class)
+				needle.Name = name
+				needle.Parent = placement
+				result = needle
+			else
+				const needle = placement:WaitForChild(
+					name,
+					private.singletone and private.singletone.timeout or class.timeout
+				) or game
+				result = (needle:IsA("BaseRemoteEvent") and needle or nil) :: BaseRemoteEvent
+				if not result then
+					const replacement = Instance.new("BindableEvent") :: any
+					replacement.Name = name .. "error"
+					replacement.Parent = game.StarterPlayer.client_runtime
+					result = replacement :: BaseRemoteEvent
+					project.console_output("unexpected event type, replaced")
+				end
 			end
 		end
 

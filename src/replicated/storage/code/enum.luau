@@ -36,6 +36,9 @@ function class.new(hashlink: string?)
 	return hval
 end
 
+--[=[
+	Проверяет, является ли переданное число енамом из этой группы
+]=]
 function class:is_my_enumitem(that: number)
 	const this = self :: class
 	const list = this:get_enums_list()
@@ -53,10 +56,16 @@ function class:is_my_enumitem(that: number)
 	return false
 end
 
+--[=[
+	Вернет количество всех когда-либо созданных `enum`
+]=]
 function class.get_enums_ever_created()
 	return private.id_counter
 end
 
+--[=[
+	Вернет количество енамов в группе
+]=]
 function class:get_count()
 	local j = 0
 	for i, v in self do
@@ -68,6 +77,9 @@ function class:get_count()
 	return j
 end
 
+--[=[
+	Вернет все енамы из группы в числовом виде
+]=]
 function class:get_enums_list()
 	const result = {} :: { number }
 
@@ -80,6 +92,9 @@ function class:get_enums_list()
 	return result
 end
 
+--[=[
+	Вернет имя енама если он принадлежит этой группе, иначе `Unknown`
+]=]
 function class:get_name(by: number): string | "Unknown"
 	for i, v in self do
 		if type(v) == "number" and v == by then
@@ -88,10 +103,6 @@ function class:get_name(by: number): string | "Unknown"
 	end
 
 	return "Unknown"
-end
-
-function class.get_enums_ever_created ()
-	return private.id_counter
 end
 
 private.id_counter = 1
