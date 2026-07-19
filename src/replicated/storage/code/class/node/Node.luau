@@ -37,6 +37,11 @@ export type class = typeof(class.new())
 ]=]
 class.type = namefield.node
 class.name = class.type :: string
+
+--[=[
+	Тег, который будет добавлен к экземпляру Roblox при инициализации ноды,
+	чтобы можно было отличить его от обычного экземпляра
+]=]
 class.tag = "@node" :: "@node"|string
 class.classname = "Object" :: string|{string}|"Object"
 
@@ -55,24 +60,21 @@ function class.new(rbx_instance: Instance?)
 	return this
 end
 
--- Событие испускает сигнал только если прошла инициализация ноды
+--[=[
+	Возвращает событие инициализации ноды
+
+	Если нода уже была инициализирована, то вернет пустой `Face.class`
+]=]
 function class:get_initiate_event ()
 	const this = self :: class
 	private.assert_initiated_event(this)
-	return private.get_initiate_event_ctrl(this):get_face()
-end
 
-function private.get_initiate_event_ctrl (this: class)
-	private.assert_initiated_event(this)
-	return private.initiate_event:fetch(this, Event.new)
-end
-
-function private.assert_initiated_event (this: class)
 	if (this:is_initiated()) then
 		project.console_output("instance already initiated and this event cannot be fired again")
-		return false
+		return Face.new()
+	else
+		return private.initiate_event:fetch(this, Event.new):get_face()
 	end
-	return true
 end
 
 function class:get_notification_event () : Face.class<number, string, number, number>

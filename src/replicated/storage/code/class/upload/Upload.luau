@@ -54,9 +54,10 @@ function class.fetch <T,U> (from: {[unknown]: unknown?}|class, key: U, reserved:
 end
 
 --[=[
-    Если по указанному ключу существует функция, то она 
-    будет вызвана с переданными аргументами. Иначе ничего
-    не произойдет 
+    Если по указанному ключу существует функция, то она будет вызвана с переданными аргументами,
+    причем вызов всегда осуществляется без `self` контекста
+    
+    Иначе ничего не произойдет 
 ]=]
 function class.ecall <T,U,E...> (from: {[unknown|U]: unknown}|class|unknown, key: U, ...: T) : ...unknown
 	const value : unknown = type(from) == "table" and (from :: {[unknown]: unknown})[key]
