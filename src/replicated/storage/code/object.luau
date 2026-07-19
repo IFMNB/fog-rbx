@@ -16,6 +16,7 @@ export type generic <sample = sample_object, class = class_sample> = setmetatabl
 function class.new(class, locked)
 	const new_object = setmetatable({}, {
 		__index = class,
+		class = class,
 		__metatable = locked
 	})
 	private.id_counted += 1
@@ -194,10 +195,15 @@ do --private_region
 			if (namefield[rawget(metatable, "type")] and not force_next_class_by_index) then
 				return metatable :: class
 			else
-				const index = metatable.__index
-				if (type(index) == "table") then
-					return index :: class
+				const class = metatable.class
+				if (type(class) == "table") then
+					return class :: class
 				else
+					const index = metatable.__index
+					if (type(index) == "table") then
+						return index :: class
+					end
+
 					project.console_output("cannot iterate over __index function type (or type isn't a table)")
 					return nil :: never
 				end
