@@ -20,9 +20,9 @@ export type flat = {
     read from: number?,
     read sender: string?
 }
-export type class<T... = ...unknown> = object.generic<{
+export type class<T... = ...unknown> = object.class<setmetatable<{
 	payload: () -> T...,
-}, typeof(class)>
+}, {__index: typeof(class)}>>
 
 
 class.type = namefield.netpack

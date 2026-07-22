@@ -32,9 +32,9 @@ const class = { __index = Disposable }
 setmetatable(class, class)
 
 type meta = { connection: Connection.class, f: (...any) -> (), once: boolean?, fired: boolean? }
-export type class<T... = ...any> = object.generic<{
+export type class<T... = ...any> = object.class<setmetatable<{
 	get_face: (self: unknown) -> Face.class<T...>,
-}, typeof(class)>
+}, {__index: typeof(class)}>>
 
 --[=[
 	`Event` - стандартный способ создавать события на которые
@@ -171,7 +171,7 @@ end
 	Регистрирует объекты для этого `Event.class`, которые должны быть освобождены
 	в конце цикла кода после вызова `:emit()` или `:launch()`
 ]=]
-function class:register_to_free_when_emitted(that: object.generic<{}, typeof(object)> | {})
+function class:register_to_free_when_emitted(that: object.class | {})
 	const this = self :: class
 	table.insert(private.emit_preregistered_to_free_objects:fetch(this, {}), that)
 end
@@ -181,7 +181,7 @@ end
 ]=]
 function class:get_registered_to_free_when_emitted()
 	const this = self :: class
-	return private.emit_preregistered_to_free_objects:fetch(this, {}) :: { object.generic<{}, typeof(object)> }
+	return private.emit_preregistered_to_free_objects:fetch(this, {}) :: { object.class }
 end
 
 --[=[

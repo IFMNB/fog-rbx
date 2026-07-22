@@ -4,7 +4,7 @@ const namefield = require("../static/namefield")
 const class = {__index = object}
 setmetatable(class, class)
 
-export type class<T=any> = object.generic<{result: T}, typeof(class)>
+export type class<T=any> = object.class<setmetatable<{result: T}, {__index: typeof(class)}>>
 
 class.type = namefield.content
 class.result = nil :: unknown

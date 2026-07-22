@@ -36,7 +36,7 @@ end
 
     `[object.class]: unknown`
 ]=]
-function class.fetch <T,U> (from: {[unknown]: unknown?}|class, key: U, reserved: (...any) -> T|T) : T
+function class.fetch <T,U> (from: {[unknown]: unknown?}, key: U, reserved: (...any) -> T|T) : T
     const value = from[key]
     if (value) then
         return value

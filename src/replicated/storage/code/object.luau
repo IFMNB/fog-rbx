@@ -4,23 +4,24 @@ const project = require("@game/ReplicatedStorage/code/static/project")
 const private = {}
 const class = {}
 
-type base = typeof(class)
+export type base = typeof(class)
 type class_sample = {[any]: any} | base | ({[any]: any} & base)
 type sample_object = {[any]: any}
-export type class <class_of_object = base> = generic<{},class_of_object>
-export type generic <sample = sample_object, class = class_sample> = setmetatable<sample, {__index: class}>
+
+export type class <parent = base, that = {}> = that & parent
 
 --[=[
 	Стандартный базовый конструктор для всех объектов в данном проекте
 ]=]
-function class.new(class, locked)
+function class.new <T> (class: T, reflection)
 	const new_object = setmetatable({}, {
 		__index = class,
 		class = class,
-		__metatable = locked
+		reflection = reflection
 	})
+
 	private.id_counted += 1
-	return new_object
+	return new_object :: class<base, T>
 end
 
 class.__index = class

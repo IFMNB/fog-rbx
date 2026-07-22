@@ -6,6 +6,12 @@ return table.freeze {
 	disposable = "disposable" :: "disposable", -- есть объекты это типичные luau таблицы а disposable он хранится в отдельном массиве который удаляется только если ты его явно освобождаешь
 	coordinate = "coordinate" :: "coordinate", -- это из record (описание 3х векторов x,y,z)
 
+	--[=[
+		Объект, предоставляющий описание поля на основе зарегистрированных при
+		создании данных, использующийся для автоматизированных систем на основе рефлекции
+	]=]
+	reflection = "reflection" :: "reflection",
+
 	node = "node" :: "node", -- как в gadot только ты прикрепляешь объект к instance роблокса (данный класс живет столько сколько instance)
 	event = "event" :: "event", -- контроллер события сигнала
 	connection = "connection" :: "connection", -- само соединения (аналог RBXScriptConnection)

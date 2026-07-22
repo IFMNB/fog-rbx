@@ -8,15 +8,15 @@ const private = {}
 const class = {}
 setmetatable(class, {__index = object})
 
-export type class <T = object.class> = object.generic<{
+export type class <T = {[string]: any}> = object.class<setmetatable<{
     class: T,
     add: <U> (self: unknown, to: metamethods & U, f: methode<T>) -> (),
     remove: <U> (self: unknown, from: metamethods & U, f: methode<T>) -> (),
     set_main: <U> (self: unknown, to: metamethods & U, f: methode<T>?) -> ()
-} & metas<T>, typeof(class)>
+}, {__index: typeof(class)}>>
 type table = setmetatable<{[any]:any}, {[any]: any}>
-type default = setmetatable<{[any]: any}, class>
-type methode <E = default, T... = ...unknown, U... = ...unknown> = (self: table, U...) -> T...
+type default = setmetatable<{[any]: any}, {[any]: any}>
+type methode <E = default, T... = ...unknown, U... = ...unknown> = (self: E, U...) -> T...
 type metas<T = default> = {
 	__index: methode<T, index<T, keyof<T>>, keyof<T>> | table | nil,
 	__newindex: methode<T, keyof<T>, index<T, keyof<T>>> | table | nil,
@@ -67,6 +67,8 @@ end
 
 export type metamethods = get_meta<metas>
 
+
+
 class.type = namefield.meta
 
 --[=[
@@ -116,10 +118,9 @@ class.__mode = nil :: (string | ("s" | "k" | "v" | "kv" | "kvs"))?
 class.__gc = nil :: methode<table>?
 class.__close = nil :: methode<table>?
 
-function class.new ()
+function class.new<T>()
     const this = object.new(class, class.type)
-
-    return this :: class
+    return this :: class<T>
 end
 
 --[=[
@@ -128,14 +129,17 @@ end
 
     Установка nil отключает другие наблюдатели
 ]=]
-function class:set_main <T> (to: metamethods & T, f: methode<table>?)
+function class:set_main <T> (to: metamethods & T, f: methode<table>|table?)
     const this = self :: class
-    
+    const T = type(f)
+    f = f :: any
+
     if f then
-        (this :: any)[to] = function (...)
+        this[to] = function (...) : ...unknown
             local result
-            
-            if this.main and not this.main_after then
+            const args = {...}
+
+            if T == "function" and this.main and not this.main_after then
                 result = {f(...)}
             end
 
@@ -143,11 +147,23 @@ function class:set_main <T> (to: metamethods & T, f: methode<table>?)
                 private.exe(this, to, ...)
             end
 
-            if this.main and this.main_after then
+            if T == "function" and this.main and this.main_after then
                 result = {f(...)}
             end
 
-            return unpack(result or {})
+            if T == "function" then
+                return unpack(result or {})
+            end
+
+            if T == "table" then
+                if to == "__index" then
+                    return f[args[2]]
+                else
+                    project.console_output "unexpected behaviour of tables: metamethode does not support table-type"
+                    this:set_main(to, nil)
+                    return
+                end
+            end
         end
     else
         (this::any)[to] = nil
@@ -163,7 +179,7 @@ end
     которые `LVM` может поставлять на данный тип. Скорее является тест-функцией,
     поэтому не рекомендуется к использованию
 ]=]
-function class:set_main_empty <T> (to: metamethods & T)
+function class.set_main_empty <T> (self: class, to: metamethods & T)
     const this = self :: class
     this:set_main(to, private.empty)
 end

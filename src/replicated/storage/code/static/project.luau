@@ -384,6 +384,12 @@ do --game
 	project.allow_ikcontrol = false
 end
 
+
+--[=[
+	Выводит сообщение в консоль
+
+	В зависимости от режима `project.debug_mode` заменяется на вывод ошибок
+]=]
 function project.console_output(write: unknown, ...: unknown): never
 	write = write ~= nil and write or "*unknown error message*"
 
@@ -400,11 +406,17 @@ function project.console_output(write: unknown, ...: unknown): never
 	end
 end
 
+--[=[
+	Универсальный typecheck агрегатор между разными экземплярами.
+	
+	Проверяет, является ли переданная `table`, `class` и `userdata` видом `object`, `class`
+	или `Instance` определенного типа, который указывает аргумент `is`. Если это не объект систем,
+	то возвращает совпадение по `typeof()` с `is` 
+]=]
 function project.this(who: unknown, is: string): boolean
 	const T = typeof(who)
 	const simple_T = type(who)
 	if (T == is) then
-		print(T, is, T == is)
 		return true
 	else
 		if (simple_T == "table") then
@@ -427,6 +439,19 @@ function project.this(who: unknown, is: string): boolean
 	return false
 end
 
+--[=[
+	LEGACY
+
+	По сути выполняет if-elseif-else работу с учетом безопасного контекста
+
+	Не очень подходит для разных вариантов действий, порой проще составить логику вручную, 
+	чем делигировать этой функции. Хотя функция и помечена как deprecated, таковой по работе
+	кода не является
+]=]
+@[deprecated {
+	reason = "Не очень выразительный api",
+	use = "Расписывайте логику проверок вручную"
+}]
 function project.try(
 	that: unknown | () -> ...any,
 	do_then: (...any) -> any,
@@ -460,6 +485,8 @@ function project.try(
 
 	return result
 end
+
+do --types_region
 
 --TODO
 --[==[
@@ -676,6 +703,8 @@ export type function attributeable_properties(T: type)
 		else
 		end
 	end
+end
+
 end
 
 return project

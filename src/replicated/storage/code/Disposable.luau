@@ -11,8 +11,9 @@ setmetatable(class, class)
 export type base = object.class<typeof(class)>
 type class_sample = { [any]: any } | base | ({ [any]: any } & base)
 type sample_object = { [any]: any }
-export type class<class_of_object = base> = generic<{}, class_of_object>
-export type generic<sample = sample_object, class = class_sample> = setmetatable<sample, { __index: class }>
+
+export type class = object.class<typeof(class)>
+
 
 function class.new(class, allow_free: boolean?)
 	const new_object = object.new(class)

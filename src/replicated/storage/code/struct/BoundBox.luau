@@ -1,6 +1,10 @@
 --!native
---!strict
 --!optimize 2
+--!strict
+
+--[=[
+	NOTE TYPE_ERROR См guideline/src/general/types
+]=]
 
 const Quaternion = require("../../dependency/Quaternion")
 const BoundBoxDirection = require(".././enums/BoundBoxDirection")
@@ -15,7 +19,7 @@ const private = {}
 const struct = { __index = Record }
 setmetatable(struct, struct)
 
-export type struct = object.class<typeof(struct)>
+export type struct = object.class<typeof(struct)> --<setmetatable<{}, {__index: typeof(struct)}>>
 
 --[=[
 	`BoundBox` - конкретный тип `Record`, являющийся геометрическим объемом в пространстве,
@@ -121,17 +125,17 @@ function struct.new(
 		return that:clone()
 	end
 
-	this.top = top
-	this.bottom = bottom
-	this.left = left
-	this.right = right
-	this.center = center
-	this.front = front
-	this.back = back
-	this.min = min
-	this.max = max
-	this.half = half
-	this.variant = variant
+	this.top = top :: Vector3
+	this.bottom = bottom :: Vector3
+	this.left = left :: Vector3
+	this.right = right :: Vector3
+	this.center = center :: Vector3
+	this.front = front :: Vector3
+	this.back = back :: Vector3
+	this.min = min :: Vector3
+	this.max = max :: Vector3
+	this.half = half :: Vector3
+	this.variant = variant :: number
 
 	return this
 end
@@ -304,7 +308,7 @@ private.middle_variant_parser = table.freeze({
 		for _, bb in boxes do
 			sum_half += bb.half
 			sum_center += bb.center
-
+			
 			const quaternion_bb = Quaternion.cframe(bb:get_cframe())
 
 			if this_quaternion:Dot(quaternion_bb) < 0 then

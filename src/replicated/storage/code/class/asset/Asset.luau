@@ -13,9 +13,9 @@ const private = {}
 const class = {}
 setmetatable(class, {__index = Disposable})
 
-export type class <T = unknown> = object.generic<{
+export type class <T = unknown> = object.class<setmetatable<{
     get_asset: (self: unknown) -> Result.class<T>
-}, typeof(class)>
+}, {__index: typeof(class)}>>
 
 class.type = namefield.asset
 class.required = 0

@@ -5,7 +5,7 @@ const private = {}
 const class = { __index = object }
 setmetatable(class, class)
 
-export type class = object.generic<{[string]: number?}, typeof(class)>
+export type class = object.class<typeof(class), {[string]: number?}>
 
 class.type = namefield.enum
 class.arch_new = error

@@ -6,11 +6,11 @@ const Connection = require("../connection/Connection")
 
 const class = {__index = Disposable}
 setmetatable(class, class)
-export type class <T... = ...any> = object.generic<{
+export type class <T... = ...any> = object.class<setmetatable<{
     once: (self: unknown, f: (T...) -> (), expected: number?) -> Connection.class,
     connect: (self: unknown, f: (T...) -> (), expected: number?) -> Connection.class,
     wait: (self: unknown, expected: number?) -> T...
-}, typeof(class)>
+}, {__index: typeof(class)}>>
 
 --[=[
     `Face` - интерфейс для работы с событиями

@@ -14,7 +14,7 @@ export type class = typeof (class)
 class.type = namefield.linked
 
 -- Ссылки могут быть созданы только 1 раз на 1 объект.
-function class.link (this: object.generic, to: Instance)
+function class.link (this: object.class, to: Instance)
     const global_for_to = Wrapper.get_global_wrap(to)
 
     if (private.stored:is_exists(global_for_to)) then
@@ -34,13 +34,30 @@ function class.link (this: object.generic, to: Instance)
     end)
 end
 
-function class.get_by_instance (to: Instance)
-    const linked_class = private.stored:fetch(to, error) :: object.class
-    return linked_class
+type function negation(t: type)
+	return types.negationof(t)
+end
+type Test = {} & setmetatable<{}, { __index: { P: number } }>
+
+local b: Test & negation<nil>
+b.P = 4
+
+
+
+function class.get_by_instance (to: Instance) : object.class?
+    if (private.stored:is_exists(to)) then
+        return private.stored:fetch(to, nil) :: object.class
+    else
+        return nil
+    end
 end
 
-function class.get_by_this (this: object.generic)
-    const linked_instance_global = private.stored:fetch(this, error) :: Wrapper.class<Instance>
+function class.get_by_this (this: object.class) : Instance?
+    if (not private.stored:is_exists(this)) then
+        return nil
+    end
+
+    const linked_instance_global = private.stored:fetch(this, nil) :: Wrapper.class<Instance>
     return linked_instance_global:get_holder() :: Instance
 end
 

@@ -5,7 +5,7 @@ const Record = require("../Record")
 const class = {__index = Record}
 setmetatable(class, class)
 
-export type class<T={[any]: any}> = object.generic<T, typeof(class)>
+export type class<T={[any]: any}> = object.class<typeof(class), {[any]: any}>
 
 class.type = namefield.content
 

@@ -15,6 +15,7 @@
 const object = require "@game/ReplicatedStorage/code/object"
 const namefield = require('@game/ReplicatedStorage/code/static/namefield')
 const project = require("@game/ReplicatedStorage/code/static/project")
+const Meta = require("../../Meta")
 const Disposable = require("../../Disposable")
 const Face = require("../face/Face")
 const Linked = require("../../service/linked/Linked")
@@ -23,7 +24,6 @@ const NodeNotificationType = require("../../enums/NodeNotificationType")
 const Upload = require("@game/ReplicatedStorage/code/class/upload/Upload")
 const Connection = require("@game/ReplicatedStorage/code/class/connection/Connection")
 const Event = require("@game/ReplicatedStorage/code/class/event/Event")
-const Meta = require("@game/ReplicatedStorage/code/class/meta/Meta")
 
 const private = {}
 const class = {__index = Disposable}
@@ -51,6 +51,10 @@ private.notification_event = Upload.new()
 private.attributes = Storage.new()
 private.attributes_events = Storage.new()
 private.instances = Upload.new()
+--[=[
+	Внутренний тег для идентификации любой ноды независимо от ее типа и замены тегов
+]=]
+private.supertag = "@node" :: "@node"|string
 
 function class.new(rbx_instance: Instance?)
 	const this = Disposable.new(class, true)
@@ -67,7 +71,6 @@ end
 ]=]
 function class:get_initiate_event ()
 	const this = self :: class
-	private.assert_initiated_event(this)
 
 	if (this:is_initiated()) then
 		project.console_output("instance already initiated and this event cannot be fired again")
@@ -148,7 +151,7 @@ do -- InitiateRegion
 
 	function private.fire_initiate_event (this: class)
 		if (private.initiate_event:is_exists(this)) then
-			const event_ctrl = private.initiate_event:get(this) :: Event.class
+			const event_ctrl = private.initiate_event:fetch(this, Event.new) :: Event.class
 			event_ctrl:emit()
 		end
 	end
@@ -238,6 +241,7 @@ do -- InitiateRegion
 					if (project.debug_mode) then
 						const callback = private.generate_callback_for_attribute(this, attribute_name, function(untyped_this: { [any]: any }, new)
 							untyped_this[attribute_name] = new
+							print "changed from explorer"
 						end)
 						const connection = attribute:Connect(callback)
 						table.insert(to_free, connection)
@@ -247,7 +251,7 @@ do -- InitiateRegion
 				do -- on_class_value_changed
 					const rollout = private.generate_rollback_for_attribute(this, attribute_name)
 					const event_connection =	changed:connect(rollout)
-					table.insert(to_free_event, event_connection);
+					table.insert(to_free_event, event_connection)
 				end
 			end
 		end
@@ -288,9 +292,12 @@ do -- InitiateRegion
 		const instance = this:get_instance()
 		return function (arg1: any, arg2: any)
 			if (arg1 ~= attribute_name) then
+				print("cancel", arg1, arg2)
 				return
 			end
-			
+
+			print(arg1, arg2)
+
 			const attribute_value = instance:GetAttribute(attribute_name)
 			if (attribute_value ~= arg2) then
 				instance:SetAttribute(attribute_name, arg2)
@@ -299,7 +306,7 @@ do -- InitiateRegion
 	end
 
 	function private.lock_initiated (arg1)
-		error(string.format("already initiated, but got %s", arg1));
+		error(string.format("already initiated, but got %s", arg1))
 	end
 
 	function class.is_initiated ()
@@ -361,33 +368,41 @@ do -- InitiateRegion
 	end
 
 	function private.wrap_class (this: class)
-		const new_meta = Meta.new()
+		const new_meta = Meta.new() :: Meta.class<class>
 		const meta = getmetatable(this) :: {[unknown]: unknown}
+
+		if (type(meta) ~= "table") then
+			project.console_output("unexpected metatable type, changed event will not work", meta)
+			return
+		end
+
 		const __index = meta.__index
 		const __newindex = meta.__newindex
 		const changed_event_controller = private.get_changed_event_ctrl(this)
-
-		this:watch_free_event(new_meta)
-		setmetatable(this, new_meta)
-
-		new_meta.__index = __index
-		new_meta.__newindex = new_meta:wrap_newindex(__newindex, function(arg1, arg2, arg3)
-			changed_event_controller:emit(arg2, arg3)
-
-			-- on_new_value_notification
+		new_meta.class = meta.class :: unknown
+		new_meta:set_main("__index", __index)
+		new_meta:set_main("__newindex", function(self, a1, a2): ...unknown
+			return rawset(self, a1, a2)
+		end)
+		new_meta:add("__newindex", function(self, a1, a2): ...unknown
+			changed_event_controller:emit(a1, a2)
 			const notificated_new_values = private.notification_new_value:fetch(this)
-			if (not notificated_new_values[arg2]) then
-				notificated_new_values[arg2] = true
-				if (private.notification_event:is_exists(this)) then
+			if not notificated_new_values[a1] then
+				notificated_new_values[a1] = true
+				if private.notification_event:is_exists(this) then
 					const event_ctrl = private.notification_event:fetch(this, Event.new) :: Event.class
-					event_ctrl:launch(NodeNotificationType.NewValue, arg2)
+					event_ctrl:launch(NodeNotificationType.NewValue, a1)
 				end
 			end
 		end)
+		new_meta.main_after = true
+
+		setmetatable(this, new_meta)
 	end
 
 	function private.set_nodeclass_tag (this: class) 
 		const to: Instance = this:get_instance() :: Instance
+		to:AddTag(private.supertag)
 		to:AddTag(this.tag)
 		to:AddTag(this.type)
 	end
@@ -425,16 +440,41 @@ function class:get_attribute_event (key: any)
 	end):get_face()
 end
 
-function class.is_node_instance (of: Instance) 
-	const tags : {string} = of:GetTags()
+function class.is_node_instance(that: Instance) 
+	const tags : {string} = that:GetTags()
 
-	for i,v in tags do
-		if v == class.tag then
+	for _,v in tags do
+		if v == private.supertag then
 			return true
 		end
 	end
 
 	return false
+end
+
+function class:get_nearest_ancestor_node(of_type: string?) : class?
+	const this = self :: class
+	
+	if (not this:is_initiated()) then
+		project.console_output("cannot get nearest ancestor node because this node is not initiated")
+		return nil
+	end
+
+	const instance = this:get_instance()
+	local ancestor = instance.Parent
+	
+	while ancestor do
+		if (class.is_node_instance(ancestor)) then
+			const node = Linked.get_by_instance(ancestor) :: class
+			if (of_type == nil or node.type == of_type) then
+				return node
+			end
+		end
+
+		ancestor = ancestor.Parent
+	end
+
+	return nil
 end
 
 do --get_node_by_instance region

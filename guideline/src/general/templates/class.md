@@ -28,13 +28,17 @@ setmetatable(class, class)
         export type class = object.class<typeof(class)>
     ```
 ]=]
-export type class<T = unknown> = object.generic<{
+export type class<T = unknown> = object.class<setmetatable<{
     --[=[
         Дженерик функционал и поля/свойства класса
     ]=]
     
     default: T?
-}, typeof(class)>
+}, {__index: typeof(class)}>>
+
+--[=[
+    Почему требуется писать целую метатаблицу если нужны кастом-значения? Потому что иначе произойдет оверрайд
+]=]
 
 --[=[
     Пример базового объекта
