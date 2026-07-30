@@ -5,7 +5,7 @@ const Record = require("../Record")
 const class = {__index = Record}
 setmetatable(class, class)
 
-export type class<T={[any]: any}> = object.class<typeof(class), {[any]: any}>
+export type class<T={[any]: any}> = object.extend<typeof(class)> & T
 
 class.type = namefield.content
 
@@ -19,5 +19,7 @@ function class:insert_from(that: {[unknown]: unknown})
         this[i] = v
     end
 end
+
+
 
 return table.freeze(class)

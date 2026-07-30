@@ -97,12 +97,40 @@ do --defaults
 	project.default_event_steps = 1
 end
 
-do --properties
+do
+	--[=[
+		Применяются особые условия
+	]=]
+	project.develop = true
+end
+
+do --debug
 	--[=[
         При `true` включается повышенная отладка: любая ошибка выводится как `error()`,
 	    никаких `warn()` не позволяется к выполнению, любые потери данных недопустимы
     ]=]
-	project.debug_mode = game["Run Service"]:IsStudio()
+	project.debug = game["Run Service"]:IsStudio() :: boolean
+
+	--[=[
+		Выводить ли сообщения в консоль?
+	]=]
+	project.debug_messages = (project.develop and "strict" or project.debug and "soft" or "important") :: "nope" | "strict" | "soft"|"important"
+
+	--[=[
+		Если включен, то хосты будут проверяться на удаление из списка
+	]=]
+	project.debug_object_hosts = (project.debug and true) :: boolean
+end
+
+do --properties
+	--[=[
+		Использовать в создании новых экземпляров механизм прототипирования?
+
+		Принципиальная разница в том, что все экземпляры будут создаваться с метатаблицей,
+		изначально ссылающейся на родителя этого экземпляра. И в том, и в другом случае
+		экземпляр так или иначе копирует все поля родителя
+	]=]
+	project.prototype_oop = true
 
 	--[=[
 	    Выделенный объект при `true` придется освобождать вручную,
@@ -147,15 +175,7 @@ do --properties
 	    Это может быть нежелательным поведением, но я писал код с расчетом на то, что
 	    метаданные объектов никогда не содержат функций
     ]=]
-	project.object_allow_liberator_call_functions = false
-
-	--[=[
-        Если `true`, то все экземпляры `Connection.class` будут создаваться на основе
-        `object.class`, а значит они будут напрямую зависеть от состояния настройки проекта
-        `project.event_strong_connections`, поскольку иначе они будут уничтожаться через
-        GarbageCollector самого Luau
-    ]=]
-	project.connection_just_object = false
+	project.liberator_allow_call_functions = false
 
 	--[=[
         (!!!) Весь код написан под сильные соединения, отключение поля может вызывать баги
@@ -165,13 +185,13 @@ do --properties
         Поле конфликтует с `project.disposable_gc_collectable`, потому что object сохраняет
         все в сильную таблицу, а event тоже сохраняет Connection.class и управляет им
     ]=]
-	project.event_strong_connections = true
+	project.face_strong_connections = true
 
 	--[=[ 
         Если `project.default_behavior_is_deferred == true`, то `Event.class` будет использовать
         `RunService.Heartbeat` сигнал при вызове коррутин для `Connection.class`, иначе `task.defer()`
     ]=]
-	project.event_use_heartbeat_deferred = true
+	project.use_signal = true
 
 	--[=[
         Если `true`, то `Event.class` будет запускать `emitter()` через `coroutine` библиотеку,
@@ -179,7 +199,12 @@ do --properties
 
         Подробности читать в `project.event_use_task_spawn`
     ]=]
-	project.event_emits_immediately = false
+	project.use_immediately_emitter = false
+
+	--[=[
+		Все события информирования будут отложены на следующий кадр.
+	]=]
+	project.use_deffered_emitter = true
 
 	--[=[
         Вызов всех соединений происходит при помощи `task.spawn()`, вместо `coroutine.resume(coroutine.create(F))`
@@ -195,12 +220,7 @@ do --properties
         они принадлежат коррутине `Event.class:emit()` и выполняются как обычные функции, только имея
         свой собственный stack: вызов происходит мгновенно и выполняются сразу же все `Connection.class`
     ]=]
-	project.event_use_task_spawn = true
-
-	--[=[
-        `Face.class` можно освобождать?
-    ]=]
-	project.face_releaseable = true
+	project.use_scheduler = true
 
 	--[=[
         У `Timer.class `есть методы `:get_wait_time()` и `:get_service_wait_time()`
@@ -221,7 +241,7 @@ do --properties
 	--[=[
         Сохранять информацию игроков в `DataStoreService`? 
     ]=]
-	project.data_save = false and not project.debug_mode
+	project.data_save = false and not project.debug
 
 	--[=[
         Использовать информацию игроков из `DataStoreService`? 
@@ -371,7 +391,7 @@ do --game
 	--[=[
         Если `true`, то при отсутствии анимации будет проигрываться tpose анимация
 
-        Поведение при `project.debug_mode == true` будет соответствовать как "Отсутствие данных",
+        Поведение при `project.debug == true` будет соответствовать как "Отсутствие данных",
         а значит такие анимации будут вызывать `error()`
     ]=]
 	project.set_tpose_when_no_animation = false
@@ -384,16 +404,20 @@ do --game
 	project.allow_ikcontrol = false
 end
 
+type console_out_type = never
 
 --[=[
-	Выводит сообщение в консоль
+	Выводит сообщение об ошибке в консоль
 
-	В зависимости от режима `project.debug_mode` заменяется на вывод ошибок
+	В разработке появление таких сообщений недопустимо
 ]=]
-function project.console_output(write: unknown, ...: unknown): never
-	write = write ~= nil and write or "*unknown error message*"
+function project.console_out_error(write: unknown, ...: unknown): console_out_type
+	if project.debug_messages == "nope" then
+		return
+	end
 
-	if project.debug_mode then
+	write = write ~= nil and write or "*unknown error message*"
+	if project.debug_messages == "strict" then
 		local line: string = ""
 
 		for i, v in { ... } do
@@ -401,9 +425,80 @@ function project.console_output(write: unknown, ...: unknown): never
 		end
 
 		error(tostring(write) .. " " .. line)
-	else
+	elseif project.debug_messages == "important" then
 		warn(string.format("%s\n", debug.traceback()), write, ...)
+	elseif project.debug_messages == "soft" then
+		print(string.format("%s\n", debug.traceback()), write, ...)
+	else
+		return
 	end
+end
+
+function project.run (f: ((...any) -> any)|thread|unknown, ...)
+	const T = type(f)
+
+	if T == "function" then
+		(f :: (...any) -> ())(...)
+		return 3
+	elseif T == "thread" then
+		if project.use_immediately_notifications_emitter then
+			coroutine.resume(f :: thread, ...)
+			return 2
+		elseif project.use_signal then
+			return 4
+		elseif project.use_scheduler then
+			if project.use_deffered_emitter then
+				task.defer(f :: thread, ...)
+			else
+				task.spawn(f :: thread, ...)
+			end
+
+			return 1
+		end
+	end
+	
+	return 0
+end
+
+
+--[=[
+	Выводит сообщение в консоль
+
+	В разработке появление сообщений такого рода нежелательно, хотя и не критично
+]=]
+function project.console_out (write, ...): console_out_type
+	if project.debug_messages == "nope" then
+		return
+	end
+
+	write = write ~= nil and write or "*unknown message*"
+	if project.debug_messages == "strict" then
+		return warn(string.format("%s\n", debug.traceback()), ...)
+	elseif project.debug_messages == "important" then
+		return warn(string.format("%s\n", debug.traceback()), ...)
+	else
+		return print(string.format("%s\n", debug.traceback()), ...)
+	end
+end
+
+--[=[
+	Обертка над pcall с реализацией авто-сообщения в консоль при неудаче
+]=]
+function project.mcall <T...,U...> (f: (T...)->U..., ...: T...) : (boolean, U...)
+	const state, out = pcall(f, ...)
+	project.out_if(not state, out, ...)
+	return state, out
+end
+
+--[=[
+	Является ли игра тестовым запуском в режиме `server & clients`
+]=]
+function project.is_test_sc () : boolean	
+	for _, v in game:GetService("Players"):GetPlayers() do
+		return v.UserId < 0
+	end
+
+	return false
 end
 
 --[=[
@@ -428,7 +523,7 @@ function project.this(who: unknown, is: string): boolean
 				end
 			end
 		elseif (simple_T == "class") then
-			project.console_output "class api (from real Luau classes) isn't supported now"
+			project.console_out_error "class api (from real Luau classes) isn't supported now"
 		elseif (simple_T == "userdata") then
 			if (T == "Instance") then
 				return who:IsA(is) or who.ClassName == is
@@ -484,227 +579,6 @@ function project.try(
 	end
 
 	return result
-end
-
-do --types_region
-
---TODO
---[==[
-type function read_only_F(T: type, Recursive: type)
-	local do_for_table
-	local do_for_union
-	const rec = Recursive:value() == true
-
-	do_for_table = function(T: type)
-		if T:is("table") then
-			const props = {}
-			for i, v in T:properties() do
-				props[i] = { read = v.read }
-			end
-
-			const new_table: type = types.newtable(props, T:indexer(), T:metatable())
-			return new_table
-		elseif T:is("union") or T:is("intersection") then
-			return do_for_union(T)
-		else
-			return types.never
-		end
-	end
-
-	do_for_union = function(T: type)
-		if T:is("union") or T:is("intersection") then
-			const new = {}
-
-			for i, v in T:components() do
-				if v:is("table") then
-					table.insert(new, do_for_table(v))
-				elseif v:is("union") then
-					table.insert(new, do_for_union(v))
-				else
-					table.insert(new, v)
-				end
-			end
-
-			if #new > 1 then
-				return T:is("union") and types.unionof(table.unpack(new))
-					or T:is("intersection") and types.intersectionof(table.unpack(new))
-			else
-				return new[1]
-			end
-		elseif T:is("table") then
-			return do_for_table(T)
-		else
-			return types.never
-		end
-	end
-
-	if T:is("union") or T:is("intersection") then
-		return do_for_union(T)
-	elseif T:is("table") then
-		return do_for_table(T)
-	else
-		return types.never
-	end
-end
-
---export type read_only<T, Recursive = false> = read_only_F<T, Recursive>
-]==]
-type function exist_F(T: type, Recursive: type)
-	local do_for_union
-	local do_for_table
-	const rec = Recursive:value() == true
-
-	do_for_union = function(T: type)
-		if T:is("union") or T:is("intersection") then
-			const new = {}
-
-			for i, v in T:components() do
-				if v:is("nil") or v:is("never") then
-					continue
-				else
-					table.insert(new, v)
-				end
-			end
-
-			if #new > 1 then
-				return T:is("union") and types.unionof(table.unpack(new))
-					or T:is("intersection") and types.intersectionof(table.unpack(new))
-			else
-				return new[1]
-			end
-		elseif T:is("table") and rec then
-			return do_for_table(T)
-		else
-			return types.never
-		end
-	end
-
-	do_for_table = function(T: type)
-		if T:is("table") then
-			const props = {}
-
-			for i, v in T:properties() do
-				const read = v.read
-						and (v.read:is("union") or v.read:is("intersection") and do_for_union(v.read) or v.read:is(
-							"table"
-						) and rec and do_for_table(v.read) or v.read)
-					or types.never
-				const write = v.write
-						and (v.write:is("union") or v.write:is("intersection") and do_for_union(v.write) or v.write:is(
-							"table"
-						) and rec and do_for_table(v.write) or v.write)
-					or types.never
-
-				if read:is("never") or write:is("never") then
-					continue
-				end
-
-				props[i] = { read = read, write = write }
-			end
-
-			const new_table = types.newtable(props, T:indexer(), T:metatable())
-			return new_table
-		elseif T:is("union") or T:is("intersection") then
-			return do_for_union(T)
-		else
-			return types.never
-		end
-	end
-
-	if T:is("union") or T:is("intersection") then
-		return do_for_union(T)
-	elseif T:is("table") then
-		return do_for_table(T)
-	else
-		return types.never
-	end
-end
-
-export type exist<T, Recursive = false> = exist_F<T, Recursive>
-
-export type function as(T: type)
-	return T
-end
-
-export type function isnt(T)
-	return types.negationof(T)
-end
-
-export type function expand(T: type, U: type)
-	local do_for_table
-	local do_for_union
-
-	do_for_table = function(T: type)
-		if T:is("table") then
-			const props = {}
-
-			for i, v in T:properties() do
-				const to_prop = { read = v.read }
-
-				if v.write then
-					to_prop.write = types.unionof(v.write, U)
-				else
-					to_prop.write = U
-				end
-
-				props[i] = to_prop
-			end
-
-			const new_table: type = types.newtable(props, T:indexer(), T:metatable())
-			return new_table
-		else
-			return types.never
-		end
-	end
-
-	do_for_union = function(T: type)
-		if T:is("union") or T:is("intersection") then
-			const new = {}
-
-			for i, v in T:components() do
-				table.insert(new, v:is("table") and do_for_table(v) or v)
-			end
-
-			if #new > 1 then
-				return T:is("union") and types.unionof(table.unpack(new))
-					or T:is("intersection") and types.intersectionof(table.unpack(new))
-			else
-				return new[1]
-			end
-		elseif T:is("table") then
-			return do_for_table(T)
-		else
-			return types.never
-		end
-	end
-
-	if T:is("table") then
-		return do_for_table(T)
-	elseif T:is("union") or T:is("intersection") then
-		return do_for_union(T)
-	else
-		return types.never
-	end
-end
-
-export type function attributeable_properties(T: type)
-	local union: type
-
-	local to_return: type
-	for i, v in T:properties() do
-		if v.read and v.write then
-			if v.read.tag ~= v.write.tag then
-				continue
-			else
-				union = types.unionof(v.read:value())
-			end
-		elseif v.read or v.write then
-			const v = v.read or v.write
-		else
-		end
-	end
-end
-
 end
 
 return project

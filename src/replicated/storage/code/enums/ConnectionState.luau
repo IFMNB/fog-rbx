@@ -1,15 +1,19 @@
-const enum = require("@game/ReplicatedStorage/code/enum")
-const struct = {__index = enum}
-setmetatable(struct, struct)
+--!strict
 
---[=[
-    Соединение является живым
-]=]
-struct.Alive = enum.new("Alive")
+const EnumItem = require("../class/arch/EnumItem")
+const EnumObject = require("../class/arch/EnumObject")
 
---[=[
-    Соединение было разорвано и может быть освобождено в любом случае
-]=]
-struct.Dead = enum.new("Dead")
+const declare = require("../static/declare")
 
-return table.freeze(struct);
+const class  = EnumObject:new({
+	name = "ConnectionState",
+
+	Alive = EnumItem:new({
+		name = "Alive",
+	}),
+    Dead = EnumItem:new({
+        name = "Dead"
+    })
+})
+
+return class

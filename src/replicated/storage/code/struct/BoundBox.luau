@@ -1,10 +1,5 @@
 --!native
 --!optimize 2
---!strict
-
---[=[
-	NOTE TYPE_ERROR См guideline/src/general/types
-]=]
 
 const Quaternion = require("../../dependency/Quaternion")
 const BoundBoxDirection = require(".././enums/BoundBoxDirection")
@@ -19,7 +14,8 @@ const private = {}
 const struct = { __index = Record }
 setmetatable(struct, struct)
 
-export type struct = object.class<typeof(struct)> --<setmetatable<{}, {__index: typeof(struct)}>>
+export type struct = Record.extend<typeof(struct)>
+export type extend<T = {}> = object.class<T, struct>
 
 --[=[
 	`BoundBox` - конкретный тип `Record`, являющийся геометрическим объемом в пространстве,
@@ -141,7 +137,7 @@ function struct.new(
 end
 
 private.unknown_boundvariant = function(...: unknown): struct
-	project.console_output("unexpected BoundVariant")
+	project.console_out_error("unexpected BoundVariant")
 	return struct.new()
 end
 
@@ -205,7 +201,7 @@ end
 --[=[
 	Возвращает инвертированный `BoundBox` с тем же центром что и до этого
 ]=]
-function struct:invert()
+function struct:invert(): struct
 	const this = self :: struct
 	const new = this:clone()
 	new.half = -new.half
@@ -216,7 +212,7 @@ end
 --[=[
 	Конвертирует информацию из `Region3`, который по сути является AABB, в `BoundBox`
 ]=]
-function struct.from_region3(that: Region3)
+function struct.from_region3(that: Region3): struct
 	const new = struct.new()
 	new.center = that.CFrame.Position
 	new.half = that.Size / 2
@@ -228,7 +224,7 @@ end
 --[=[
 	Конвертирует информацию из `Region3int16`, который по сути является AABB, в `BoundBox`
 ]=]
-function struct.from_region3int16(that: Region3int16)
+function struct.from_region3int16(that: Region3int16): struct
 	return struct.from_aabb(
 		Vector3.new(that.Min.X, that.Min.Y, that.Min.Z),
 		Vector3.new(that.Max.X, that.Max.Y, that.Max.Z)
@@ -239,7 +235,7 @@ end
 	Строит `BoundBox` из переданных `min` и `max` аргументов,
 	вычисляя их положение и размер на лету из этих же аргументов
 ]=]
-function struct.from_aabb(min: Vector3, max: Vector3)
+function struct.from_aabb(min: Vector3, max: Vector3): struct
 	const new = struct.new()
 	new.variant = BoundVariant.AABB
 	new.max = max
@@ -308,7 +304,7 @@ private.middle_variant_parser = table.freeze({
 		for _, bb in boxes do
 			sum_half += bb.half
 			sum_center += bb.center
-			
+
 			const quaternion_bb = Quaternion.cframe(bb:get_cframe())
 
 			if this_quaternion:Dot(quaternion_bb) < 0 then
@@ -357,14 +353,14 @@ private.middle_variant_parser = table.freeze({
 	при этом будут преобразованы абсолютно все `BasePart` внутри переданных
 	экземпляров `Model`
 ]=]
-function struct.from_model(variant: number?, ...: Model)
+function struct.from_model(variant: number?, ...: Model): { struct }
 	const result: { struct } = {}
 	const raw: { { struct } } = {}
 	for _, mdl in { ... } do
 		const parts: { BasePart } = {}
 
 		for _, instance in mdl:GetDescendants() do
-			if instance:IsA "BasePart" then
+			if instance:IsA("BasePart") then
 				table.insert(parts, instance :: BasePart)
 			end
 		end
@@ -466,7 +462,7 @@ private.cover_variant_parser = table.freeze({
 		return new
 	end,
 	[BoundVariant.Unknown] = function(this: struct, of: struct): struct
-		project.console_output("unexpected BoundVariant")
+		project.console_out_error("unexpected BoundVariant")
 		return struct.new()
 	end,
 }) :: { (struct, struct) -> struct }
@@ -522,7 +518,7 @@ function struct:invariant(to_variant: number?): struct
 				BoundVariant.OBB
 			)
 		else
-			project.console_output("unexpected BoundVariant")
+			project.console_out_error("unexpected BoundVariant")
 			return this:clone()
 		end
 	else
@@ -660,7 +656,7 @@ private.inside_variant_parser = table.freeze({
 		return true
 	end,
 	[BoundVariant.Unknown] = function(this: struct, of: struct): boolean
-		project.console_output("unexpected BoundVariant, abort")
+		project.console_out_error("unexpected BoundVariant, abort")
 		return false
 	end,
 }) :: { (struct, struct) -> boolean }
@@ -707,7 +703,7 @@ end
 ]=]
 function struct:intersection(...: struct): { boolean }
 	const this = self :: struct
-	const result = {}
+	const result: { boolean } = {}
 
 	for _, BB in { ... } do
 		const parser: (struct, struct) -> boolean = this.variant == BB.variant
@@ -829,7 +825,7 @@ function struct:unpack(): { Vector3 }
 	return this.variant == BoundVariant.OBB
 			and { this.top, this.bottom, this.left, this.right, this.center, this.front, this.back }
 		or this.variant == BoundVariant.AABB and { this.min, this.max }
-		or { project.console_output("cannot properly unpack unexpected BoundVariant") }
+		or { project.console_out_error("cannot properly unpack unexpected BoundVariant") }
 end
 
 --[=[
@@ -975,7 +971,7 @@ end
     elseif (this.variant == BoundVariant.OBB) then
 		return struct.new(this.top, this.bottom, this.left, this.right, this.center, this.front, this.back, nil, nil, this.half, this.variant)
     else
-        project.console_output "BoundVariant @Unknown"
+        project.console_out_error "BoundVariant @Unknown"
         return this:clone()
     end
 ]]
@@ -1008,7 +1004,7 @@ function struct:get_origin_directions(): Coordinate.struct
 	elseif this.variant == BoundVariant.AABB then
 		return Coordinate.new(Vector3.xAxis, Vector3.yAxis, Vector3.zAxis)
 	else
-		project.console_output("")
+		project.console_out_error("")
 		return Coordinate.new(Vector3.zero, Vector3.zero, Vector3.zero)
 	end
 end
@@ -1030,7 +1026,7 @@ function struct:get_axis(of: Enum.Axis?): { Vector3 }
 		elseif this.variant == BoundVariant.AABB then
 			return { Vector3.xAxis, Vector3.yAxis, Vector3.zAxis }
 		else
-			project.console_output("unexpected BoundVariant")
+			project.console_out_error("unexpected BoundVariant")
 			return {
 				Vector3.zero,
 			}

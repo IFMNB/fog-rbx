@@ -1,25 +1,39 @@
-const enum = require("@game/ReplicatedStorage/code/enum")
-const struct = {__index = enum}
-setmetatable(struct, struct)
+--!strict
 
---[=[
-    Система обязана выполнить операцию вычитания с указанным аргументом
-]=]
-struct.Substract = enum.new("Substract")
+const EnumObject = require("../class/arch/EnumObject")
+const EnumItem = require("../class/arch/EnumItem")
+const declare = require("../static/declare")
 
---[=[
-    Система обязана выполнить операцию прибавления с указанным аргументом
-]=]
-struct.Add = enum.new("Add")
+const class = EnumObject:new({
+	name = "MathOperation",
 
---[=[
-    Система обязана выполнить операцию умножения с указанным аргументом
-]=]
-struct.Multiple = enum.new("Multiple")
+	--[=[
+		Система обязана выполнить операцию вычитания с указанным аргументом.
+	]=]
+	Substract = EnumItem:new({
+		name = "Substract",
+	}),
 
---[=[
-    Система обязана выполнить операцию деления с указанным аргументом
-]=]
-struct.Divide = enum.new("Divide")
+	--[=[
+		Система обязана выполнить операцию прибавления с указанным аргументом.
+	]=]
+	Add = EnumItem:new({
+		name = "Add",
+	}),
 
-return table.freeze(struct)
+	--[=[
+		Система обязана выполнить операцию умножения с указанным аргументом.
+	]=]
+	Multiple = EnumItem:new({
+		name = "Multiple",
+	}),
+
+	--[=[
+		Система обязана выполнить операцию деления с указанным аргументом.
+	]=]
+	Divide = EnumItem:new({
+		name = "Divide",
+	}),
+})
+
+return class

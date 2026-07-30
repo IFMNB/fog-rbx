@@ -87,7 +87,7 @@ do --values_region
 		const metadata = private.metadata
 
 		assert(
-			this.private_server or not project.debug_mode,
+			this.private_server or not project.debug,
 			"attempt to access owner_joined_event when server isn't a private"
 		)
 
@@ -128,7 +128,7 @@ do --controls_region
 		if metadata.thread then
 			task.cancel(metadata.thread)
 		else
-			assert(not project.debug_mode, "mainloop thread does not exist")
+			assert(not project.debug, "mainloop thread does not exist")
 		end
 	end
 
@@ -152,13 +152,12 @@ end
 
 private.metadata = Storage.new()
 
-
 do --initiate_region
 	const server = class.arch_new(class, true)
 
 	private.singletone = server
-    table.freeze(class)
-    table.freeze(private)
+	table.freeze(class)
+	table.freeze(private)
 end
 
 return private.singletone

@@ -1,14 +1,43 @@
-const enum = require("@game/ReplicatedStorage/code/enum")
-const struct = { __index = enum }
-setmetatable(struct, struct)
+--!strict
 
-struct.Walk = enum.new("Walk")
-struct.Run = enum.new("Run")
-struct.Idle = enum.new("Idle")
-struct.Jump = enum.new("Jump")
-struct.Fall = enum.new("Fall")
-struct.Fly = enum.new("Fly")
-struct.Crouch = enum.new("Crouch")
-struct.Prone = enum.new("Prone")
+const EnumObject = require("../class/arch/EnumObject")
+const EnumItem = require("../class/arch/EnumItem")
+const declare = require("../static/declare")
 
-return table.freeze(struct)
+const class = EnumObject:new({
+	name = "AnimeAnimationVariant",
+
+	Walk = EnumItem:new({
+		name = "Walk",
+	}),
+
+	Run = EnumItem:new({
+		name = "Run",
+	}),
+
+	Idle = EnumItem:new({
+		name = "Idle",
+	}),
+
+	Jump = EnumItem:new({
+		name = "Jump",
+	}),
+
+	Fall = EnumItem:new({
+		name = "Fall",
+	}),
+
+	Fly = EnumItem:new({
+		name = "Fly",
+	}),
+
+	Crouch = EnumItem:new({
+		name = "Crouch",
+	}),
+
+	Prone = EnumItem:new({
+		name = "Prone",
+	}),
+})
+
+return class

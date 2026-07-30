@@ -1,24 +1,39 @@
-const enum = require("@game/ReplicatedStorage/code/enum")
-const struct = {__index = enum}
-setmetatable(struct, struct)
+--!strict
 
---[=[
-    Будут использовано текущее состояние runtime систем 
-]=]
-struct.Inherit = enum.new ""
+const EnumObject = require("../class/arch/EnumObject")
+const EnumItem = require("../class/arch/EnumItem")
+const declare = require("../static/declare")
 
---[=[
-    Принудительно будет обрабатываться только в синхронном контексте
-]=]
-struct.Synchro = enum.new "PrimarySynchro"
+const class = EnumObject:new({
+	name = "RuntimeMode",
 
---[=[
-    Принудительно будет обрабатываться только в параллельном контексте
-]=]
-struct.Parallel = enum.new "Parallel"
---[=[
-    Не будет обрабатываться ни в каких случаях
-]=]
-struct.Disabled = enum.new "Disabled"
+	--[=[
+		Будет использовано текущее состояние runtime-систем.
+	]=]
+	Inherit = EnumItem:new({
+		name = "Inherit",
+	}),
 
-return table.freeze(struct);
+	--[=[
+		Принудительно будет обрабатываться только в синхронном контексте.
+	]=]
+	Synchro = EnumItem:new({
+		name = "PrimarySynchro",
+	}),
+
+	--[=[
+		Принудительно будет обрабатываться только в параллельном контексте.
+	]=]
+	Parallel = EnumItem:new({
+		name = "Parallel",
+	}),
+
+	--[=[
+		Не будет обрабатываться ни в каких случаях.
+	]=]
+	Disabled = EnumItem:new({
+		name = "Disabled",
+	}),
+})
+
+return class

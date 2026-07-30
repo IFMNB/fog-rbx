@@ -1,7 +1,11 @@
-const enum = require("@game/ReplicatedStorage/code/enum")
-const struct = {__index = enum}
-setmetatable(struct, struct)
+--!strict
 
+const EnumObject = require("../class/arch/EnumObject")
+const EnumItem = require("../class/arch/EnumItem")
+const declare = require("../static/declare")
 
+const class = EnumObject:new({
+	name = "",
+})
 
-return table.freeze(struct)
+return class

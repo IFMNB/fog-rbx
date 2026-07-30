@@ -1,22 +1,25 @@
+--!strict
+
 const object = require "@game/ReplicatedStorage/code/object" 
+const Record = require("../Record")
 const Result = require("./Result")
 const namefield = require('@game/ReplicatedStorage/code/static/namefield')
 
-const class = {__index = object}
-setmetatable(class, class)
+const class = {}
 
-export type class = object.class<typeof(class)>
+export type class = Record.extend<typeof(class)>
+export type extend<T = {}> = object.class<T, class>
 
-class.type = namefield.raycast
+class.type = namefield.raycast 
 class.from = Vector3.zero
 class.to = Vector3.zero
 class.direction = Vector3.new()
 class.mult = 1
 class.params = nil :: RaycastParams?
-class.result = Result :: Result.class<RaycastResult>
+class.result = (Result :: any) :: Result.class<RaycastResult>
 
 function class.new ()
-	return object.new(class, true)
+	return Record.new(class) :: class
 end
 
 function class:recalculate ()
@@ -32,7 +35,7 @@ function class:raycast()
 		this.result = Result.new(true, result)
 		return true
 	else
-		this.result = false
+		this.result = Result.new(false, result :: any)
 		return false
 	end
 end
@@ -49,5 +52,4 @@ function class:set_from(from: Vector3)
 	this:recalculate()
 end
 
-table.freeze(class :: any)
-return class
+return table.freeze(class)

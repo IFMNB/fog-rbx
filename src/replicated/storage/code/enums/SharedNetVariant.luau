@@ -1,32 +1,35 @@
-const enum = require("@game/ReplicatedStorage/code/enum")
-const struct = { __index = enum }
-setmetatable(struct, struct)
+--!strict
 
---[=[
-    Канал для внешнего небезопасного, но быстрого общения с клиентами
-    через `UnreliableRemoteEvent`
-]=]
-struct.Unsafe = enum.new("Unsafe")
---[=[
-    Канал для внешнего безопасного, но медленного общения с клиентами
-    через `RemoteEvent`
-]=]
-struct.Safe = enum.new("Safe")
+const EnumObject = require("../class/arch/EnumObject")
+const EnumItem = require("../class/arch/EnumItem")
+const declare = require("../static/declare")
 
---[=[
-    Канал для внутреннего общения внутри сети, потому что работает на
-    основе `BindableEvent`
-]=]
-struct.Internal = enum.new "Internal"
+const class = EnumObject:new({
+	name = "NetworkChannel",
 
-function struct.get_variant (of: number) : string?
-    if (of == struct.Unsafe) then
-        return "UnreliableRemoteEvent"
-    elseif (of == struct.Safe) then
-        return "RemoteEvent"
-    else
-        return nil
-    end
-end
+	--[=[
+		Канал для внешнего небезопасного, но быстрого общения с клиентами
+		через `UnreliableRemoteEvent`.
+	]=]
+	Unsafe = EnumItem:new({
+		name = "Unsafe",
+	}),
 
-return table.freeze(struct)
+	--[=[
+		Канал для внешнего безопасного, но медленного общения с клиентами
+		через `RemoteEvent`.
+	]=]
+	Safe = EnumItem:new({
+		name = "Safe",
+	}),
+
+	--[=[
+		Канал для внутреннего общения внутри сети, поскольку работает на
+		основе `BindableEvent`.
+	]=]
+	Internal = EnumItem:new({
+		name = "Internal",
+	})
+})
+
+return class

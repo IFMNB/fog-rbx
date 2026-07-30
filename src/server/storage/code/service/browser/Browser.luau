@@ -236,7 +236,7 @@ private.singletone = object.new(table.freeze(class), false)
 do --initiate_region
     const browser = private.singletone
 
-    if (project.browser_online and not project.debug_mode) then
+    if (project.browser_online and not project.debug) then
         Server:get_shutdown_event():once(function(reason: number)
             browser:notificate_servers(ServerNotification.PreparingShutdown)
             const metadata = private.metadata:fetch(browser)

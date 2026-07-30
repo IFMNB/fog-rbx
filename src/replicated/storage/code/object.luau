@@ -1,220 +1,196 @@
-const namefield = require('@game/ReplicatedStorage/code/static/namefield')
-const project = require("@game/ReplicatedStorage/code/static/project")
+--!strict
+
+const namefield = require("@game/ReplicatedStorage/code/static/namefield")
+const empty = require("./static/empty")
+const project = require("./static/project")
+const declare = require("./static/declare")
 
 const private = {}
-const class = {}
+const class: declare.object = {
+	identity = "never",
+	type = namefield.object,
 
-export type base = typeof(class)
-type class_sample = {[any]: any} | base | ({[any]: any} & base)
-type sample_object = {[any]: any}
+	new = function(self, that, ...)
+		const T = (
+			project.prototype_oop
+				and setmetatable(table.clone(self), {
+					__index = function(t, i)
+						const var = rawget(t, i)
+						return var
+					end,
+				})
+			or table.clone(self)
+		) :: declare.object
 
-export type class <parent = base, that = {}> = that & parent
+		private.load_to_new(T, that)
+		private.bootload_new(T, self) 
+		private.wake(T)
 
---[=[
-	Стандартный базовый конструктор для всех объектов в данном проекте
-]=]
-function class.new <T> (class: T, reflection)
-	const new_object = setmetatable({}, {
-		__index = class,
-		class = class,
-		reflection = reflection
-	})
+		return T :: any
+	end,
 
-	private.id_counted += 1
-	return new_object :: class<base, T>
-end
+	is = function(this, that)
+		local base = private.ever[this]
 
-class.__index = class
-
---[=[
-	Базовый тип для всех объектов в данном проекте, дающий разницу между
-	обычной таблицей с метатаблицей и объектом в проекте
-
-	`Просто классы еще не завезли в язык`
-]=]
-class.type = namefield.object
-
---[=[
-	`object.identity` является уникальным идентификатором объекта в рамках
-	этой Luau Virtual Machine
-]=]
-class.identity = "" :: unknown
-class.arch_new = class.new
-
--- Экземпляр конкретного типа вводит конкретное поведение
--- Однако экземпляр архетипа вводит глобальное поведение
--- для всех объектов которые создаются через него, и это
--- поведение работает независимо от конкретного типа
-
---[=[
-	Выдает количество всех когда-либо созданных объектов
-]=]
-function class.get_objects_ever_created ()
-	return private.id_counted
-end
-
---[=[
-	Сравнивает этот объект с любым переданным значением на соответствие типов
-	и настоящего `type()` значения
-]=]
-function class:equals (with: any)
-    const this = self :: class
-    return this.is(with, this.type)
-end
-
---[=[
-	Делает этот экземпляр неизменяемым
-
-	`Если новые классы Luau нельзя будет замораживать, то этот api будет удален`
-]=]
-function class:immutable()
-	return table.freeze(self :: typeof(self))
-end
-
---[=[
-	Проверяет, что этот экземпляр является изменяемым
-]=]
-function class:is_immutable ()
-	return table.isfrozen(self)
-end
-
---[[
-	Не все объекты могут поддерживать полноценное клонирование.
-	Объекты имеющие большую часть информации внутри метаданных ***не*** будут
-	иметь одинаковое поведение со своим оригиналом, поскольку их
-	метаданные не будут совпадать с клонированным объектом.
-]]
-function class:clone ()
-	const this = self :: class
-	const default = getmetatable(this)
-	local result : {[unknown]: unknown}|any
-
-	if (default) then
-		result = setmetatable(table.clone(this), default)
-	else
-		project.console_output "clone failure (unknown reason)"
-		result = this.new(this :: any)
-
-		for i,v in this :: {[unknown]: unknown} do
-			result[i] = v
-		end
-	end
-
-	return result :: typeof(self)
-end
-
---[=[
-	Проверяет, что этот конкретный объект является объектом с указанным типом,
-	а также проверяет, что этот объект вообще является объектом
-]=]
-function class:is(classname: keyof<typeof(namefield)>|string|nil) : boolean
-	const this = self :: class
-	const meta = getmetatable(this) :: any
-	classname = classname or class.type
-	
-	if (type(meta) == "table") then
-		const index = meta.__index :: unknown
-		
-		if (type(index) == "table") then
-			const object = index :: {[unknown]: unknown}
-			
-			return object.type == classname
-				and true
-				or class.is(object, classname)
-				or false
-		end
-	end
-	
-	return false
-end
-
-
-
-do --base_region
-
-	--[=[
-		Позволяет обойти все дерево наследования этого объекта начиная от
-		его класса, заканчивая базовым `object` классом
-	]=]
-	@native
-	function class:do_for_all_inheritance (func: (class) -> (), recursive: boolean?, invert: boolean?)
-		const this = self :: class
-		local index = this :: class
-		const see = {} :: {any}
-
-		while (index) do
-			if (not invert) then
-				func(index)
+		while base do
+			const state, cached = private.get_cached_direct(base)
+			if state then
+				return cached.__type == that
 			end
 
-			if (recursive) then
-				table.insert(see, index)
-				local found = private.get__index_class(index, true)
-				
-				if (not found) then
-					return
-				else
-					index = found
-				end
-
-				if (table.find(see, index)) then
-					if (index.type == "object") then
-						return
-					else
-						project.console_output(string.format ("cycle oop dependency \n%s", index.type))
-						return
-					end
-				end
-			end
-
-			if (invert) then
-				func(index)
-			end
-		end
-	end
-
-	--[=[
-		Возвращает класс этого объекта или `nil`, если этот класс - `object`
-	]=]
-	function class:get_base () : class?
-		const this = self :: class
-		const index = private.get__index_class(this)
-
-		if (index and index.type and namefield[index.type] ~= nil) then
-			return index :: class
+			base = private.ever[base]
 		end
 
-		return nil
-	end
+		return false
+	end,
 
-end
+	equals = function(this, that)
+		const state, cached = private.get_cached(this)
+		return state and cached.__type == that or false
+	end,
+
+	get_base = function(self)
+		return private.ever[self] :: any
+	end,
+
+	toggle_host = function <T> (self: T, f: (T) -> ())
+		const state, cached = private.get_cached<<T,unknown>>(self)
+
+		if state then
+			const pos = table.find(cached.hosts, f)
+			if pos then
+				table.remove(cached.hosts, pos)
+				if project.debug_object_hosts then project.console_out_error "host deleted" end
+				return
+			else
+				table.insert(cached.hosts, f)
+			end
+		else
+			project.console_out_error "cached isn't exists" 
+			return
+		end
+	end,
+}
 
 do --private_region
-	function private.get__index_class (this: class, force_next_class_by_index: boolean?) : class?
-		const metatable = getmetatable(this) :: {[unknown]: unknown}?
-		if (type(metatable) == "table") then
-			if (namefield[rawget(metatable, "type")] and not force_next_class_by_index) then
-				return metatable :: class
-			else
-				const class = metatable.class
-				if (type(class) == "table") then
-					return class :: class
-				else
-					const index = metatable.__index
-					if (type(index) == "table") then
-						return index :: class
-					end
+	type cached <T = declare.object, U = unknown> = {
+		__index: U,
+		__metatable: empty.instance,
+		__type: string,
 
-					project.console_output("cannot iterate over __index function type (or type isn't a table)")
-					return nil :: never
-				end
+		self: unknown,
+		hosts: { (new: T) -> () },
+	}
+	
+	private.cached = setmetatable({} :: { [unknown]: cached }, table.freeze({ __mode = "ks" }))
+	private.ever = setmetatable({} :: { [declare.object | unknown]: unknown }, table.freeze({ __mode = "ks" }))
+
+	function private.get_cached_by_instance<T,U>(this: unknown): (boolean, cached<T,U>)
+		const ever = private.ever[this]
+		if ever then
+			const cached = private.cached[ever]
+			if cached then
+				return true, cached
 			end
 		end
 
-		return nil
+		return false, nil :: never
 	end
 
-	private.id_counted = 0 :: number
+	function private.get_cached_direct <T,U> (this: unknown) : (boolean, cached<T,U>)
+		const cached = private.cached[this]
+		const state = cached ~= nil
+		return state, cached
+	end
+
+	function private.get_cached<T,U> (this: unknown) : (boolean, cached<T,U>)
+		local state, cached = private.get_cached_direct <<T,unknown>>(this)
+		if not state then state, cached = private.get_cached_by_instance <<T, unknown>>(this) end
+		return state, cached
+	end
+
+	function private.lazyget_cached(this: unknown | { [unknown]: unknown }, parent): cached
+		const Ttype = typeof(this)
+		const meta: cached = private.cached[this]
+			or {
+				__index = parent,
+				__metatable = empty,
+				__type = Ttype == "table" and tostring((this :: any).type) or Ttype,
+
+				self = this,
+				hosts = {},
+			}
+
+		private.cached[this] = meta
+		return meta
+	end
+
+	function private.wake_hosts(inside: cached, to: declare.object)
+		for _, v in inside.hosts do
+			if not project.debug then
+				project.mcall(v, to)
+			else
+				v(to)
+			end
+		end
+	end
+
+	function private.load_to_new (new: declare.object, load: {[unknown]: unknown}|unknown|nil)
+		const T = type(load)
+
+		if T == "table" then
+			for i, v in load :: {[unknown]: unknown} do
+				(new :: {[unknown]: unknown})[i] = v
+			end
+		end
+	end
+
+	function private.get_hierarchy<T,U>(from: declare.object): {cached<T,U>}
+		const result = {}
+		local state, cached = private.get_cached(from)
+
+		while state do
+			table.insert(result, cached)
+
+			if cached.__index ~= nil then
+				state, cached = private.get_cached(cached.__index)
+
+				if table.find(result, cached) then
+					project.console_out("recursive hierarchy")
+					break
+				end
+			else
+				break
+			end
+		end
+
+		return result
+	end
+ 
+	function private.wake (new: declare.object)
+		const hierarchy =  private.get_hierarchy <<declare.object, unknown>> (new)
+		const count = #hierarchy
+
+		for i = count, count, -1 do
+			const cached = hierarchy[i]
+			private.wake_hosts(cached, new)
+		end
+	end
+
+	function private.bootload_new(new: declare.object, parent: unknown)
+		(new :: any).identity = tostring(new)
+	
+		private.ever[new] = parent
+		private.lazyget_cached(new, parent)
+	end
+
+	private.bootload_new(class)
 end
 
-return table.freeze(class)
+if project.debug then
+	class:toggle_host(function(new: declare.object)
+		project.console_out("created a new ", new.type," object", new, "hosts:", private.get_hierarchy(new))
+	end)
+end
+
+return class

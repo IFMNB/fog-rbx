@@ -1,55 +1,75 @@
-const enum = require("@game/ReplicatedStorage/code/enum")
-const struct = {__index = enum}
-setmetatable(struct, struct)
+--!strict
+
+const EnumObject = require("../class/arch/EnumObject")
+const EnumItem = require("../class/arch/EnumItem")
+const declare = require("../static/declare")
 
 
---[=[
-    Направление согласно `Enum.Axis`
+const class = EnumObject:new({
+	name = "BoundBoxDirection",
 
-    Конкретно это направление `Vector3.yAxis`
-]=]
-struct.Top = enum.new("Top")
+	--[=[
+		Направление согласно `Enum.Axis`
 
---[=[
-    Направление согласно `Enum.Axis`
+		Конкретно это направление `Vector3.yAxis`
+	]=]
+	Top = EnumItem:new({
+		name = "Top",
+	}),
 
-    Конкретно это направление `-Vector3.yAxis`
-]=]
-struct.Bottom = enum.new("Bottom")
+	--[=[
+		Направление согласно `Enum.Axis`
 
---[=[
-    Направление согласно `Enum.Axis`
+		Конкретно это направление `-Vector3.yAxis`
+	]=]
+	Bottom = EnumItem:new({
+		name = "Bottom",
+	}),
 
-    Конкретно это направление `Vector3.xAxis`
-]=]
-struct.Right = enum.new("Right")
+	--[=[
+		Направление согласно `Enum.Axis`
 
---[=[
-    Направление согласно `Enum.Axis`
+		Конкретно это направление `Vector3.xAxis`
+	]=]
+	Right = EnumItem:new({
+		name = "Right",
+	}),
 
-    Конкретно это направление `-Vector3.xAxis`
-]=]
-struct.Left = enum.new("Left")
+	--[=[
+		Направление согласно `Enum.Axis`
 
---[=[
-    Направление согласно `Enum.Axis`
+		Конкретно это направление `-Vector3.xAxis`
+	]=]
+	Left = EnumItem:new({
+		name = "Left",
+	}),
 
-    Конкретно это направление `-Vector3.zAxis`
-]=]
-struct.Front = enum.new("Front")
+	--[=[
+		Направление согласно `Enum.Axis`
 
---[=[
-    Направление согласно `Enum.Axis`
+		Конкретно это направление `-Vector3.zAxis`
+	]=]
+	Front = EnumItem:new({
+		name = "Front",
+	}),
 
-    Конкретно это направление `Vector3.zAxis`
-]=]
-struct.Back = enum.new("Back")
+	--[=[
+		Направление согласно `Enum.Axis`
 
---[=[
-    Является направлением __от__ центра мирового пространства
-    к этому центру, то есть это результат вычисления направления
-    куда нужно идти от центра мира, чтобы прийти сюда
-]=]
-struct.Center = enum.new("Center")
+		Конкретно это направление `Vector3.zAxis`
+	]=]
+	Back = EnumItem:new({
+		name = "Back",
+	}),
 
-return table.freeze(struct)
+	--[=[
+		Является направлением __от__ центра мирового пространства
+		к этому центру, то есть это результат вычисления направления,
+		куда нужно идти от центра мира, чтобы прийти сюда.
+	]=]
+	Center = EnumItem:new({
+		name = "Center",
+	}),
+})
+
+return class

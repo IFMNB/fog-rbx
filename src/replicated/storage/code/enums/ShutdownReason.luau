@@ -1,81 +1,93 @@
-const enum = require("@game/ReplicatedStorage/code/enum")
-const struct = {__index = enum}
-setmetatable(struct, struct)
+--!strict
 
-export type struct = typeof(struct)
+const EnumObject = require("../class/arch/EnumObject")
+const EnumItem = require("../class/arch/EnumItem")
 
-local sync_id: number = 61554
-local function get_id ()
-    sync_id += 1
-    return sync_id
-end
+local map : {}
 
+const class = EnumObject:new({
+	name = "CloseReason",
 
---[=[
-    Сервер был выключен в результате технических неполадок Roblox
-]=]
-struct.RobloxMaintenance = enum.new(get_id())
+	--[=[
+		Сервер был выключен в результате технических неполадок Roblox.
+	]=]
+	RobloxMaintenance = EnumItem:new({
+		name = "RobloxMaintenance",
+	}),
 
---[=[
-    Сервер был выключен из-за приказа о выключении, направленного
-    через дэшбоард сайт Roblox
-]=]
-struct.DeveloperShutdown = enum.new(get_id())
+	--[=[
+		Сервер был выключен из-за приказа о выключении, направленного
+		через дэшборд Roblox.
+	]=]
+	DeveloperShutdown = EnumItem:new({
+		name = "DeveloperShutdown",
+	}),
 
---[=[
-    Сервер был выключен в ходе рассылки обновлений через
-    дэшбоард сайт Roblox
-]=]
-struct.DeveloperUpdate = enum.new(get_id())
+	--[=[
+		Сервер был выключен в ходе рассылки обновлений через
+		дэшборд Roblox.
+	]=]
+	DeveloperUpdate = EnumItem:new({
+		name = "DeveloperUpdate",
+	}),
 
---[=[
-    На сервере не осталось игроков
-]=]
-struct.ServerEmpty = enum.new(get_id())
+	--[=[
+		На сервере не осталось игроков.
+	]=]
+	ServerEmpty = EnumItem:new({
+		name = "ServerEmpty",
+	}),
 
---[=[
-    Сервер, скорее всего, имел утечку памяти и был выключен в
-    результате переполнения доступного ОЗУ
-]=]
-struct.OutOfMemory = enum.new(get_id())
+	--[=[
+		Сервер, скорее всего, имел утечку памяти и был выключен
+		в результате переполнения доступного ОЗУ.
+	]=]
+	OutOfMemory = EnumItem:new({
+		name = "OutOfMemory",
+	}),
 
---[=[
-    Сервер был отключен в результате модерации Roblox
-]=]
-struct.Moderation = enum.new(get_id())
+	--[=[
+		Сервер был отключен в результате модерации Roblox.
+	]=]
+	Moderation = EnumItem:new({
+		name = "Moderation",
+	}),
 
---[=[
-    Сервер был выключен потому что был подан сигнал от разработчика
-    прямо на этом сервере
-]=]
-struct.ConsoleRequest = enum.new(get_id())
+	--[=[
+		Сервер был выключен потому, что был подан сигнал от разработчика
+		прямо на этом сервере.
+	]=]
+	ConsoleRequest = EnumItem:new({
+		name = "ConsoleRequest",
+	}),
 
---[=[
-    Сервер был выключен потому что его синглтон был освобожден
-    по неизвестной причине
-]=]
-struct.SingletoneDestroyed = enum.new(get_id())
+	--[=[
+		Сервер был выключен потому, что его синглтон был освобождён
+		по неизвестной причине.
+	]=]
+	SingletoneDestroyed = EnumItem:new({
+		name = "SingletoneDestroyed",
+	}),
 
---[=[
-    Сервер выключен по внутриигровой причине, такой как уничтожение
-    его экземпляра в ходе какого-либо режима игры
-]=]
-struct.GameReason = enum.new(get_id())
+	--[=[
+		Сервер выключен по внутриигровой причине, такой как уничтожение
+		его экземпляра в ходе какого-либо режима игры.
+	]=]
+	GameReason = EnumItem:new({
+		name = "GameReason",
+	}),
 
-const map = {
-    [Enum.CloseReason.Unknown] = struct.Unknown,
-    [Enum.CloseReason.ServerEmpty] = struct.ServerEmpty,
-    [Enum.CloseReason.RobloxMaintenance] = struct.RobloxMaintenance,
-    [Enum.CloseReason.OutOfMemory] = struct.OutOfMemory,
-    [Enum.CloseReason.Moderation] = struct.Moderation,
-    [Enum.CloseReason.DeveloperUpdate] = struct.DeveloperUpdate,
-    [Enum.CloseReason.DeveloperShutdown] = struct.DeveloperShutdown,
+})
+
+map = {
+	[Enum.CloseReason.Unknown] = class.Unknown,
+	[Enum.CloseReason.ServerEmpty] = class.ServerEmpty,
+	[Enum.CloseReason.RobloxMaintenance] = class.RobloxMaintenance,
+	[Enum.CloseReason.OutOfMemory] = class.OutOfMemory,
+	[Enum.CloseReason.Moderation] = class.Moderation,
+	[Enum.CloseReason.DeveloperUpdate] = class.DeveloperUpdate,
+	[Enum.CloseReason.DeveloperShutdown] = class.DeveloperShutdown,
 }
 
-function struct.map (with: Enum.CloseReason)
-    return map[with] or struct.Unknown
-end
 
-
-
-return table.freeze(struct)
+return class

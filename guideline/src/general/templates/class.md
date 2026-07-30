@@ -2,7 +2,7 @@
 
 const Storage = require("@game/ReplicatedStorage/code/class/storage/Storage")
 const Upload = require("@game/ReplicatedStorage/code/class/upload/Upload")
-const enum = require("@game/ReplicatedStorage/code/enum")
+const enum = require("../class/arch/enum")
 const object = require("@game/ReplicatedStorage/code/object")
 const namefield = require("@game/ReplicatedStorage/code/static/namefield")
 

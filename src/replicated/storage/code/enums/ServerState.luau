@@ -1,34 +1,50 @@
-const enum = require("@game/ReplicatedStorage/code/enum")
-const struct = {__index = enum}
-setmetatable(struct, struct)
+--!strict
 
---[=[
-    Сервер подготавливается к выключению, после конца текущей сессии
-    или активации сигнала выключения, сервер будет уничтожен
-]=]
-struct.PendingShutdown = enum.new("PendingShutdown")
+const EnumObject = require("../class/arch/EnumObject")
+const EnumItem = require("../class/arch/EnumItem")
+const declare = require("../static/declare")
 
---[=[
-    Сервер на данный момент выключается
-]=]
-struct.Shutdown = enum.new("Shutdown")
+const class = EnumObject:new({
+	name = "ServerState",
 
---[=[
-    Сервер был инициализирован сейчас, и на данный момент, проходит
-    проверки и подгружает информацию
-]=]
-struct.InitiatedNow = enum.new("InitiatedNow")
+	--[=[
+		Сервер подготавливается к выключению. После завершения текущей
+		сессии или активации сигнала выключения сервер будет уничтожен.
+	]=]
+	PendingShutdown = EnumItem:new({
+		name = "PendingShutdown",
+	}),
 
---[=[
-    Сервер в штатном состоянии
-]=]
-struct.Online = enum.new("Online")
+	--[=[
+		Сервер на данный момент выключается.
+	]=]
+	Shutdown = EnumItem:new({
+		name = "Shutdown",
+	}),
 
---[=[
-    По неизвестной причине сервер находится в критическом состоянии:
-    не отвечает на запросы, или не может продолжать игру, или что-то
-    иное, что не дает ему работать
-]=]
-struct.Critical = enum.new "Critical"
+	--[=[
+		Сервер был инициализирован только что и в данный момент проходит
+		проверки и подгружает информацию.
+	]=]
+	InitiatedNow = EnumItem:new({
+		name = "InitiatedNow",
+	}),
 
-return table.freeze(struct)
+	--[=[
+		Сервер находится в штатном состоянии.
+	]=]
+	Online = EnumItem:new({
+		name = "Online",
+	}),
+
+	--[=[
+		По неизвестной причине сервер находится в критическом состоянии:
+		не отвечает на запросы, не может продолжать игру или находится
+		в ином состоянии, не позволяющем ему работать.
+	]=]
+	Critical = EnumItem:new({
+		name = "Critical",
+	}),
+})
+
+return class

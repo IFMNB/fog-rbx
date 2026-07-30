@@ -9,20 +9,19 @@ const object = require("../object")
 const namefield = require("../static/namefield")
 const project = require("../static/project")
 
-const class = { __index = Record }
+const class = { __index =object }
 setmetatable(class, class)
 
 export type flat = {
-    read to: {string}?,
-    read loaded: {unknown}?,
-    read expected: typeof(enum.Unknown)?,
-    read rpc: boolean?,
-    read from: number?,
-    read sender: string?
+    read to: {string},
+    read loaded: {unknown},
+    read expected: any,
+    read rpc: boolean,
+    read from: number,
+    read sender: string
 }
-export type class<T... = ...unknown> = object.class<setmetatable<{
-	payload: () -> T...,
-}, {__index: typeof(class)}>>
+export type class = object.extend<setmetatable<{}, {__index: typeof(class)}>>
+export type extend<T = {}> = object.class<T, class>
 
 
 class.type = namefield.netpack
@@ -60,12 +59,12 @@ class.rpc = false
 --[=[
     Полезная нагрузка, упакованная в этом файле
 ]=]
-class.loaded = {}
+class.loaded = {} :: {[unknown]: unknown}
 
 class.sender = nil :: string?
 
-function class.new(to: {Player|User}?, ...: unknown)
-	const this = Record.new(class)
+function class.new <T...>(to: {Player|User}?, ...: any)
+	const this = object.new(class)
 	const set : {string} = {}
 
     to = to or {}
@@ -79,7 +78,7 @@ function class.new(to: {Player|User}?, ...: unknown)
         elseif project.this(that,"Player") then
 			table.insert(set, (that :: Player).User:ToString())
         else
-            project.console_output "unexpected valuetype from NetPack.class .to list"
+            project.console_out_error "unexpected valuetype from NetPack.class .to list"
             continue
         end
     end
@@ -87,7 +86,7 @@ function class.new(to: {Player|User}?, ...: unknown)
     for _, user_id in table.clone(set) :: {string} do
         const player = Players:GetPlayerByUserId(User.fromString(user_id) :: any)
         if (not player) then
-            project.console_output "value from NetPack.class .to isn't a UserId"
+            project.console_out_error "value from NetPack.class .to isn't a UserId"
             table.remove(this.to, table.find(this.to, user_id))
         end
     end
@@ -102,8 +101,9 @@ end
 ]=]
 function class.convert_flat(from: flat)
     const that = class.new(nil, unpack(from.loaded or {}))
-    
+
     if (type(from) == "table") then
+        that.expected = 0
 		that.rpc = from.rpc
 		that.to = from.to
 		that.expected = from.expected
@@ -126,7 +126,7 @@ end
     Полезная нагрузка, которая пришла с источника. Она никогда недоступна
     для изменения, это принципиальное правило класса
 ]=]
-function class:payload(): ...unknown
+function class:payload()
 	return self.loaded
 end
 
@@ -142,12 +142,17 @@ function class:get_players(): {Player}
         if (player) then
             table.insert(players, player)
         else
-            project.console_output "unexpected value for NetPack.class :get_players() from NetPack.class .to"
+            project.console_out_error "unexpected value for NetPack.class :get_players() from NetPack.class .to"
             continue
         end
     end
 
     return players
+end
+
+local f = class.new()
+for i,v in f.to do
+
 end
 
 --[=[
@@ -160,6 +165,7 @@ function class:is_me_sender (): boolean
     const this = self :: class
     
     if RunService:IsServer() then
+
         return this.sender == nil and this.from == NetSource.FromServer
     else
         return this.sender == (Players.LocalPlayer and Players.LocalPlayer.User:ToString()) and this.from ~= NetSource.FromServer

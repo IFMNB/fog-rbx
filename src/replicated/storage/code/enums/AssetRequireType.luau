@@ -1,35 +1,53 @@
-const enum = require("@game/ReplicatedStorage/code/enum")
-const struct = {__index = enum}
-setmetatable(struct, struct)
+--!strict
 
---[=[
-    Ожидает объект, тип которого соответствует этому значению
-]=]
-struct.Mesh = enum.new("Mesh")
+const EnumObject = require("../class/arch/EnumObject")
+const EnumItem = require("../class/arch/EnumItem")
+const declare = require("../static/declare")
 
---[=[
-    Ожидает объект, тип которого соответствует этому значению
-]=]
-struct.Animation = enum.new("Animation")
+const class = EnumObject:new({
+	name = "AssetRequireType",
 
---[=[
-    Ожидает объект, тип которого соответствует этому значению
-]=]
-struct.Module = enum.new("Module")
+	--[=[
+		Ожидает объект, тип которого соответствует этому значению.
+	]=]
+	Mesh = EnumItem:new({
+		name = "Mesh",
+	}),
 
---[=[
-    Ожидает объект, тип которого соответствует этому значению
-]=]
-struct.Image = enum.new("Image")
+	--[=[
+		Ожидает объект, тип которого соответствует этому значению.
+	]=]
+	Animation = EnumItem:new({
+		name = "Animation",
+	}),
 
---[=[
-    Ожидает объект, тип которого соответствует этому значению
-]=]
-struct.Sound = enum.new("Sound")
+	--[=[
+		Ожидает объект, тип которого соответствует этому значению.
+	]=]
+	Module = EnumItem:new({
+		name = "Module",
+	}),
 
---[=[
-    Ожидает объект, тип которого соответствует этому значению
-]=]
-struct.Model = enum.new("Model")
+	--[=[
+		Ожидает объект, тип которого соответствует этому значению.
+	]=]
+	Image = EnumItem:new({
+		name = "Image",
+	}),
 
-return table.freeze(struct)
+	--[=[
+		Ожидает объект, тип которого соответствует этому значению.
+	]=]
+	Sound = EnumItem:new({
+		name = "Sound",
+	}),
+
+	--[=[
+		Ожидает объект, тип которого соответствует этому значению.
+	]=]
+	Model = EnumItem:new({
+		name = "Model",
+	}),
+})
+
+return class

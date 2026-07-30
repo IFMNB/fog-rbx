@@ -1,10 +1,23 @@
-const enum = require("@game/ReplicatedStorage/code/enum")
-const struct = { __index = enum }
-setmetatable(struct, struct)
+--!strict
 
-struct.Konsole = enum.new "Konsole"
-struct.Cmdr = enum.new "Cmdr"
+const EnumObject = require("../class/arch/EnumObject")
+const EnumItem = require("../class/arch/EnumItem")
+const declare = require("../static/declare")
 
-struct.ActMap = enum.new "ActMap"
+const class = EnumObject:new({
+	name = "CommandSource",
 
-return table.freeze(struct)
+	Konsole = EnumItem:new({
+		name = "Konsole",
+	}),
+
+	Cmdr = EnumItem:new({
+		name = "Cmdr",
+	}),
+
+	ActMap = EnumItem:new({
+		name = "ActMap",
+	}),
+})
+
+return class

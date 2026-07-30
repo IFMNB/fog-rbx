@@ -1,19 +1,29 @@
-const enum = require("@game/ReplicatedStorage/code/enum")
-const struct = {__index = enum}
-setmetatable(struct, struct)
+--!strict
 
---[=[
-    Агент получает одноразовый сигнал, который предлагает
-    ему запустить выполнение той или иной задачи
+const EnumObject = require("../class/arch/EnumObject")
+const EnumItem = require("../class/arch/EnumItem")
+const declare = require("../static/declare")
 
-    Это сигнал к действию
-]=]
-struct.Send = enum.new("Send")
+const class = EnumObject:new({
+	name = "AgentEventType",
 
---[=[
-    Агент получает событие, которое обязывает его запустить
-    выполнение того или иного действия
-]=]
-struct.Order = enum.new("Order")
+    --[=[
+        Агент получает одноразовый сигнал, который предлагает
+        ему запустить выполнение той или иной задачи
 
-return table.freeze(struct)
+        Это сигнал к действию
+    ]=]
+    Send = EnumItem:new({
+        name = "Send"
+    }),
+
+    --[=[
+        Агент получает событие, которое обязывает его запустить
+        выполнение того или иного действия
+    ]=]
+    Order = EnumItem:new({
+        name = "Order"
+    })
+})
+
+return class

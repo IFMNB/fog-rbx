@@ -1,10 +1,15 @@
-const enum = require("@game/ReplicatedStorage/code/enum")
-const struct = {__index = enum}
-setmetatable(struct, struct)
+--!strict
 
---[=[
-    Обязывает Агента вызвать функцию с определенным названием
-]=]
-struct.Execute = enum.new("Execute")
+const EnumObject = require("../class/arch/EnumObject")
+const EnumItem = require("../class/arch/EnumItem")
+const declare = require("../static/declare")
 
-return table.freeze(struct)
+const class = EnumObject:new({
+	name = "AgentOrderNotificationType",
+
+	Executre = EnumItem:new({
+		name = "Execute",
+	}),
+})
+
+return class
