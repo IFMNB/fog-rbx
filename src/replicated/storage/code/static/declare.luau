@@ -182,7 +182,7 @@ export type asset<T = unknown> = construct<{
     read rid: number,
     state: enumitem,
 
-    read get_asset: (self: asset<T>) -> T
+    read get_asset: (self: asset<T>) -> T?
 }, runtimeobject>
 
 
