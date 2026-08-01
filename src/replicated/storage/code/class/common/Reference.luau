@@ -1,7 +1,6 @@
 --!strict
 const Notification = require("@game/ReplicatedStorage/code/class/common/Notification")
-const InstanceNotificationVariant =
-	require("@game/ReplicatedStorage/code/enums/notifications/InstanceNotificationVariant")
+const InstanceNotificationVariant = require("@game/ReplicatedStorage/code/enums/notifications/InstanceNotificationVariant")
 const runtimeobject = require("@game/ReplicatedStorage/code/runtimeobject")
 const declare = require("@game/ReplicatedStorage/code/static/declare")
 const namefield = require("@game/ReplicatedStorage/code/static/namefield")

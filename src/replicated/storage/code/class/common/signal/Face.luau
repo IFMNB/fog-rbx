@@ -1,6 +1,9 @@
 --!strict
 
 const NotificationVariant = require("@game/ReplicatedStorage/code/enums/notifications/NotificationVariant")
+const MessageNotificationVariant =
+	require("@game/ReplicatedStorage/code/enums/notifications/message/MessageNotificationVariant")
+const project = require("@game/ReplicatedStorage/code/static/project")
 const ConnectionMode = require("../../../enums/ConnectionMode")
 const ConnectionState = require("../../../enums/ConnectionState")
 const runtimeobject = require("../../../runtimeobject")
@@ -18,9 +21,16 @@ const class: declare.face = runtimeobject:new({
 		f: ((...any) -> ()) | thread | declare.runtimeobject,
 		call_on: declare.enumitem?
 	): declare.connection
-		const connection = Connection:new({
-			call_on = (self.is(call_on, "enumitem") and call_on or nil) :: declare.enumitem,
-		})
+		const enumitem_callon = (self.is(call_on, "enumitem") and call_on or NotificationVariant.Any) :: declare.enumitem
+		const connection = Connection:new({ call_on = enumitem_callon })
+		const lambda = function(notification: declare.notification<declare.notification>)
+			const packed_notification = notification:get_packed() :: declare.notification
+			if self.is(packed_notification, namefield.notification) then
+				connection:notificate(packed_notification)
+			else
+				project.console_out_error("face got a non-notification object, ignoring")
+			end
+		end
 
 		connection:notificate(Notification:new({
 			call_on = NotificationVariant.Setup,
@@ -29,9 +39,11 @@ const class: declare.face = runtimeobject:new({
 
 		connection:toggle_notice(function(notification)
 			self:toggle_notice(connection)
+			self:toggle_notice(lambda)
 		end, ConnectionState.Dead, ConnectionMode.Once)
 
-		self:toggle_notice(connection, NotificationVariant.Emit, ConnectionMode.Connection)
+		table.insert(private.face_created_connections[self], connection)
+		self:toggle_notice(lambda, private.main_invoker, ConnectionMode.Connection)
 		self:notificate(Notification:new({ pack = { connection }, call_on = NotificationVariant.ConnectionAdded }))
 
 		return connection
@@ -42,9 +54,17 @@ const class: declare.face = runtimeobject:new({
 		f: ((...any) -> ()) | thread | declare.runtimeobject,
 		call_on: declare.enumitem?
 	): declare.connection
-		const connection = Connection:new({
-			call_on = (self.is(call_on, "enumitem") and call_on or nil) :: declare.enumitem,
-		})
+		const enumitem_callon = (self.is(call_on, "enumitem") and call_on or NotificationVariant.Any) :: declare.enumitem
+		const connection = Connection:new({ call_on = enumitem_callon })
+		const lambda = function(notification: declare.notification<declare.notification>)
+			const packed_notification = notification:get_packed() :: declare.notification
+			if self.is(packed_notification, namefield.notification) then
+				connection:notificate(packed_notification)
+				connection:disconnect()
+			else
+				project.console_out_error("face got a non-notification object, ignoring")
+			end
+		end
 
 		connection:notificate(Notification:new({
 			call_on = NotificationVariant.Setup,
@@ -53,16 +73,11 @@ const class: declare.face = runtimeobject:new({
 
 		connection:toggle_notice(function(notification)
 			self:toggle_notice(connection)
-			self:notificate(Notification:new({ pack = { connection }, call_on = NotificationVariant.ConnectionRemoved }))
-
-            const pos = table.find(private.face_created_connections[self], connection)
-            if pos then
-                table.remove(private.face_created_connections[self], pos)
-            end
+			self:toggle_notice(lambda)
 		end, ConnectionState.Dead, ConnectionMode.Once)
 
-        table.insert(private.face_created_connections[self], connection)
-		self:toggle_notice(connection, NotificationVariant.Emit, ConnectionMode.Once)
+		table.insert(private.face_created_connections[self], connection)
+		self:toggle_notice(lambda, private.main_invoker, ConnectionMode.Connection)
 		self:notificate(Notification:new({ pack = { connection }, call_on = NotificationVariant.ConnectionAdded }))
 
 		return connection
@@ -83,14 +98,23 @@ const class: declare.face = runtimeobject:new({
 		that:unlink(self)
 		self:notificate(Notification:new({ call_on = NotificationVariant.ConnectionRemoved }))
 	end,
+
+	invoke = function(self: declare.face, notification: declare.notification?): ()
+		self:notificate(Notification:new({
+			call_on = private.main_invoker,
+			pack = { notification or Notification:new({ call_on = NotificationVariant.Any }) },
+		}))
+	end,
 })
 
 class:toggle_host(function(new: declare.face)
-    private.face_created_connections[new] = {}
+	private.face_created_connections[new] = {}
 end)
 
 do
-    private.face_created_connections = setmetatable({} :: {[declare.face]: {declare.connection}}, table.freeze {__mode = "ks"})
+	private.main_invoker = MessageNotificationVariant.Invoke
+	private.face_created_connections =
+		setmetatable({} :: { [declare.face]: { declare.connection } }, table.freeze({ __mode = "ks" }))
 end
 
 return class

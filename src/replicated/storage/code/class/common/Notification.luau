@@ -1,14 +1,14 @@
 --!strict
 
-const runtimeobject = require("../../runtimeobject")
+const object = require("@game/ReplicatedStorage/code/object")
 const declare = require("../../static/declare")
 const namefield = require("../../static/namefield")
 const EnumObject = require("../arch/EnumObject")
 
-const class : declare.notification = runtimeobject:new({
+const class : declare.notification = object:new({
     type = namefield.notification,
     pack = {},
-    call_on = EnumObject.Unknown :: declare.enumitem|declare.runtimeobject,
+    call_on = EnumObject.Unknown,
 
     get_packed = function (self: declare.notification) : ...any
         return type(self.pack) == "table" and unpack(self.pack) or nil

@@ -1,102 +1,70 @@
 --!strict
-
 const AssetService = game:GetService("AssetService")
-const object = require "@game/ReplicatedStorage/code/object"
-const Disposable = require("../../Disposable")
-const project = require("../../static/project")
-const Result = require("../../struct/Result")
-const AssetRequireType = require("../../enums/AssetRequireType")
-const Storage = require("../storage/Storage")
-const namefield = require "@game/ReplicatedStorage/code/static/namefield"
+const Notification = require("@game/ReplicatedStorage/code/class/common/Notification")
+const AssetStateVariant = require("@game/ReplicatedStorage/code/enums/descriptor/AssetStateVariant")
+const AssetRequireNotificationVariant = require("@game/ReplicatedStorage/code/enums/notifications/AssetRequireNotificationVariant")
+const AssetVariant = require("@game/ReplicatedStorage/code/enums/required/AssetVariant")
+const runtimeobject = require("@game/ReplicatedStorage/code/runtimeobject")
+const declare = require("@game/ReplicatedStorage/code/static/declare")
+const namefield = require("@game/ReplicatedStorage/code/static/namefield")
+const project = require("@game/ReplicatedStorage/code/static/project")
 
 const private = {}
-const class = {}
-setmetatable(class, {__index = Disposable})
+const class: declare.asset = runtimeobject:new({
+	type = namefield.asset,
+	variant = AssetVariant.Unknown,
+	rid = 0,
+	state = AssetStateVariant.Never,
 
-export type class <T = unknown> = Disposable.extend<setmetatable<{
-    get_asset: (self: unknown) -> Result.class<T>
-}, {__index: typeof(class)}>>
-export type extend<T = {}> = object.class<T, class>
+	get_asset = function(self: declare.asset): any
+        if self.state ~= AssetStateVariant.Never then 
+            self.state = AssetStateVariant.Reload
+        end
 
-class.type = namefield.asset
-class.required = 0
-class.cached = Result
+        local loader = private.loaders[self.variant]
 
+        if not loader then
+            self.state = AssetStateVariant.Unknown
+            project.console_out_error("unknown AssetVariant")
+            return nil
+        end
 
-function class.new ()
-    const this = Disposable.new(class)
-    return this
+        self.state = AssetStateVariant.Making
+	    self:notificate(Notification:new({ call_on = AssetRequireNotificationVariant.Loading }))
+        local ok, result = pcall(loader, self)
+
+        if ok then
+            self.state = AssetStateVariant.Loaded
+            self:notificate(Notification:new {call_on = AssetRequireNotificationVariant.Successful, pack = {result}})
+            return result
+        else
+            self.state = AssetStateVariant.Fail
+    		self:notificate(Notification:new({ call_on = AssetRequireNotificationVariant.Failure, pack = { result } }))
+            project.console_out_error(result)
+            return nil
+        end
+    end,
+})
+
+do
+	private.loaders = table.freeze({
+
+		[AssetVariant.Model] = function(that: declare.asset): Instance
+			return AssetService:LoadAssetAsync(that.rid)
+		end,
+
+		[AssetVariant.Sound] = function(that: declare.asset): Sound
+			local sound = Instance.new("Sound")
+			sound.SoundId = string.format("rbxassetid://%d", that.rid)
+			return sound
+		end,
+
+		[AssetVariant.Image] = function(that: declare.asset): ImageLabel
+			local image = Instance.new("ImageLabel")
+			image.Image = string.format("rbxassetid://%d", that.rid)
+			return image
+		end,
+	}) :: { [declare.enumitem]: (declare.asset) -> unknown }
 end
 
-function class:set_require_type (asset_require_type: number?)
-    private.metadata:fetch(self).require_type = asset_require_type or AssetRequireType.Unknown
-end
-
-function class:get_require_type () : number
-    return private.metadata:fetch(self).require_type or AssetRequireType.Unknown
-end
-
-function class:is_expected_required_type (with: number?) : boolean
-    const required_type = self:get_require_type()
-    return with and required_type == with or required_type == AssetRequireType.Unknown
-end
-
---[[Конкатенация ID ассета в полноценный URI типа rbxassetid://1234567890]]
-@[deprecated {
-    use = "Roblox API: Content",
-    reason = "Новый API Content унифицирован и определенно может заменить assetid. Некоторые RbxAPI, впрочем, могут его не поддерживать",
-}]
-function class:get_roblox_uri ()
-    return "rbxassetid://"..tostring(self.required)
-end
-
-function class:get_asset () : Result.class
-    const this = (self::any) :: class
-    const loader = private.loaders[this:get_require_type()] or private.loaders[AssetRequireType.Unknown]
-
-    if (this.required == 0) then
-        project.console_out_error "Asset.class @required == 0, abort"
-        return this.cached
-    end
-
-    if (this.cached ~= Result) then
-        Disposable.queue_free(this.cached)
-    end
-
-    this.cached = Result.call_of(loader, this)
-    return this.cached
-end
-
-private.loaders = table.freeze {
-    [AssetRequireType.Animation] = function (this: class)
-        const result = Instance.new "Animation"
-        result.AnimationContent = Content.fromAssetId(this.required)
-        return result
-    end,
-    [AssetRequireType.Image] = function (this: class)
-        const result = Instance.new "ImageLabel"
-        result.ImageContent = Content.fromAssetId(this.required)
-        return result
-    end,
-    [AssetRequireType.Mesh] = function (this: class)
-        return AssetService:CreateMeshPartAsync(Content.fromAssetId(this.required))
-    end,
-    [AssetRequireType.Model] = function (this: class)
-        return AssetService:LoadAssetAsync(this.required)
-    end,
-    [AssetRequireType.Module] = function (this: class)
-        return require(this:get_roblox_uri()) :: unknown
-    end,
-    [AssetRequireType.Sound] = function (this: class)
-        const result = Instance.new "Sound"
-        result.SoundId = this:get_roblox_uri()
-        return result        
-    end,
-    [AssetRequireType.Unknown] = function (this: class)
-        return project.console_out_error "unknown AssetRequireType"
-    end
-} :: {(class) -> any}
-
-private.metadata = Storage.new()
-
-return table.freeze(class)
+return class

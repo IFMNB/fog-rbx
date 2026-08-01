@@ -35,7 +35,9 @@ const class: declare.object = {
 		while base do
 			const state, cached = private.get_cached_direct(base)
 			if state then
-				return cached.__type == that
+				if cached.__type == that then
+					return true
+				end
 			end
 
 			base = private.ever[base]
@@ -79,7 +81,7 @@ const class: declare.object = {
 do --private_region
 	type cached <T = declare.object, U = unknown> = {
 		__index: U,
-		__metatable: empty.instance,
+		__metatable: empty.instance|nil|string,
 		__type: string,
 
 		self: unknown,
@@ -121,7 +123,7 @@ do --private_region
 		const meta: cached = private.cached[this]
 			or {
 				__index = parent,
-				__metatable = empty,
+				__metatable = if not project.prototype_oop then nil else if project.develop or project.debug then "<metatable>" else empty,
 				__type = Ttype == "table" and tostring((this :: any).type) or Ttype,
 
 				self = this,
@@ -178,7 +180,7 @@ do --private_region
 		const hierarchy =  private.get_hierarchy <<declare.object, unknown>> (new)
 		const count = #hierarchy
 
-		for i = count, count, -1 do
+		for i = count, 1, -1 do
 			const cached = hierarchy[i]
 			private.wake_hosts(cached, new)
 		end
@@ -197,7 +199,7 @@ end
 
 if project.debug then
 	class:toggle_host(function(new: declare.object)
-		project.console_out("created a new ", new.type," object", new, "hosts:", private.get_hierarchy(new))
+		project.console_out(string.format("new %s object", new.type))
 	end)
 end
 

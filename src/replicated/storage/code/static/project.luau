@@ -101,7 +101,7 @@ do
 	--[=[
 		Применяются особые условия
 	]=]
-	project.develop = true
+	project.develop = false
 end
 
 do --debug
@@ -114,7 +114,7 @@ do --debug
 	--[=[
 		Выводить ли сообщения в консоль?
 	]=]
-	project.debug_messages = (project.develop and "strict" or project.debug and "soft" or "important") :: "nope" | "strict" | "soft"|"important"
+	project.debug_messages = (project.develop and "strict" or project.debug and "important" or "soft") :: "nope" | "strict" | "soft"|"important"
 
 	--[=[
 		Если включен, то хосты будут проверяться на удаление из списка
@@ -495,11 +495,11 @@ function project.console_out (write, ...): console_out_type
 
 	write = write ~= nil and write or "*unknown message*"
 	if project.debug_messages == "strict" then
-		return warn(string.format("%s\n", debug.traceback()), ...)
+		return warn(string.format("%s\n%s", write, debug.traceback()), ...)
 	elseif project.debug_messages == "important" then
-		return warn(string.format("%s\n", debug.traceback()), ...)
+		return warn(write, ...)
 	else
-		return print(string.format("%s\n", debug.traceback()), ...)
+		return print(string.format("%s\n%s", write, debug.traceback()), ...)
 	end
 end
 

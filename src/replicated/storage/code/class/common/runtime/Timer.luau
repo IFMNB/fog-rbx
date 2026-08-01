@@ -1,87 +1,111 @@
 --!strict
 const Notification = require("@game/ReplicatedStorage/code/class/common/Notification")
+const Controller = require("@game/ReplicatedStorage/code/class/common/runtime/Controller")
+const ConnectionMode = require("@game/ReplicatedStorage/code/enums/ConnectionMode")
+const ControllerNotificationVariant =
+	require("@game/ReplicatedStorage/code/enums/notifications/ControllerNotificationVariant")
 const NotificationType = require("@game/ReplicatedStorage/code/enums/notifications/NotificationVariant")
 const runtimeobject = require("@game/ReplicatedStorage/code/runtimeobject")
 const declare = require("@game/ReplicatedStorage/code/static/declare")
 const namefield = require("@game/ReplicatedStorage/code/static/namefield")
-const project = require("@game/ReplicatedStorage/code/static/project")
 
 const private = {}
-const class : declare.timer = runtimeobject:new {
+const class: declare.timer = runtimeobject:new({
 	type = namefield.timer,
 	seconds = 1,
 	modifier = 1,
 	iterate = 1,
+	previous_stepped = DateTime.now(),
 
-	wait = function (self: declare.timer) : ()
+	wait = function(self: declare.timer): ()
 		self:get_notification_event():wait(NotificationType.Stepped)
 	end,
 
-	bind = function (self: declare.timer, f: (()->())|thread) : declare.connection
-		return self:get_notification_event():once(f :: ((...any)->()|thread), NotificationType.Stepped)
+	bind = function(self: declare.timer, f: (() -> ()) | thread): declare.connection
+		return self:get_notification_event():connect(f :: (...any) -> () | thread, NotificationType.Stepped)
 	end,
 
-	continue = function (self: declare.timer) : ()
-		const tasked = private.get_task(self)
-		const status = coroutine.status(tasked)
-
-		if status == "suspended" then
-			task.spawn(tasked)
-		elseif status == "dead" then
-			project.console_out_error "timer cannot reach his task"
-		end
-	end,
-
-	pause = function (self: declare.timer) : ()
-		task.cancel(private.get_task(self))
-		private.tasks[self] = nil
-	end,
-
-	reset = function (self: declare.timer) : ()
-		private.holds[self] = self.seconds
-	end,
-
-	schedule = function (self: declare.timer) : ()
-		task.delay(self.seconds, function ()
-			self:notificate(Notification:new {
-				call_on = NotificationType.Stepped
-			})
+	schedule = function(self: declare.timer): ()
+		task.delay(self.seconds, function()
+			self:notificate(Notification:new({
+				call_on = NotificationType.Stepped,
+			}))
 		end)
-	end
-}
+	end,
+
+	get_delta = function(self: declare.timer): number
+		return DateTime.now().UnixTimestampMillis - self.previous_stepped.UnixTimestampMillis
+	end,
+
+	get_control = function(self: declare.timer): declare.controller
+		return private.ctrls[self]
+	end,
+})
 
 class:toggle_host(function(new: declare.timer)
-	new:reset()
-	new:pause()
+	const date = DateTime.now()
+	const control = Controller:new()
+	const loop = private.get_loop(new)
+
+	new.previous_stepped = date
+	private.ctrls[new] = control
+
+	control:toggle_notice(function()
+		if not private.tasks[new] then
+			private.tasks[new] = task.spawn(loop)
+		end
+
+	end, ControllerNotificationVariant.Continue, ConnectionMode.Connection)
+
+	control:toggle_notice(function()
+		if private.tasks[new] then
+			if coroutine.status(private.tasks[new]) ~= "dead" then
+				task.cancel(private.tasks[new])
+			end
+			
+			private.tasks[new] = nil
+		end
+	end, ControllerNotificationVariant.Pause, ConnectionMode.Connection)
+
+	control:toggle_notice(function()
+		private.holds[new.identity] = new.seconds
+	end, ControllerNotificationVariant.Reset, ConnectionMode.Connection)
 end)
 
 do
-	private.frozen = table.freeze {__mode = "ks"}
-	private.tasks = setmetatable({} :: {[declare.timer]: thread}, private.frozen)
-	private.holds = setmetatable({} :: {[declare.timer]: number}, private.frozen)
+	private.frozen = table.freeze({ __mode = "ks" })
+	private.tasks = setmetatable({} :: { [declare.timer]: thread }, private.frozen)
+	private.holds = setmetatable({} :: { [unknown]: number }, private.frozen)
+	private.ctrls = setmetatable({} :: { [declare.timer]: declare.controller }, private.frozen)
 
-	function private.get_task (to: declare.timer)
-		const tasked = private.tasks[to] or coroutine.create(function ()
-			const notification = Notification:new {
-				call_on = NotificationType.Stepped
-			}
-			
-			while private.holds[to] > 0 do
-				private.holds[to] -= 1
+	function private.get_loop(new: declare.timer)
+		const modificator = new.modifier
+		const iterate = new.iterate
+		const identity = new.identity
+		private.holds[identity] = private.holds[identity] or new.seconds
 
-				for i = 1, to.iterate do
-					to:notificate(notification)
+		return function()
+			while private.holds[identity] > 0 do
+				const that = class.require(identity)
+
+				if that == nil then
+					break
 				end
 
-				task.wait(1 * to.modifier)
+				if class.is(that, "timer") then
+					const me = that :: declare.timer
+
+					for i = 1, iterate do
+						me:notificate(Notification:new({ call_on = NotificationType.Stepped }))
+					end
+				end
+
+				private.holds[identity] -= 1
+				task.wait(1 * modificator)
 			end
 
-			private.tasks[to] = nil
-		end)
-
-		private.tasks[to] = tasked
-		
-		return tasked
+			task.cancel(coroutine.running())
+		end
 	end
 end
 

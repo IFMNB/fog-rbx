@@ -8,7 +8,9 @@ const namefield = require("@game/ReplicatedStorage/code/static/namefield")
 const class : declare.enumobject = object:new({
     type = namefield.enumobject,
     Unknown = EnumItem:new({name = "Unknown"}),
+    Any = EnumItem:new({name = "Any"}),
     name = "EnumObject",
+
 
     get_enums_list = function <T> (self: declare.enumobject) 
         const result: { declare.enumitem } = {}

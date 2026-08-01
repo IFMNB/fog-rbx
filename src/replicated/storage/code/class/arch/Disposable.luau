@@ -92,9 +92,6 @@ class:toggle_host(function(new: declare.disposable)
     end, NotificationVariant.PreRelease, ConnectionMode.Once)
 end)
 
-class:toggle_state(DisposableStateVariant.Normal)
-
-
 do
     type direct = {
         self: declare.disposable,
@@ -106,6 +103,8 @@ do
     function private.get_direct (of: declare.disposable)
         return private.objects[of.identity] or { self = of, states = { }} :: direct
     end
+    
+	class:toggle_state(DisposableStateVariant.Normal)
 end
 
 return class

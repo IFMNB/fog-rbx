@@ -27,7 +27,9 @@ type instanceable<T = {},U = Instance> = {
 type expected_calltype <T=unknown> = {
     call_on: T
 }
-type nameable <T="*no name*"> = { name: T|string }
+type nameable <T=string> = {
+    name: T|string
+}
 type math_operations<T=unknown,U... = ()> = {
     read multiple: (self: T, to: number) -> U...,
     read divide: (self: T, to: number) -> U...,
@@ -78,13 +80,15 @@ type loopable<T = unknown> = {
 type referenceable<T = unknown, U = unknown> = {
     read get_reference: (self: T) -> reference<U>,
 }
-type scheduleable<T = unknown> = {
-    read get_schedule: (self: T) -> schedule
+
+type reloadable<T = unknown> = {
+    read reload: (self: T) -> ()
 }
 
 export type enumobject<T = enumobject> = construct<{
     read type: namefield.enumobject,
     read Unknown: enumitem,
+    read Any: enumitem,
 
     read get_enums_list: (self: enumobject) -> {enumitem},                        
     read get_enums_count: (self: enumobject) -> number,
@@ -98,7 +102,12 @@ export type enumitem = construct<{
     read hashlink: number,
 } & nameable<string>, object>
 
+export type notification<T...=...unknown> = construct<{
+    read type: namefield.notification,
+    pack: {unknown},
 
+    read get_packed: (self: notification<T...>) -> T...
+} & expected_calltype<enumitem>, object>
 
 
 export type runtimeobject = construct<{
@@ -106,23 +115,19 @@ export type runtimeobject = construct<{
     created_at: DateTime,
  
     read get_notification_event: (self: runtimeobject) -> face<notification>,
-    read toggle_notice: (self: runtimeobject, f: (notification: notification) -> ()|thread|runtimeobject, call_on: enumitem|runtimeobject?, mode: enumitem?) -> (),
-    read notificate: (self: runtimeobject, notification: notification?) -> ()
+    read toggle_notice: (self: runtimeobject, f: (notification: notification) -> ()|thread|runtimeobject, call_on: enumitem?, mode: enumitem?) -> (),
+    read notificate: (self: runtimeobject, notification: notification?) -> (),
 }, object>
 
-export type notification<T...=...unknown> = construct<{
-    read type: namefield.notification,
-    pack: {unknown},
 
-    read get_packed: (self: notification<T...>) -> T...
-} & expected_calltype<enumitem|runtimeobject>, runtimeobject>
 
 export type face<T... = ...face_default_type> = construct<{
     read type: namefield.face,
 
     read connect: (self: face<T...>, f: ((T...) -> ())|thread|runtimeobject, call_on: enumitem?) -> connection,
     read once: (self: face<T...>, f: ((T...) -> ())|thread|runtimeobject, call_on: enumitem?) -> connection,
-    read wait: (self: face<T...>, call_on: enumitem?) -> T...
+    read wait: (self: face<T...>, call_on: enumitem?) -> T...,
+    read invoke: (self: face<T...>, notification: notification?) -> ()
 } & linkable<face<T...>, connection>, runtimeobject> 
 
 export type connection = construct<{
@@ -130,6 +135,7 @@ export type connection = construct<{
     state: enumitem,
 
     read disconnect: (self: connection) -> (),
+    read reload: (self: connection) -> (),
 } & linkable<connection, face> & expected_calltype<enumitem>, runtimeobject>
 
 export type value<T = unknown> = construct<{
@@ -144,11 +150,14 @@ export type value<T = unknown> = construct<{
 export type timer = construct<{
     read type: namefield.timer,
     seconds: number,
+    previous_stepped: DateTime,
 
     read schedule: (self: timer) -> (),
     read wait: (self: timer) -> (),
     read bind: (self: timer, f: (()->())|thread) -> connection,
-} & iterations<number> & modifier<number> & operatable<timer>, runtimeobject>
+    
+    read get_delta: (self: timer) -> number,
+} & iterations<number> & modifier<number> & controllable<timer>, runtimeobject>
 
 export type maybe = construct<{
     read type: namefield.maybe,
@@ -167,9 +176,14 @@ export type controller = construct<{
     state: enumitem
 } & operatable<controller>, runtimeobject>
 
-export type schedule = construct<{
-    read type: namefield.schedule,
-} & loopable<schedule> & controllable<schedule>, runtimeobject>
+export type asset<T = unknown> = construct<{
+    read type: namefield.asset,
+    read variant: enumitem,
+    read rid: number,
+    state: enumitem,
+
+    read get_asset: (self: asset<T>) -> T
+}, runtimeobject>
 
 
 
@@ -191,7 +205,6 @@ export type attribute<T = unknown, U = Instance> = construct<{
 export type node<T = Instance> = construct<{
     read type: namefield.node,
 
-
     read get_attribute_list: (self: node<T>) -> {value},
     read get_attribute: (self: node<T>, name: string) -> value?,
     read add_attribute: (self: node<T>, name: string) -> value,
@@ -203,9 +216,12 @@ export type noderuntime<T = Instance> = construct<{
     last_delta: number,
     last_emit: number,
 
-    process: (self: node<T>, delta: number) -> (),
-    simulate: (self: node<T>, delta: number) -> (),
-} & scheduleable<noderuntime<T>>, node<T>>
+    process: (self: noderuntime<T>, delta: number) -> (),
+    simulate: (self: noderuntime<T>, delta: number) -> (),
+    read get_runtime: (self: noderuntime<T>) -> timer,
+}, node<T>>
+
+local x : noderuntime
 
 
 

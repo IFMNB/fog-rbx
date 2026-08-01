@@ -1,8 +1,8 @@
 --!strict
+const Attribute = require("@game/ReplicatedStorage/code/class/actors/Attribute")
 const Disposable = require("@game/ReplicatedStorage/code/class/arch/Disposable")
+const Maybe = require("@game/ReplicatedStorage/code/class/common/Maybe")
 const Reference = require("@game/ReplicatedStorage/code/class/common/Reference")
-const Maybe = require("@game/ReplicatedStorage/code/class/lazystorage/Maybe")
-const Attribute = require("@game/ReplicatedStorage/code/class/rbxwrap/Attribute")
 const NotificationVariant = require("@game/ReplicatedStorage/code/enums/notifications/NotificationVariant")
 const declare = require("@game/ReplicatedStorage/code/static/declare")
 const namefield = require("@game/ReplicatedStorage/code/static/namefield")

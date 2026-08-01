@@ -1,5 +1,7 @@
 --!strict
 
+const ConnectionMode = require("@game/ReplicatedStorage/code/enums/ConnectionMode")
+const NotificationVariant = require("@game/ReplicatedStorage/code/enums/notifications/NotificationVariant")
 const object = require("./object")
 const declare = require("./static/declare")
 const namefield = require("./static/namefield")
@@ -18,32 +20,36 @@ const class: declare.runtimeobject = object:new({
 		return notifications.static
     end,
 
-	toggle_notice = function (self: declare.runtimeobject, f: (notification: declare.notification) -> ()|thread|declare.runtimeobject, call_on: declare.enumitem|declare.runtimeobject?, mode: declare.enumitem?) : ()
-		const notice_registry= private.direct_notificatios[self] or {}
+	toggle_notice = function (self: declare.runtimeobject, f: (notification: declare.notification) -> ()|thread|declare.runtimeobject, call_on: declare.enumitem?, mode: declare.enumitem?) : ()
+		const notice_registry= private.direct_notificatios[self]
 		if notice_registry[f] then
 			notice_registry[f] = nil
 		else
-			notice_registry[f] = table.freeze {
-				mode = mode,
-				call_on = call_on
+			notice_registry[f] = {
+				mode = mode or ConnectionMode.Once,
+				call_on = call_on or NotificationVariant.Unknown
 			}
 		end
-
-		private.direct_notificatios[self] = notice_registry
 	end,
 
 	notificate = function (self: declare.runtimeobject, notification: declare.notification?) : ()
-		private.notificate_notice(self, notification or (require "../code/class/common/Notification" :: declare.notification):new())
-		
+		const Notification = require "../code/class/common/Notification" :: declare.notification
+		const relevant_notification = notification or Notification:new()
+		private.notificate_notice(self, relevant_notification)
+
 		const face = private.notification_events[self]
 		if face then
-			face.static:notificate(notification)
+			face.static:invoke(relevant_notification)
 		end
     end,
 })
  
 class:toggle_host(function(new: declare.runtimeobject)
+	private.direct_notificatios[new] = {}
 	new.created_at = DateTime.now()
+	new:toggle_notice(function ()
+		project.console_out(string.format("%q %s", new.type, "got a pre-release notification"))
+	end, NotificationVariant.PreRelease, ConnectionMode.Connection)
 end)
 
 do
@@ -57,7 +63,7 @@ do
 	}
 
     private.notification_events = setmetatable({} :: {[declare.runtimeobject]: notifications?}, {__mode='ks'})
-	private.direct_notificatios = setmetatable({} :: {[declare.runtimeobject]: {[unknown]: direct?}?}, {__mode='ks'})
+	private.direct_notificatios = setmetatable({} :: {[declare.runtimeobject]: {[unknown]: direct?}}, {__mode='ks'})
 
 	function private.notificate_notice (self: declare.runtimeobject, notification: declare.notification, ...)
 		const notice_registry = private.direct_notificatios[self]
@@ -71,7 +77,7 @@ do
 				if v.mode == require("./enums/ConnectionMode").Once then
 					notice_registry[i] = nil
 				end
-
+				
 				const result = project.run(i, notification, ...)
 				if result == 4 then
 					error "todo signal"
@@ -80,7 +86,7 @@ do
 						(i :: declare.runtimeobject):notificate(notification, ...)
 					else
 						notice_registry[i] = nil
-						project.console_out("unknown call with post 0")
+						project.console_out("unknown call with post 0", notification.call_on.name, tostring(i))
 					end
 				end
 			end
