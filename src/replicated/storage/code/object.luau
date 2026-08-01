@@ -70,6 +70,10 @@ const class: declare.object = {
 			return
 		end
 	end,
+
+	require = function (identity: unknown) : declare.object?
+		return private.identity[identity] :: declare.object?
+	end
 }
 
 do --private_region
@@ -82,8 +86,11 @@ do --private_region
 		hosts: { (new: T) -> () },
 	}
 	
-	private.cached = setmetatable({} :: { [unknown]: cached }, table.freeze({ __mode = "ks" }))
-	private.ever = setmetatable({} :: { [declare.object | unknown]: unknown }, table.freeze({ __mode = "ks" }))
+	private.frozen = table.freeze {__mode = "ks"}
+	private.cached = setmetatable({} :: { [unknown]: cached }, private.frozen)
+	private.ever = setmetatable({} :: { [declare.object | unknown]: unknown }, private.frozen)
+	private.identity = setmetatable({} :: {[unknown]: declare.object|unknown}, private.frozen)
+
 
 	function private.get_cached_by_instance<T,U>(this: unknown): (boolean, cached<T,U>)
 		const ever = private.ever[this]
@@ -180,6 +187,7 @@ do --private_region
 	function private.bootload_new(new: declare.object, parent: unknown)
 		(new :: any).identity = tostring(new)
 	
+		private.identity[new.identity] = new
 		private.ever[new] = parent
 		private.lazyget_cached(new, parent)
 	end

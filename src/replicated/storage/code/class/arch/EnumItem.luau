@@ -1,10 +1,8 @@
 --!strict
-
-const object = require("../../object")
-const declare = require("../../static/declare")
-const empty = require("../../static/empty")
-const namefield = require("../../static/namefield")
-const project = require("../../static/project")
+const object = require("@game/ReplicatedStorage/code/object")
+const declare = require("@game/ReplicatedStorage/code/static/declare")
+const namefield = require("@game/ReplicatedStorage/code/static/namefield")
+const project = require("@game/ReplicatedStorage/code/static/project")
 
 const class : declare.enumitem = object:new({
     type = namefield.enumitem,

@@ -460,6 +460,28 @@ function project.run (f: ((...any) -> any)|thread|unknown, ...)
 	return 0
 end
 
+function project.exec (f: ((...any) -> any)|thread|unknown, ...)
+		const T = type(f)
+
+	if T == "function" or T == "thread" then
+		if project.use_immediately_notifications_emitter then
+			coroutine.resume(f :: thread, ...)
+		elseif project.use_scheduler then
+			if project.use_deffered_emitter then
+				task.defer(f :: thread, ...)
+			else
+				task.spawn(f :: thread, ...)
+			end
+		else
+			task.delay(0, f, ...)
+		end
+
+		return true
+	end
+	
+	return false
+end
+
 
 --[=[
 	Выводит сообщение в консоль

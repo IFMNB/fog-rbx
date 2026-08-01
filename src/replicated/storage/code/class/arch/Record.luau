@@ -1,11 +1,10 @@
 --!strict
 
-const object = require("../../object")
-const runtimeobject = require("../../runtimeobject")
-const declare = require("../../static/declare")
-const namefield = require("../../static/namefield")
+const object = require("@game/ReplicatedStorage/code/object")
+const declare = require("@game/ReplicatedStorage/code/static/declare")
+const namefield = require("@game/ReplicatedStorage/code/static/namefield")
 
-const class: declare.record = runtimeobject:new({
+const class: declare.record = object:new({
     type = namefield.record,
 
     get_dictionary = function (self: declare.record) : {[string]: number|boolean|string}

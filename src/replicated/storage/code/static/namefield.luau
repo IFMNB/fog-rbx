@@ -70,6 +70,11 @@ export type anyt = literal<"any">
 export type streamnet = literal<"streamnet">
 export type enumitem = literal<"enumitem">
 export type notification = literal<"notification">
+export type maybe = literal<"maybe">
+export type reference = literal<"maybe">
+export type controller = literal<"controller">
+export type noderuntime = literal<"noderuntime">
+export type schedule = literal<"schedule">
 
 export type classfield = {
 	read object: object,
@@ -139,6 +144,11 @@ export type classfield = {
 	read anyt: anyt,
 	read enumitem: enumitem,
 	read notification: notification,
+	read reference: reference,
+	read maybe: maybe,
+	read controller: controller,
+	read noderuntime: noderuntime,
+	read schedule: schedule,
 }
 export type names = keyof<classfield>
 
@@ -232,6 +242,32 @@ const namefield : classfield = {
 	anime = "anime" :: anime, -- замена animation скрипта работает как сервис, в 1 месте предоставляет анимации для всех сразу
 	ability = "ability" :: ability, -- у персонажей есть возможность вызывать абилки внутри должен содержать функцию (нереализован)
 	charclass = "charclass" :: charclass, -- это описывает текущий класс персонажа содержит loadout и тд.
+
+	--[=[
+		Объект для выполнения разнообразных операций, при условии нахождения на сцене роблокса
+	]=]
+	noderuntime = "noderuntime" :: noderuntime,
+
+	--[=[
+		Объект для управления расписанием выполнения операций
+	]=]
+	schedule = "schedule" :: schedule,
+
+	--[=[
+		Объект для контроля проигрывания текущей операции, то есть
+		функционал "стой/продолжи/ресетни"
+	]=]
+	controller = "controller" :: controller,
+
+	--[=[
+		Объект ленивой регенерации и хранения
+	]=]
+	maybe = "maybe" :: maybe,
+
+	--[=[
+		Объект ссылка на Instance
+	]=]
+	reference = "reference" :: "reference",
 
 	--[=[
 		Объект, представляющий результат общения между клиентом и сервером.

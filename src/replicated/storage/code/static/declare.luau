@@ -11,6 +11,7 @@ export type object = {
     read is: (self: unknown, that: namefield.names | string) -> boolean,
     read get_base: (self: unknown) -> unknown?,
     read toggle_host: <T> (self: unknown, f: (new: T) -> ()) -> (),
+    read require: (identity: unknown) -> object?
 }
 
 export type construct<T = {}, U = object> = T & U
@@ -20,9 +21,8 @@ export type prototype<T = {}, U = object> = construct<setmetatable<T, { __index:
 type f_action <T... = (), U... = ()> = (T...) -> U...
 type writeable_f_action <T... = (), U... = ()> = f_action|f_action<T...>|f_action<T..., U...>
 type instanceable<T = {},U = Instance> = {
-    read set_instance: (self: T, to: U?) -> (),                 write set_instance: (self: unknown, to: unknown?) -> (),
-    read get_instance: (self: T) -> U?,                         write get_instance: (self: unknown) -> Instance?,
-    read get_instance_changed_event: (self: T) -> face<U>,      write get_instance_changed_event: (self: unknown) -> face
+    read set_instance: (self: T, to: U) -> (),                 
+    read get_instance: (self: T) -> U,                         
 }
 type expected_calltype <T=unknown> = {
     call_on: T
@@ -54,26 +54,49 @@ type normals<T=unknown, U=normal> = {
 }
 type stream_identity_type = string
 type face_default_type = nil
-
+type linkable<T=unknown,U=unknown> = {
+    read link: (self: T, that: U) -> (),
+    read unlink: (self: T, that: U) -> ()
+}
+type operatable<T = unknown> = {
+    read continue: (self: T) -> (),
+    read pause: (self: T) -> (),
+    read reset: (self: T) -> ()
+}
+type controllable<T = unknown> = {
+    read get_control: (self: T) -> controller
+}
+type modifier<T = unknown> = {
+    modifier: T
+}
+type iterations<T = unknown> = {
+    iterate: T
+}
+type loopable<T = unknown> = {
+    read get_loop: (self: T) -> timer
+}
+type referenceable<T = unknown, U = unknown> = {
+    read get_reference: (self: T) -> reference<U>,
+}
+type scheduleable<T = unknown> = {
+    read get_schedule: (self: T) -> schedule
+}
 
 export type enumobject<T = enumobject> = construct<{
     read type: namefield.enumobject,
     read Unknown: enumitem,
-    read name: string,
-
 
     read get_enums_list: (self: enumobject) -> {enumitem},                        
     read get_enums_count: (self: enumobject) -> number,
     read get_enums_name: (...enumitem) -> ...string,
     read generate_enumitem: (self: enumobject, with_name: string) -> enumitem,
     read is_my_enumitem: (self: enumobject, that: enumitem) -> boolean,
-}, object>
+} & nameable<string>, object>
 
 export type enumitem = construct<{
     read type: namefield.enumitem,
     read hashlink: number,
-    read name: string,
-}, object>
+} & nameable<string>, object>
 
 
 
@@ -99,16 +122,54 @@ export type face<T... = ...face_default_type> = construct<{
 
     read connect: (self: face<T...>, f: ((T...) -> ())|thread|runtimeobject, call_on: enumitem?) -> connection,
     read once: (self: face<T...>, f: ((T...) -> ())|thread|runtimeobject, call_on: enumitem?) -> connection,
-    read wait: (self: face<T...>, call_on: enumitem?) -> T...,
-}, runtimeobject> 
+    read wait: (self: face<T...>, call_on: enumitem?) -> T...
+} & linkable<face<T...>, connection>, runtimeobject> 
 
 export type connection = construct<{
     read type: namefield.connection,
     state: enumitem,
 
     read disconnect: (self: connection) -> (),
-} & expected_calltype<enumitem>, runtimeobject>
+} & linkable<connection, face> & expected_calltype<enumitem>, runtimeobject>
 
+export type value<T = unknown> = construct<{
+    read type: namefield.value,
+
+    read get_value: (self: value<T>) -> T?,                    
+    read set_value: (self: value<T>, new: T?) -> (),            
+    read get_value_default: (self: value<T>) -> T?,             
+    read set_value_default: (self: value<T>, new: T?) -> (),    
+}, runtimeobject>
+
+export type timer = construct<{
+    read type: namefield.timer,
+    seconds: number,
+
+    read schedule: (self: timer) -> (),
+    read wait: (self: timer) -> (),
+    read bind: (self: timer, f: (()->())|thread) -> connection,
+} & iterations<number> & modifier<number> & operatable<timer>, runtimeobject>
+
+export type maybe = construct<{
+    read type: namefield.maybe,
+
+    read extract: <T> (self: maybe, it: unknown, make: () -> T) -> T,
+    read erase: (self: maybe, it: unknown) -> (),
+    read exist: (self: maybe, it: unknown) -> boolean
+}, runtimeobject>
+
+export type reference<T = Instance> = construct<{
+    read type: namefield.reference   
+} & instanceable<reference<T>, T>, runtimeobject>
+
+export type controller = construct<{
+    read type: namefield.controller,
+    state: enumitem
+} & operatable<controller>, runtimeobject>
+
+export type schedule = construct<{
+    read type: namefield.schedule,
+} & loopable<schedule> & controllable<schedule>, runtimeobject>
 
 
 
@@ -121,35 +182,30 @@ export type disposable = construct<{
     read toggle_state: (self: disposable, state: enumitem) -> ()
 }, runtimeobject> 
 
-export type value<T = unknown> = construct<{
-    read type: namefield.value,
-
-    read get_value: (self: value<T>) -> T?,                     write get_value: (self: value) -> unknown?,
-    read set_value: (self: value<T>, new: T?) -> (),            write set_value: (self: value, new: unknown?) -> (),
-    read get_value_default: (self: value<T>) -> T?,             write get_value_default: (self: value) -> unknown?,
-    read set_value_default: (self: value<T>, new: T?) -> (),    write set_value_default: (self: value, new: unknown?) -> (),
-}, disposable>
-
 export type attribute<T = unknown, U = Instance> = construct<{
     read type: namefield.attribute,
+    
+    read get_params: (self: attribute<T,U>) -> value<T>
+} & nameable<string> & referenceable<attribute<T,U>,U?>, disposable>
 
-} & instanceable<attribute<T,U>,U>, value<T>>
-
-export type node<T= Instance> = construct<{
+export type node<T = Instance> = construct<{
     read type: namefield.node,
 
-    read is_initiated: (self: node<T>) -> boolean,    
-    read get_initiate_event: (self: node<T>) -> face<node> 
-} & instanceable<node<T>, T>, disposable>
 
-export type processor<T = Instance> = construct<{
-    read type: namefield.processor,
+    read get_attribute_list: (self: node<T>) -> {value},
+    read get_attribute: (self: node<T>, name: string) -> value?,
+    read add_attribute: (self: node<T>, name: string) -> value,
+    read remove_attribute: (self: node<T>, name: string) -> () 
+} & referenceable<node<T>,T?> , disposable>
 
-    read process: (self: processor<T>, delta: number) -> (),    write process: writeable_f_action<(processor, number)>|writeable_f_action<(processor<T>, number)>,
-    read simulate: (self: processor<T>, delta: number) -> (),   write simulate: writeable_f_action<(processor, number)>|writeable_f_action<(processor<T>, number)>,
-}, node<T>>
+export type noderuntime<T = Instance> = construct<{
+    read type: namefield.noderuntime,
+    last_delta: number,
+    last_emit: number,
 
-
+    process: (self: node<T>, delta: number) -> (),
+    simulate: (self: node<T>, delta: number) -> (),
+} & scheduleable<noderuntime<T>>, node<T>>
 
 
 
@@ -197,7 +253,7 @@ export type record = construct<{
     read get_dictionary: (self: record) -> {[string]: number|boolean|string},
     read immutable: (self: record) -> record,
     read is_immutable: (self: record) -> boolean
-}, runtimeobject>
+}, object>
 
 export type liberator = construct<{
     read type: namefield.liberator,

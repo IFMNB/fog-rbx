@@ -1,10 +1,10 @@
 --!strict
 
-const runtimeobject = require("../../runtimeobject")
-const declare = require("../../static/declare")
-const namefield = require("../../static/namefield")
-const project = require("../../static/project")
-const EnumItem = require("./EnumItem")
+const EnumItem = require("@game/ReplicatedStorage/code/class/arch/EnumItem")
+const runtimeobject = require("@game/ReplicatedStorage/code/runtimeobject")
+const declare = require("@game/ReplicatedStorage/code/static/declare")
+const namefield = require("@game/ReplicatedStorage/code/static/namefield")
+const project = require("@game/ReplicatedStorage/code/static/project")
 
 const class : declare.service = runtimeobject:new({
 	type = namefield.service,

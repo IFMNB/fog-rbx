@@ -1,9 +1,9 @@
 --!strict
 
-const object = require("../../object")
-const declare = require("../../static/declare")
-const namefield = require("../../static/namefield")
-const EnumItem = require("./EnumItem")
+const EnumItem = require("@game/ReplicatedStorage/code/class/arch/EnumItem")
+const object = require("@game/ReplicatedStorage/code/object")
+const declare = require("@game/ReplicatedStorage/code/static/declare")
+const namefield = require("@game/ReplicatedStorage/code/static/namefield")
 
 const class : declare.enumobject = object:new({
     type = namefield.enumobject,
@@ -44,6 +44,6 @@ const class : declare.enumobject = object:new({
     is_my_enumitem = function (self: declare.enumobject, that: declare.enumitem) : boolean
         return self[that.name] ~= nil
     end
-});
+})
 
 return class
