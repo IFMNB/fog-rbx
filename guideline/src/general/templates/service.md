@@ -2,13 +2,13 @@
 
 ```luau
 
-const Service = require("@game/ReplicatedStorage/code/Service")
-const Event = require("@game/ReplicatedStorage/code/class/event/Event")
-const Face = require("@game/ReplicatedStorage/code/class/face/Face")
-const Storage = require("@game/ReplicatedStorage/code/class/storage/Storage")
-const Upload = require("@game/ReplicatedStorage/code/class/upload/Upload")
-const object = require("@game/ReplicatedStorage/code/object")
-const namefield = require("@game/ReplicatedStorage/code/static/namefield")
+const Service = require("@game/ReplicatedStorage/Service")
+const Event = require("@game/ReplicatedStorage/class/event/Event")
+const Face = require("@game/ReplicatedStorage/class/face/Face")
+const Storage = require("@game/ReplicatedStorage/class/storage/Storage")
+const Upload = require("@game/ReplicatedStorage/class/upload/Upload")
+const object = require("@game/ReplicatedStorage/object")
+const namefield = require("@game/ReplicatedStorage/static/namefield")
 
 const private = {}
 const class = {}

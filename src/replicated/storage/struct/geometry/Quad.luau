@@ -1,0 +1,107 @@
+--!strict
+const Record = require("@game/ReplicatedStorage/class/arch/Record")
+const declare = require("@game/ReplicatedStorage/static/declare")
+const namefield = require("@game/ReplicatedStorage/static/namefield")
+const Triangle = require("@game/ReplicatedStorage/struct/geometry/Triangle")
+
+const class: declare.quad = Record:new({
+	type = namefield.quad,
+
+	left = Triangle:new(),
+	right = Triangle:new(),
+
+	get_center = function(self: declare.quad): Vector3
+		return (self.left:get_center() + self.right:get_center()) / 2
+	end,
+
+	get_normal_interpolated = function(self: declare.quad): Vector3
+		return (self.left:get_normal_interpolated() + self.right:get_normal_interpolated()).Unit
+	end,
+
+	get_normal_geometric = function(self: declare.quad): Vector3
+		return (self.left:get_normal_geometric() + self.right:get_normal_geometric()).Unit
+	end,
+
+	absolute = function(self: declare.quad): declare.quad
+		const clone = self:clone()
+
+		clone.right = clone.right:absolute()
+		clone.left = clone.left:absolute()
+
+		return clone
+	end,
+
+	null = function(self: declare.quad): declare.quad
+		const clone = self:clone()
+
+		clone.right = clone.right:null()
+		clone.left = clone.left:null()
+
+		return clone
+	end,
+
+	substract = function(self: declare.quad, with: number): declare.quad
+		const clone = self:clone()
+
+		clone.right = clone.right:substract(with)
+		clone.left = clone.left:substract(with)
+
+		return clone
+	end,
+
+	append = function(self: declare.quad, with: number): declare.quad
+		const clone = self:clone()
+
+		clone.right = clone.right:append(with)
+		clone.left = clone.left:append(with)
+
+		return clone
+	end,
+
+	multiple = function(self: declare.quad, with: number): declare.quad
+		const clone = self:clone()
+
+		clone.right = clone.right:multiple(with)
+		clone.left = clone.left:multiple(with)
+
+		return clone
+	end,
+
+	divide = function(self: declare.quad, with: number): declare.quad
+		const clone = self:clone()
+
+		clone.right = clone.right:divide(with)
+		clone.left = clone.left:divide(with)
+
+		return clone
+	end,
+
+	invert = function(self: declare.quad): declare.quad
+		const clone = self:clone()
+
+		clone.right = clone.right:invert()
+		clone.left = clone.left:invert()
+
+		return clone
+	end,
+
+	normalize = function(self: declare.quad): declare.quad
+		const clone = self:clone()
+
+		clone.right = clone.right:normalize()
+		clone.left = clone.left:normalize()
+
+		return clone
+	end,
+
+	infinity = function(self: declare.quad): declare.quad
+		const clone = self:clone()
+
+		clone.right = clone.right:infinity()
+		clone.left = clone.left:infinity()
+
+		return clone
+	end,
+})
+
+return class

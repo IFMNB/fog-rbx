@@ -1,15 +1,15 @@
-const Disposable = require("@game/ReplicatedStorage/code/Disposable")
-const Value = require "@game/ReplicatedStorage/code/class/value/Value"
-const Processor = require("@game/ReplicatedStorage/code/class/processor/Processor")
-const Upload = require("@game/ReplicatedStorage/code/class/upload/Upload")
-const StorageMode = require("@game/ReplicatedStorage/code/enums/StorageMode")
-const object = require("@game/ReplicatedStorage/code/object")
-const storage = require("@game/ReplicatedStorage/code/class/storage/Storage")
+const Disposable = require("@game/ReplicatedStorage/Disposable")
+const Value = require("@game/ReplicatedStorage/class/value/Value")
+const Processor = require("@game/ReplicatedStorage/class/processor/Processor")
+const Upload = require("@game/ReplicatedStorage/class/upload/Upload")
+const StorageMode = require("@game/ReplicatedStorage/enums/StorageMode")
+const object = require("@game/ReplicatedStorage/object")
+const storage = require("@game/ReplicatedStorage/class/storage/Storage")
 const Entity = require("../entity/Entity")
-const namefield = require("@game/ReplicatedStorage/code/static/namefield")
+const namefield = require("@game/ReplicatedStorage/static/namefield")
 
 const private = {}
-const class = {__index = Processor}
+const class = { __index = Processor }
 setmetatable(class, class)
 
 export type class = typeof(class.new())
@@ -19,28 +19,26 @@ class.description = "default_description"
 class.free_on_empty = false
 class.max = 1
 
-
-function class.new ()
-    return Disposable.new(class, true)
+function class.new()
+	return Disposable.new(class, true)
 end
 
-function class:get_count () :  Value.generic<number>
-    const this = self :: class
-    return Upload.fetch(private.metadata:fetch(this), "count", function ()
-        return Value.new("number")
-    end)
+function class:get_count(): Value.generic<number>
+	const this = self :: class
+	return Upload.fetch(private.metadata:fetch(this), "count", function()
+		return Value.new("number")
+	end)
 end
 
 function class:get_stats()
-    const this = self :: class
-    return Upload.fetch(private.metadata:fetch(this), "entity", Entity)
+	const this = self :: class
+	return Upload.fetch(private.metadata:fetch(this), "entity", Entity)
 end
 
 function class:get_()
-    const this = self :: class
-    
+	const this = self :: class
 end
 
-private.metadata = storage.new (StorageMode.Strong)
+private.metadata = storage.new(StorageMode.Strong)
 
 return table.freeze(class)

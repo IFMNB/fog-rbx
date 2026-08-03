@@ -1,7 +1,7 @@
-const Disposable = require("@game/ReplicatedStorage/code/Disposable")
-const object = require("@game/ReplicatedStorage/code/object")
-const namefield = require("@game/ReplicatedStorage/code/static/namefield")
-const lifeform = require("@game/ServerStorage/code/class/lifeform/Lifeform")
+const Disposable = require("@game/ReplicatedStorage/Disposable")
+const object = require("@game/ReplicatedStorage/object")
+const namefield = require("@game/ReplicatedStorage/static/namefield")
+const lifeform = require("@game/ServerStorage/class/lifeform/Lifeform")
 
 const private = {}
 const class = { __index = lifeform }

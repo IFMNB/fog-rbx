@@ -3,8 +3,8 @@
 ```luau
     --!strict
 
-    const declare = require("@game/ReplicatedStorage/code/static/declare")
-    const namefield = require("@game/ReplicatedStorage/code/static/namefield")
+    const declare = require("@game/ReplicatedStorage/static/declare")
+    const namefield = require("@game/ReplicatedStorage/static/namefield")
 
     const private = {}
     const class: declare.Тип_Класса = Родитель:new({

@@ -1,10 +1,10 @@
-const Disposable = require("@game/ReplicatedStorage/code/Disposable")
-const Storage = require("@game/ReplicatedStorage/code/class/storage/Storage")
-const Timer = require("@game/ReplicatedStorage/code/class/timer/Timer")
-const ConnectionState = require("@game/ReplicatedStorage/code/enums/ConnectionState")
-const object = require("@game/ReplicatedStorage/code/object")
-const namefield = require("@game/ReplicatedStorage/code/static/namefield")
-const project = require("@game/ReplicatedStorage/code/static/project")
+const Disposable = require("@game/ReplicatedStorage/Disposable")
+const Storage = require("@game/ReplicatedStorage/class/storage/Storage")
+const Timer = require("@game/ReplicatedStorage/class/timer/Timer")
+const ConnectionState = require("@game/ReplicatedStorage/enums/ConnectionState")
+const object = require("@game/ReplicatedStorage/object")
+const namefield = require("@game/ReplicatedStorage/static/namefield")
+const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
 const class = { __index = Disposable }

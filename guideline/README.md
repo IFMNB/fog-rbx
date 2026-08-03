@@ -15,10 +15,10 @@
 В качестве примера идет этот код:
 
 ```luau
-    const object = reqiore "@game/ReplicatedStorage/code/object"
-    const Browser = require "@game/ServerStorage/code/service/browser/Browser"
-    const Server = require "@game/ServerStorage/code/service/server/Server"
-    const ServerNotification = require "@game/ServerStorage/code/enums/ServerNotification"
+    const object = reqiore "@game/ReplicatedStorage/object"
+    const Browser = require "@game/ServerStorage/service/browser/Browser"
+    const Server = require "@game/ServerStorage/service/server/Server"
+    const ServerNotification = require "@game/ServerStorage/enums/ServerNotification"
 
     Server:start(function()
         print "hello new world!" 
@@ -45,7 +45,7 @@
 
 ## Objects
 
-Объектом считается значение с типом `table` или `class` (в зависимости от того, используется ли `class` api из luau или нет), который наследуется от базового `object` по адресу `@game/ReplicatedStorage/code/object`.
+Объектом считается значение с типом `table` или `class` (в зависимости от того, используется ли `class` api из luau или нет), который наследуется от базового `object` по адресу `@game/ReplicatedStorage/object`.
 
 ## Class
 
