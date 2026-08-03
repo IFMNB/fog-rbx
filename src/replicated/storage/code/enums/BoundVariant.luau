@@ -17,7 +17,7 @@ const class  = EnumObject:new({
         объемов, а вообще не ограничен природой своего существования
         и может быть использован в любых целях
     ]=]
-	Alive = EnumItem:new({
+	AABB = EnumItem:new({
 		name = "AABB",
 	}),
 
@@ -30,7 +30,7 @@ const class  = EnumObject:new({
         объемов, а вообще не ограничен природой своего существования
         и может быть использован в любых целях
     ]=]
-    Dead = EnumItem:new({
+    OBB = EnumItem:new({
         name = "OBB"
     })
 })

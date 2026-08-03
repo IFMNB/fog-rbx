@@ -51,11 +51,22 @@ const class: declare.object = {
 		return state and cached.__type == that or false
 	end,
 
-	get_base = function(self)
-		return private.ever[self] :: any
+	get_base = function(self: any, expected: namefield.names|string|nil) : any
+		const base = private.ever[self]
+		if expected then 
+			if self.is(base, expected) then
+				return base
+			else
+				project.console_out_error "base has unexpected type, return nil"
+			end
+		else
+			return base
+		end
+
+		return nil
 	end,
 
-	toggle_host = function <T> (self: T, f: (T) -> ())
+	toggle_host = function (self: any, f: (any) -> ())
 		const state, cached = private.get_cached<<T,unknown>>(self)
 
 		if state then

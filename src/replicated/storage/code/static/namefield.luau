@@ -1,7 +1,5 @@
 --!strict
-
 export type literal<T = "never"> = T | string
-
 export type object = literal<"object">
 export type runtimeobject = literal<"runtimeobject">
 export type typeobject = literal<"typeobject">
@@ -75,6 +73,11 @@ export type reference = literal<"maybe">
 export type controller = literal<"controller">
 export type noderuntime = literal<"noderuntime">
 export type schedule = literal<"schedule">
+export type cube = literal<"cube">
+export type directions = literal<"directions">
+export type vertex = literal<"vertex">
+export type triangle = literal<"triangle">
+export type quad = literal<"quad">
 
 export type classfield = {
 	read object: object,
@@ -149,6 +152,11 @@ export type classfield = {
 	read controller: controller,
 	read noderuntime: noderuntime,
 	read schedule: schedule,
+	read cube: cube,
+	read directions: directions,
+	read vertex: vertex,
+	read quad: quad,
+	read triangle: triangle,
 }
 export type names = keyof<classfield>
 
@@ -244,9 +252,36 @@ const namefield : classfield = {
 	charclass = "charclass" :: charclass, -- это описывает текущий класс персонажа содержит loadout и тд.
 
 	--[=[
+		Объект-описание фейса, части геометрии для рендера или математических
+		операций
+	]=]
+	quad = "quad" :: quad,
+
+	--[=[
+		Объект-описание треугольника, части геометрии для рендера или математических
+		операций
+	]=]
+	triangle = "triangle" :: triangle,
+
+	--[=[
+		Объект-описание геометрического куба
+	]=]
+	cube = "cube" :: cube,
+
+	--[=[
 		Объект для выполнения разнообразных операций, при условии нахождения на сцене роблокса
 	]=]
 	noderuntime = "noderuntime" :: noderuntime,
+
+	--[=[
+		Объект, обозначающий одну вершину
+	]=]
+	vertex = "vertex" :: vertex,
+
+	--[=[
+		Объект для установки осей направляющих
+	]=]
+	directions = "directions" :: directions,
 
 	--[=[
 		Объект для управления расписанием выполнения операций

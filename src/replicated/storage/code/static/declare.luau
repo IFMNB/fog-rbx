@@ -9,7 +9,7 @@ export type object = {
     read new: <T,U> (self: T, that: U?, ...any) -> construct<T,U>,
     read equals: (this: unknown, that: any) -> boolean,
     read is: (self: unknown, that: namefield.names | string) -> boolean,
-    read get_base: (self: unknown) -> unknown?,
+    read get_base: <T> (self: unknown, expected: namefield.names|string|nil) -> T?,
     read toggle_host: <T> (self: unknown, f: (new: T) -> ()) -> (),
     read require: (identity: unknown) -> object?
 }
@@ -39,9 +39,8 @@ type math_operations<T=unknown,U... = ()> = {
     read absolute: (self: T) -> U...,
     read normalize: (self: T) -> U...,
 
-    read math_null: (self: T) -> U...,
-    read p_infinity: (self: T) -> U...,
-    read n_infinity: (self: T) -> U...
+    read null: (self: T) -> U...,
+    read infinity: (self: T) -> U...,
 }
 type vector_operations<T=unknown,U... = ()> = {
     read to_cframe: (self: T) -> CFrame,
@@ -51,8 +50,9 @@ type vector_operations<T=unknown,U... = ()> = {
 type positioned<T=Vector3> = {
     position: T
 }
-type normals<T=unknown, U=normal> = {
-    read get_normal: (self: T) -> U
+type normals<T=unknown, U=Vector3> = {
+    read get_normal_geometric: (self: T) -> U,
+    read get_normal_interpolated: (self: T) -> U,
 }
 type stream_identity_type = string
 type face_default_type = nil
@@ -83,6 +83,14 @@ type referenceable<T = unknown, U = unknown> = {
 
 type reloadable<T = unknown> = {
     read reload: (self: T) -> ()
+}
+type axisable<T = unknown> = {
+    right: T,
+    up: T,
+    front: T
+}
+type centerable<T = unknown> = {
+    read get_center: (self: T) -> Vector3
 }
 
 export type enumobject<T = enumobject> = construct<{
@@ -221,9 +229,6 @@ export type noderuntime<T = Instance> = construct<{
     read get_runtime: (self: noderuntime<T>) -> timer,
 }, node<T>>
 
-local x : noderuntime
-
-
 
 
 
@@ -266,17 +271,13 @@ export type streamnet = construct<{
 export type record = construct<{
     read type: namefield.record,
 
-    read get_dictionary: (self: record) -> {[string]: number|boolean|string},
     read immutable: (self: record) -> record,
-    read is_immutable: (self: record) -> boolean
-}, object>
+    read is_immutable: (self: record) -> boolean,
+    read clone: <T> (self: T) -> T,
 
-export type liberator = construct<{
-    read type: namefield.liberator,
-    in_table: setmetatable<{[unknown]:unknown},{[unknown]:unknown}>,
-    for_index: unknown,
-    parse_every_in_table: boolean
-},record>
+    read get_dictionary: (self: record) -> {[string]: number|boolean|string},
+    read each: <T> (self: record, type: string, f: (value: T) -> T) -> ()
+}, object>
 
 export type result<T = unknown> = construct<{
     read type: namefield.result,
@@ -286,29 +287,12 @@ export type result<T = unknown> = construct<{
     read call_of: <Y,U> (f: (...Y) -> U, ...Y) -> result,       write call_of: (f: (...unknown) -> unknown) -> result
 }, record>
 
-export type content <T = unknown, U = unknown> = construct<{
-    read type: namefield.content,
-
-    read insert_from: (self: content<T,U>, from: {[T]:U}) -> (),    write insert_from: (self: content, from: {[unknown]: unknown}) -> (),
-    read get_safely: (self: content<T,U>, key: T) -> result<U>,     write get_safely: (self: content) -> result,
-    read insert: (self: content<T,U>, key: T, value: U?) -> (),     write insert: (self: content, key: unknown, value: unknown?) -> ()
-}, record>
-
 export type boundbox = construct<{
     read type: namefield.boundbox,
-    variant: number,
-
-    top: Vector3,
-    bottom: Vector3,
-    left: Vector3,
-    right: Vector3,
-    front: Vector3,
-    back: Vector3,
-
+    variant: enumitem,
     half: Vector3,
     min: Vector3,
     max: Vector3,
-
 
     read is_inside: (self: boundbox, ...boundbox|BasePart|Model) -> boolean,
     read is_belong: (self: boundbox, ...vertex) -> boolean,
@@ -329,39 +313,52 @@ export type boundbox = construct<{
 
     read get_cover: (self: boundbox, ...boundbox|BasePart|Model) -> boundbox,
     read get_invariant: (self: boundbox, variant: enumitem?) -> boundbox,
-    read get_corners: (self: boundbox) -> {vertex},
     read get_mininum_translation: (self: boundbox, ...boundbox|BasePart|Model) -> vertex,
     read get_origin_directions: (self: boundbox) -> directions,
     read get_axis: (self: boundbox) -> directions,
     read get_origin_size: (self: boundbox) -> Vector3,
-    read get_direction: (self: boundbox, direction: enumitem) -> Vector3,
-    read get_quad: (self: boundbox, direction: enumitem) -> quad,
+
     read get_recalculated: (self: boundbox) -> boundbox
-} & positioned<Vector3> & math_operations<boundbox, boundbox> & vector_operations<boundbox, boundbox>, record>
+}, cube>
 
 export type triangle = construct<{
-    right: vertex,
-    up: vertex,
-    front: vertex,
-} & normals<triangle> & positioned<Vector3> & math_operations<quad, quad>, record>
+    read type: namefield.triangle,
+
+    read from_vector3: (self: triangle, right: Vector3?, up: Vector3?, front: Vector3?) -> triangle
+} & centerable<triangle> & axisable<vertex> & normals<triangle> & math_operations<triangle, triangle>, record>
+
 export type quad = construct<{
+    read type: namefield.quad,
     left: triangle,
     right: triangle,
-} & normals<quad> & positioned<Vector3> & math_operations<quad, quad>, record>
+} & centerable<quad> & normals<quad> & math_operations<quad, quad>, record>
 
 export type directions = construct<{
-    right: Vector3,
-    up: Vector3,
-    front: Vector3,
-} & vector_operations<directions, directions> & math_operations<directions, directions>, record>
-
-export type normal = construct<{ } & positioned<normal>, directions>
+    read type: namefield.directions,
+} & axisable<Vector3> & vector_operations<directions, directions> & math_operations<directions, directions>, record>
 
 export type vertex = construct<{
-    normal: normal,
-    mtv_min: number
+    read type: namefield.vertex,
+    normal: Vector3,
+    mtv_min: number,
+
+    read from_global_point: (self: vertex, position: Vector3?) -> vertex,
+    read from_local_point: (self: vertex, local_position: Vector3?, position: Vector3?) -> vertex
 } & positioned<Vector3> & math_operations<vertex, vertex>, record>
 
+export type cube = construct<{
+    read type: namefield.cube,
+    top: Vector3,
+    bottom: Vector3,
+    left: Vector3,
+    right: Vector3,
+    front: Vector3,
+    back: Vector3,
+
+    read get_corners: (self: boundbox) -> {vertex},
+    read get_direction: (self: boundbox, direction: enumitem) -> Vector3,
+    read get_quad: (self: boundbox, direction: enumitem) -> quad,
+} & centerable<cube> & math_operations<cube, cube> & vector_operations<cube,cube>, record>
 
 
 
