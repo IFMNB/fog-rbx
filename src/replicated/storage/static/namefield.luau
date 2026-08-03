@@ -78,6 +78,7 @@ export type directions = literal<"directions">
 export type vertex = literal<"vertex">
 export type triangle = literal<"triangle">
 export type quad = literal<"quad">
+export type channel = literal<"channel">
 
 export type classfield = {
 	read object: object,
@@ -157,6 +158,7 @@ export type classfield = {
 	read vertex: vertex,
 	read quad: quad,
 	read triangle: triangle,
+	read channel: channel,
 }
 export type names = keyof<classfield>
 
@@ -250,6 +252,12 @@ const namefield : classfield = {
 	anime = "anime" :: anime, -- замена animation скрипта работает как сервис, в 1 месте предоставляет анимации для всех сразу
 	ability = "ability" :: ability, -- у персонажей есть возможность вызывать абилки внутри должен содержать функцию (нереализован)
 	charclass = "charclass" :: charclass, -- это описывает текущий класс персонажа содержит loadout и тд.
+
+	--[=[
+		Объект подтип `Node<RemoteEvent>`, соединяющий поведение RemoteEvent с
+		поведением из RemoteFunction
+	]=]
+	channel = "channel" :: channel,
 
 	--[=[
 		Объект-описание фейса, части геометрии для рендера или математических

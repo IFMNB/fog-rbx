@@ -226,9 +226,23 @@ export type noderuntime<T = Instance> = construct<{
 
     process: (self: noderuntime<T>, delta: number) -> (),
     simulate: (self: noderuntime<T>, delta: number) -> (),
+    
     read get_runtime: (self: noderuntime<T>) -> timer,
 }, node<T>>
 
+export type channel = construct<{
+    read type: namefield.channel,
+    read APIN: string,
+
+    read send: (self: channel, notification: notification, rpc: boolean?) -> (),
+    read invoke: (self: channel, notification: notification, rpc: boolean?) -> (),
+
+    read get_invoke_event: (self: channel) -> face<...unknown>,
+    read get_sended_event: (self: channel) -> face<...unknown>,
+
+    read get_peerid: (that: Player?) -> number,
+    read set_peerid: (to: number, that: Player?) -> ()
+}, node<RemoteEvent>>
 
 
 
