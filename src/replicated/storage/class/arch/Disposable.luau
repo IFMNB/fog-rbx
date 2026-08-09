@@ -1,8 +1,8 @@
 --!strict
 const Notification = require("@game/ReplicatedStorage/class/common/Notification")
 const ConnectionMode = require("@game/ReplicatedStorage/enums/ConnectionMode")
-const DisposableStateVariant = require("@game/ReplicatedStorage/enums/DisposableStateVariant")
 const NotificationVariant = require("@game/ReplicatedStorage/enums/notifications/NotificationVariant")
+const DisposableStateVariant = require("@game/ReplicatedStorage/enums/state/DisposableStateVariant")
 const runtimeobject = require("@game/ReplicatedStorage/runtimeobject")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const namefield = require("@game/ReplicatedStorage/static/namefield")

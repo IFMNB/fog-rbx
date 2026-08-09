@@ -28,19 +28,23 @@ const class: declare.reference = runtimeobject:new({
 			const that = to :: Instance
 
 			private.connections[self] = that.Destroying:Once(function()
-				self:notificate(Notification:new({ call_on = InstanceNotificationVariant.InstanceDestroyed }))
+				self:notificate(Notification:new({ call_on = InstanceNotificationVariant.Destroyed }))
 			end)
 		end
 
 		if stored == nil and to == nil then
-			self:notificate(Notification:new({ call_on = InstanceNotificationVariant.InstanceNullified }))
+			self:notificate(Notification:new({ call_on = InstanceNotificationVariant.Nullified }))
 		elseif stored == nil and to ~= nil then
-			self:notificate(Notification:new({ call_on = InstanceNotificationVariant.InstanceNew }))
+			self:notificate(Notification:new({ call_on = InstanceNotificationVariant.Newwie }))
 		elseif stored ~= to then
-			self:notificate(Notification:new({ call_on = InstanceNotificationVariant.InstanceChanged }))
+			self:notificate(Notification:new({ call_on = InstanceNotificationVariant.Changed }))
 		else
 			project.console_out("missmatch reference")
 		end
+	end,
+
+	is_instance_exists = function(self: declare.reference): boolean
+		return typeof(self:get_instance()) == "Instance"
 	end,
 })
 

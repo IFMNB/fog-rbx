@@ -4,17 +4,16 @@ const EnumObject = require("@game/ReplicatedStorage/class/arch/EnumObject")
 const EnumItem = require("@game/ReplicatedStorage/class/arch/EnumItem")
 const declare = require("@game/ReplicatedStorage/static/declare")
 
-const class = EnumObject:new({
-	name = "NotificationVariant",
-
-	Signal = EnumItem:new({ name = "Signal" }),
-	Initialize = EnumItem:new({ name = "Initialize" }),
-	Setup = EnumItem:new({ name = "Setup" }),
-	PreRelease = EnumItem:new({ name = "PreRelease" }),
-	ConnectionAdded = EnumItem:new({ name = "ConnectionAdded" }),
-	ConnectionRemoved = EnumItem:new({ name = "ConnectionRemoved" }),
-	Stepped = EnumItem:new({ name = "Stepped" }),
-	Emit = EnumItem:new({ name = "Emit" }),
+const class: declare.enum_notification_variant = EnumObject:new({
+	name = script.Name,
+	Signal = EnumItem:new() :: declare.enumitem<any>,
+	Initialize = EnumItem:new() :: declare.enumitem<any>,
+	Setup = EnumItem:new() :: declare.enumitem<any>,
+	PreRelease = EnumItem:new() :: declare.enumitem<any>,
+	ConnectionAdded = EnumItem:new() :: declare.enumitem<any>,
+	ConnectionRemoved = EnumItem:new() :: declare.enumitem<any>,
+	Stepped = EnumItem:new() :: declare.enumitem<any>,
+	Emit = EnumItem:new() :: declare.enumitem<any>,
 })
 
 return class

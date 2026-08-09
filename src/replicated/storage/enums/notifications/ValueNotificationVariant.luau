@@ -4,18 +4,17 @@ const EnumObject = require("@game/ReplicatedStorage/class/arch/EnumObject")
 const EnumItem = require("@game/ReplicatedStorage/class/arch/EnumItem")
 const declare = require("@game/ReplicatedStorage/static/declare")
 
-const class = EnumObject:new({
-	name = "ValueNotificationVariant",
+const class: declare.enum_value_notification_variant = EnumObject:new({
+	name = script.Name,
 
-	LazyValueNew = EnumItem:new({ name = "LazyValueNew" }),
-	LazyValueGet = EnumItem:new({ name = "LazyValueGet" }),
-	LazyValueRemoved = EnumItem:new({ name = "LazyValueRemoved" }),
-	LazyValueChanged = EnumItem:new({ name = "LazyValueChanged" }),
-
-	ValueNew = EnumItem:new({ name = "ValueNew" }),
-	ValueGet = EnumItem:new({ name = "ValueGet" }),
-	ValueRemoved = EnumItem:new({ name = "ValueRemoved" }),
-	ValueChanged = EnumItem:new({ name = "ValueChanged" }),
+	LazyValueNew = EnumItem:new() :: declare.enumitem<any>,
+	LazyValueGet = EnumItem:new() :: declare.enumitem<any>,
+	LazyValueRemoved = EnumItem:new() :: declare.enumitem<any>,
+	LazyValueChanged = EnumItem:new() :: declare.enumitem<any>,
+	ValueNew = EnumItem:new() :: declare.enumitem<any>,
+	ValueGet = EnumItem:new() :: declare.enumitem<any>,
+	ValueRemoved = EnumItem:new() :: declare.enumitem<any>,
+	ValueChanged = EnumItem:new() :: declare.enumitem<any>,
 })
 
 return class

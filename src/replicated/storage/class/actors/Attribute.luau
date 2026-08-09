@@ -4,6 +4,7 @@ const ConnectionMode = require("../../enums/ConnectionMode")
 const InstanceNotificationVariant = require("@game/ReplicatedStorage/enums/notifications/InstanceNotificationVariant")
 const NotificationType = require("@game/ReplicatedStorage/enums/notifications/NotificationVariant")
 const ValueNotificationVariant = require("@game/ReplicatedStorage/enums/notifications/ValueNotificationVariant")
+const OperationalVariant = require("@game/ReplicatedStorage/enums/required/OperationalVariant")
 const declare = require("../../static/declare")
 const namefield = require("../../static/namefield")
 const project = require("../../static/project")
@@ -22,6 +23,21 @@ const class: declare.attribute = Disposable:new({
 
 	get_params = function(self: declare.attribute): declare.value
 		return private.params[self]
+	end,
+
+	get_current_value = function(self: declare.attribute): any?
+		const instance = self:get_reference():get_instance()
+
+		if instance then
+			const value = instance:GetAttribute(self.name)
+			if typeof(value) == self:get_params():get_value() then
+				return value
+			else
+				return nil
+			end
+		else
+			return nil
+		end
 	end,
 })
 
@@ -44,20 +60,31 @@ class:toggle_host(function(new: declare.attribute)
 
 			if not ok then
 				project.console_out_error("attribute unexpected valuetype", err)
+				if new:get_state(OperationalVariant.Working) then
+					new:toggle_state(OperationalVariant.Working)
+				end
+
+				if not new:get_state(OperationalVariant.Paused) then
+					new:toggle_state(OperationalVariant.Paused)
+				end
+			else
+				if not new:get_state(OperationalVariant.Working) then
+					new:toggle_state(OperationalVariant.Working)
+				end
+
+				if new:get_state(OperationalVariant.Paused) then
+					new:toggle_state(OperationalVariant.Paused)
+				end
 			end
 		end
 	end
 
 	const toggle_listeners = function()
-		refer:toggle_notice(update_value_attribute, InstanceNotificationVariant.InstanceNew, ConnectionMode.Connection)
-		refer:toggle_notice(
-			update_value_attribute,
-			InstanceNotificationVariant.InstanceChanged,
-			ConnectionMode.Connection
-		)
-		param:toggle_notice(update_value_attribute, ValueNotificationVariant.ValueChanged, ConnectionMode.Connection)
-		param:toggle_notice(update_value_attribute, ValueNotificationVariant.ValueNew, ConnectionMode.Connection)
-		param:toggle_notice(update_value_attribute, ValueNotificationVariant.ValueRemoved, ConnectionMode.Connection)
+		refer:toggle_notice(update_value_attribute, InstanceNotificationVariant.Newwie, ConnectionMode.Ever)
+		refer:toggle_notice(update_value_attribute, InstanceNotificationVariant.Changed, ConnectionMode.Ever)
+		param:toggle_notice(update_value_attribute, ValueNotificationVariant.ValueChanged, ConnectionMode.Ever)
+		param:toggle_notice(update_value_attribute, ValueNotificationVariant.ValueNew, ConnectionMode.Ever)
+		param:toggle_notice(update_value_attribute, ValueNotificationVariant.ValueRemoved, ConnectionMode.Ever)
 	end
 
 	toggle_listeners()

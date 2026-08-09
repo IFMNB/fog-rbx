@@ -1,21 +1,19 @@
 --!strict
 
-const EnumItem = require("@game/ReplicatedStorage/class/arch/EnumItem")
+const Cryptography = require("@game/ReplicatedStorage/dependency/Cryptography")
 const object = require("@game/ReplicatedStorage/object")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const namefield = require("@game/ReplicatedStorage/static/namefield")
 
 const class: declare.enumobject = object:new({
 	type = namefield.enumobject,
-	Unknown = EnumItem:new({ name = "Unknown" }),
-	Any = EnumItem:new({ name = "Any" }),
-	name = "EnumObject",
+	name = script.Name,
 
-	get_enums_list = function<T>(self: declare.enumobject)
-		const result: { declare.enumitem } = {}
+	get_enums_list = function<T>(self: declare.enumobject): { [unknown]: declare.enumitem }
+		const result: { [unknown]: declare.enumitem } = {}
 		for i, v in self :: { [string]: unknown } do
-			if object.is(v, self.type) then
-				table.insert(result, v :: declare.enumitem)
+			if object.is(v, namefield.enumitem) then
+				result[i] = v :: declare.enumitem
 			end
 		end
 
@@ -35,16 +33,31 @@ const class: declare.enumobject = object:new({
 		return unpack(result)
 	end,
 
-	generate_enumitem = function(self: declare.enumobject, itemname: string): declare.enumitem
-		return require("./EnumItem"):new({
-			name = itemname,
-			enumobject = self,
-		})
-	end,
-
 	is_my_enumitem = function(self: declare.enumobject, that: declare.enumitem): boolean
 		return self[that.name] ~= nil
 	end,
-})
+
+	assert_is_my_enumitem = function (self: declare.enumobject, that: unknown) : boolean
+		return assert(object.is(that, namefield.enumitem) and self:is_my_enumitem(that :: declare.enumitem), "received data isn't expected enumitem")
+	end
+});
+
+class:toggle_host(function(new: declare.enumobject)
+	for i, v in new:get_enums_list() do
+		const name = tostring(i)
+
+		if v.enum == nil then
+			v:child(new)
+		end
+
+		if v.name == "" then
+			v.name = name
+		end
+
+		if v.hashlink == "" then
+			(v :: any).hashlink = Cryptography.Hashing.Blake3.Digest(buffer.fromstring(name))
+		end
+	end
+end)
 
 return class

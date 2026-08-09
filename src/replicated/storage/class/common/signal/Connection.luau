@@ -1,29 +1,28 @@
 --!strict
 
-const ConnectionStateVariants = require("@game/ReplicatedStorage/enums/notifications/ConnectionStateVariants")
+const DefaultVariant = require("@game/ReplicatedStorage/enums/DefaultVariant")
 const NotificationVariant = require("@game/ReplicatedStorage/enums/notifications/NotificationVariant")
+const ConnectionStateVariant = require("@game/ReplicatedStorage/enums/state/ConnectionStateVariant")
 const ConnectionMode = require("../../../enums/ConnectionMode")
-const ConnectionState = require("../../../enums/ConnectionState")
 const runtimeobject = require("../../../runtimeobject")
 const declare = require("../../../static/declare")
 const namefield = require("../../../static/namefield")
 const project = require("../../../static/project")
-const EnumObject = require("../../arch/EnumObject")
 const Notification = require("../Notification")
 
 const private = {}
 const class: declare.connection = runtimeobject:new({
 	type = namefield.connection,
-	state = EnumObject.Unknown,
-	call_on = EnumObject.Unknown,
+	state = DefaultVariant.Unknown,
+	call_on = DefaultVariant.Unknown,
 
 	disconnect = function(self: declare.connection): ()
-		if self.state ~= ConnectionState.Dead then
+		if self.state ~= ConnectionMode.Disconnected then
 			project.console_out("disconnecting connection")
 
-			self.state = ConnectionState.Dead
+			self.state = ConnectionMode.Disconnected
 			self:notificate(Notification:new({
-				call_on = ConnectionState.Dead,
+				call_on = ConnectionMode.Disconnected,
 			}))
 		end
 	end,
@@ -53,7 +52,7 @@ const class: declare.connection = runtimeobject:new({
 	end,
 
 	reload = function(self: declare.connection): ()
-		self:notificate(Notification:new({ call_on = ConnectionStateVariants.ChangingCallOn }))
+		self:notificate(Notification:new({ call_on = ConnectionStateVariant.ChangingCallOn }))
 	end,
 })
 
@@ -66,8 +65,8 @@ class:toggle_host(function(new: declare.connection)
 		const main_f = private.get_main_f(new, closeup_f, is_runtimeobject)
 		const regenerate = private.get_regenerator(new, main_f)
 
-		new:toggle_notice(main_f, new.call_on, ConnectionMode.Connection)
-		new:toggle_notice(regenerate, ConnectionStateVariants.ChangingCallOn, ConnectionMode.Connection)
+		new:toggle_notice(main_f, new.call_on, ConnectionMode.Ever)
+		new:toggle_notice(regenerate, ConnectionStateVariant.ChangingCallOn, ConnectionMode.Ever)
 		new:notificate(Notification:new({ call_on = NotificationVariant.Initialize }))
 	end, NotificationVariant.Setup, ConnectionMode.Once)
 
@@ -113,10 +112,10 @@ do
 	function private.get_regenerator(new: declare.connection, main_f)
 		return function()
 			for i = 1, 2 do
-				new:toggle_notice(main_f, new.call_on, ConnectionMode.Connection)
+				new:toggle_notice(main_f, new.call_on, ConnectionMode.Ever)
 			end
 
-			new:notificate(Notification:new({ call_on = ConnectionStateVariants.Normal }))
+			new:notificate(Notification:new({ call_on = ConnectionStateVariant.Normal }))
 		end
 	end
 end

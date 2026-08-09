@@ -1,19 +1,13 @@
 --!strict
+const EnumItem = require("@game/ReplicatedStorage/class/arch/EnumItem")
+const EnumObject = require("@game/ReplicatedStorage/class/arch/EnumObject")
+const declare = require("@game/ReplicatedStorage/static/declare")
 
-const EnumItem = require("../class/arch/EnumItem")
-const EnumObject = require("../class/arch/EnumObject")
-
-const declare = require("../static/declare")
-
-const class = EnumObject:new({
-	name = "ConnectionState",
-
-	Once = EnumItem:new({
-		name = "Once",
-	}),
-	Connection = EnumItem:new({
-		name = "Connection",
-	}),
+const class: declare.enum_connection_mode_variant = EnumObject:new({
+	name = script.Name,
+	Ever = EnumItem:new() :: declare.enumitem<any>,
+	Once = EnumItem:new() :: declare.enumitem<any>,
+	Disconnected = EnumItem:new() :: declare.enumitem<any>,
 })
 
 return class

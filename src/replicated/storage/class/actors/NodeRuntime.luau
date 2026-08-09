@@ -31,11 +31,11 @@ class:toggle_host(function(new: declare.noderuntime)
 	reference_notification_channel:connect(function()
 		can = true
 		print("can")
-	end, InstanceNotificationVariant.InstanceNew)
+	end, InstanceNotificationVariant.Newwie)
 	reference_notification_channel:connect(function()
 		can = false
 		print("fuck")
-	end, InstanceNotificationVariant.InstanceNullified)
+	end, InstanceNotificationVariant.Nullified)
 
 	timer:bind(function()
 		if not can then

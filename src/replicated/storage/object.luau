@@ -27,9 +27,17 @@ const class: declare.object = {
 		private.wake(T)
 
 		return T :: any
+	end, 
+
+	renew = function(self: declare.object, that) : any
+		return assert(self:base<<declare.object>>(), "base corruption"):new(that)
 	end,
 
 	is = function(this, that)
+		if that == "anyt" then
+			return true
+		end
+
 		local base = private.ever[this]
 
 		while base do
@@ -51,7 +59,7 @@ const class: declare.object = {
 		return state and cached.__type == that or false
 	end,
 
-	get_base = function(self: any, expected: namefield.names|string|nil) : any
+	base = function(self: any, expected: namefield.names|string|nil) : any
 		const base = private.ever[self]
 		if expected then 
 			if self.is(base, expected) then

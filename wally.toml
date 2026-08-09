@@ -16,6 +16,7 @@ Quaternion = "sleitnick/quaternion@0.2.3" # Quaternion geometry
 Videlib = "centau/vide@0.4.1" # UI Library
 Lori = "kyrorblx/lori@0.1.7" # Debug manager
 Konsole = "kyrorblx/konsole@0.1.9" # Console manager
+Cryptography = "daily3014/cryptography@1.5.0" # Security/Hash
 
 [server-dependencies]
 Cmdr = "evaera/cmdr@1.12.0"

@@ -71,7 +71,7 @@
 * `ValueChanged`;
 * `NewValue`;
 * `NewLazyValue`;
-* `InstanceDestroyed`.
+* `Destroyed`.
 
 Подписчики самостоятельно определяют необходимость обработки конкретного уведомления.
 

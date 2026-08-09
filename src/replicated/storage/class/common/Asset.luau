@@ -1,6 +1,7 @@
 --!strict
 const AssetService = game:GetService("AssetService")
 const Notification = require("@game/ReplicatedStorage/class/common/Notification")
+const DefaultVariant = require("@game/ReplicatedStorage/enums/DefaultVariant")
 const AssetStateVariant = require("@game/ReplicatedStorage/enums/descriptor/AssetStateVariant")
 const AssetRequireNotificationVariant =
 	require("@game/ReplicatedStorage/enums/notifications/AssetRequireNotificationVariant")
@@ -13,7 +14,7 @@ const project = require("@game/ReplicatedStorage/static/project")
 const private = {}
 const class: declare.asset = runtimeobject:new({
 	type = namefield.asset,
-	variant = AssetVariant.Unknown,
+	variant = DefaultVariant.Unknown,
 	rid = 0,
 	state = AssetStateVariant.Never,
 
@@ -25,7 +26,7 @@ const class: declare.asset = runtimeobject:new({
 		local loader = private.loaders[self.variant]
 
 		if not loader then
-			self.state = AssetStateVariant.Unknown
+			self.state = AssetStateVariant.Fail
 			project.console_out_error("unknown AssetVariant")
 			return nil
 		end

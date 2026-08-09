@@ -17,7 +17,6 @@ const class: declare.node = Disposable:new({
 		end)
 	end,
 
-
     get_attribute_list = function (self: declare.node) : {declare.value}
         const result = {}
 

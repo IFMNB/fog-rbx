@@ -54,7 +54,7 @@ class:toggle_host(function(new: declare.timer)
 		if not private.tasks[new] then
 			private.tasks[new] = task.spawn(loop)
 		end
-	end, ControllerNotificationVariant.Continue, ConnectionMode.Connection)
+	end, ControllerNotificationVariant.Continue, ConnectionMode.Ever)
 
 	control:toggle_notice(function()
 		if private.tasks[new] then
@@ -64,11 +64,11 @@ class:toggle_host(function(new: declare.timer)
 
 			private.tasks[new] = nil
 		end
-	end, ControllerNotificationVariant.Pause, ConnectionMode.Connection)
+	end, ControllerNotificationVariant.Pause, ConnectionMode.Ever)
 
 	control:toggle_notice(function()
 		private.holds[new.identity] = new.seconds
-	end, ControllerNotificationVariant.Reset, ConnectionMode.Connection)
+	end, ControllerNotificationVariant.Reset, ConnectionMode.Ever)
 end)
 
 do

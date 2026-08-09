@@ -1,31 +1,28 @@
 --!strict
+const Cryptography = require("@game/ReplicatedStorage/dependency/Cryptography")
 const object = require("@game/ReplicatedStorage/object")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const namefield = require("@game/ReplicatedStorage/static/namefield")
-const project = require("@game/ReplicatedStorage/static/project")
 
 const class: declare.enumitem = object:new({
 	type = namefield.enumitem,
-	hashlink = 0,
+	hashlink = "",
 	name = "",
+	enum = nil :: never, -- устанавливается при инициализации EnumObject
+
+
+	child = function (self: declare.enumitem, of: declare.enumobject) : boolean
+		if (self.enum == nil) then
+			(self :: any).enum = of
+			return true
+		else
+			return self.enum == of
+		end
+	end
 })
 
 class:toggle_host(function(new: declare.enumitem)
-	local hval = 0x811c9dc5
-
-	for i = 1, #new.name do
-		hval = bit32.bxor(hval, string.byte(new.name, i))
-		hval *= 0x01000193
-		hval = bit32.band(hval, 0xFFFFFFFF)
-	end
-
-	if project.debug then
-		if #new.name == 0 then
-			project.console_out_error("enumitem.hashlink == 0", new.name)
-		end
-	end
-
-	(new :: any).hashlink = hval
+	(new :: any).hashlink = Cryptography.Hashing.Blake3.Digest(buffer.fromstring(new.name))
 end)
 
 return class

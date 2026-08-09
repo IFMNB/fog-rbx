@@ -4,15 +4,15 @@ const EnumObject = require("@game/ReplicatedStorage/class/arch/EnumObject")
 const EnumItem = require("@game/ReplicatedStorage/class/arch/EnumItem")
 const declare = require("@game/ReplicatedStorage/static/declare")
 
-const class = EnumObject:new({
-	name = "DirectionVariant",
+const class: declare.enum_direction_variant = EnumObject:new({
+	name = script.Name,
 
-	pX = EnumItem:new({ name = "pX" }),
-	mX = EnumItem:new({ name = "mX" }),
-	pY = EnumItem:new({ name = "pY" }),
-	mY = EnumItem:new({ name = "mY" }),
-	pZ = EnumItem:new({ name = "pZ" }),
-	mZ = EnumItem:new({ name = "mZ" }),
+	Top = EnumItem:new() :: declare.enumitem<any>,
+	Bottom = EnumItem:new() :: declare.enumitem<any>,
+	Left = EnumItem:new() :: declare.enumitem<any>,
+	Right = EnumItem:new() :: declare.enumitem<any>,
+	Front = EnumItem:new() :: declare.enumitem<any>,
+	Back = EnumItem:new() :: declare.enumitem<any>,
 })
 
 return class
