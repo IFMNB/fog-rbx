@@ -20,6 +20,6 @@ Cryptography = "daily3014/cryptography@1.5.0" # Security/Hash
 Squash = "data-oriented-house/squash@5.0.0" # Buffer/Ser
 
 [server-dependencies]
-Cmdr = "evaera/cmdr@1.12.0"
+# Cmdr = "evaera/cmdr@1.12.0" # outdated
 
 [dev-dependencies]

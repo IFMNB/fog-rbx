@@ -29,11 +29,7 @@
 
       "server_dependency": {
           "$path": "ServerPackages"
-        },
-
-      "server_runtime": {
-        "$path": "src/server/runtime"
-      }
+        }
     },
 
     "StarterPlayer": {
@@ -45,10 +41,6 @@
 
       "StarterCharacterScripts": {
         "$path": "src/client/local"
-      },
-
-      "client_runtime": {
-        "$path": "src/client/runtime"
       }
     },
 
