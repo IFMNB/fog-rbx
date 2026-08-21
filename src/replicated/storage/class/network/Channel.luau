@@ -16,7 +16,6 @@ const DisposableNotification = require("@game/ReplicatedStorage/enums/notificati
 const declare = require("@game/ReplicatedStorage/static/declare")
 const namefield = require("@game/ReplicatedStorage/static/namefield")
 const project = require("@game/ReplicatedStorage/static/project")
-const Result = require("@game/ReplicatedStorage/struct/common/Result")
 
 const private = {}
 const class: declare.channel = Observable:new({
@@ -39,7 +38,7 @@ const class: declare.channel = Observable:new({
             end
 
             if game.RunService:IsServer() then
-                for _, v in private.peers[self] do
+                for _, v in self:get_peer() do
                     const player = v:get_player():get_instance()
                     if player then
                         base.send:FireClient(player, to.hashlink, ...)
@@ -48,19 +47,131 @@ const class: declare.channel = Observable:new({
             else
                 base.send:FireServer(to.hashlink, ...)
             end
+        else
+            project.console_out_error "cannot find base, abort, echo continued"
         end
 
         if self.echo then
-            self.event:invoke(to :: declare.enumitem<any>, ...)
+            private.requests[self] = nil
+            self.event:invoke(to, ...)
         end
 	end,
 
-	await = function(self: declare.channel, to: declare.enumitem_network_replication, ...: unknown): declare.result<{ unknown }, ...unknown>
+	await = function(self: declare.channel, to: declare.enumitem_network_replication, ...: unknown): {[declare.user]: (() -> ...unknown)?}
+        const base = self.reference:get_instance()
+        if base then
+            if game.RunService:IsServer() then
+                const result: {[declare.user]: (() -> ...unknown)?} = {}
+                const peers = self:get_peer()
+                local to_wait = #peers
+                const run = coroutine.running()
 
+                for _, v in peers do
+                    const player = v:get_player():get_instance()
+
+                    if player then
+                        task.defer(function (...)
+                            const thread = coroutine.running()
+                            task.delay(self.time_to_response, function ()
+                                if not result[v] then
+                                    task.cancel(thread)
+                                    coroutine.close(thread)
+
+                                    to_wait -= 1
+                                    if to_wait <= 0 then
+                                        coroutine.resume(run)
+                                    end
+                                end
+                            end)
+                            
+                            const state, out = pcall(function(...)
+                                return base.await:InvokeClient(player, ...)
+                            end, ...)
+
+                            if state then
+                                const pack = {out}
+
+                                result[v] = function ()
+                                    return unpack(pack)
+                                end
+                            else
+                                project.console_out "fail to catch data, exception"
+                            end
+
+                            to_wait -= 1
+
+                            if to_wait <= 0 then
+                                coroutine.resume(run)
+                            end
+                        end, ...)
+                    end
+                end
+
+                coroutine.yield()
+
+                return result
+            else
+                const pack = {base.await:InvokeServer(...)}
+
+                return {
+                    [User:get_local_user()] = function ()
+                        return unpack(pack)
+                    end
+                }
+            end
+        else
+            project.console_out_error("cannot find base")
+            return { }
+        end
 	end,
 
-    async = function(self: declare.channel, to: declare.enumitem_network_replication, ...: unknown): declare.result<declare.object>
+    async = function(self: declare.channel, to: declare.enumitem_network_replication, ...: unknown): {[declare.user]: (() -> ...unknown)?}
+        const base = self.reference:get_instance()
+        if base then
+            if game.RunService:IsServer() then
+                const result: {[declare.user]: (() -> ...unknown)?} = {}
+                const peers = self:get_peer()
 
+                for _, v in peers do
+                    const player = v:get_player():get_instance()
+
+                    if player then
+                        task.defer(function (...)
+                            const thread = coroutine.running()
+                            task.delay(self.time_to_response, function ()
+                                if not result[v] then
+                                    task.cancel(thread)
+                                    coroutine.close(thread)
+                                end
+                            end)
+                            
+                            const pack = {base.await:InvokeClient(player, ...)}
+
+                            result[v] = function ()
+                                return unpack(pack)
+                            end
+                        end, ...)
+                    end
+                end
+
+                return result
+            else
+                const result: {[declare.user]: (() -> ...unknown)?} = {}
+
+                task.defer(function (...)
+                    const pack = {base.await:InvokeServer(...)}
+
+                    result[User:get_local_user()] = function ()
+                        return unpack(pack)
+                    end
+                end, ...)
+
+                return result
+            end
+        else
+            project.console_out_error("cannot find base")
+            return { }
+        end
 	end,
 
 	get_await_response = function(self: declare.channel, to: declare.enumitem<any>): ((...unknown) -> ...unknown)?
@@ -130,7 +241,12 @@ const class: declare.channel = Observable:new({
         private.variant[self] = to
 
         if to then
-            self.reference:set_instance(private.get_base(to))
+            const base = private.get_base(to)
+            if base then
+                self.reference:set_instance(base)
+            else
+                project.console_out_error("it is not possible to establish a base for the channel, further network communication will be interrupted")
+            end
         else
             self.reference:set_instance(nil)
         end
@@ -169,6 +285,7 @@ class:host(function(new: declare.channel)
                     end
 
                     private.build(new, private.checker(new.reference:get_instance() :: any))
+                    new:set_variant(nil)
                 end
             }
         }
@@ -208,23 +325,25 @@ do
 				const new_event = Instance.new("RemoteEvent")
 				const new_async = Instance.new("RemoteFunction")
 				const new_await = Instance.new("RemoteFunction")
+                --const new_build = Instance.new("RemoteFunction")
 
 
 				new_folder.Name = variant.hashlink
 				new_event.Name = "send"
 				new_async.Name = "async"
                 new_await.Name = "await"
+                --new_build.Name = "build"
 
 				new_event.Parent = new_folder
 				new_async.Parent = new_folder
 				new_await.Parent = new_folder
+                --new_build.Parent = new_folder
                 new_folder.Parent = shared
 
 				return new_folder :: any
 			end
 		else
 			const unknown_that: any = game.ReplicatedStorage.shared:WaitForChild(variant.hashlink, 5)
-            private.checker(unknown_that)
 
             return unknown_that :: rbx_type
 		end
@@ -235,6 +354,7 @@ do
 		assert(assert(of:FindFirstChild("send"), "folder doesn't have event"):IsA("RemoteEvent"))
 		assert(assert(of:FindFirstChild("async"), "folder doesn't have function"):IsA("RemoteFunction"))
         assert(assert(of:FindFirstChild("await"), "folder doesn't have function"):IsA("RemoteFunction"))
+        --assert(assert(of:FindFirstChild("build"), "folder doesn't have function"):IsA("RemoteFunction"))
         return of :: rbx_type
     end
 

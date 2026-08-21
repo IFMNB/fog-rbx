@@ -55,19 +55,20 @@ const class: declare.event = Observable:new({
 		private.connections[self][that.on] = connections
 	end,
 
-	invoke = function(self: declare.event, package: declare.package<declare.enumitem|{declare.enumitem_type_element_variant}, unknown>|declare.enumitem, ...): ()
-		if package:is(namefield.enumitem) then
-			package = Package:new {
-				on = { package :: declare.enumitem},
-				pack = {...}
-			}
-		end
+	invoke = function(self: declare.event, call: declare.enumitem<any>|{declare.enumitem<any>}|declare.notification<declare.enumitem<any>|{declare.enumitem<any>}>, ...): ()
+		local iterate: {declare.enumitem<any>} = {}
 		
-		if package.is(package.on, namefield.enumitem) then
-			package.on = {package.on :: declare.enumitem<any>}
+		if self.is(call, namefield.enumitem) then
+			table.insert(iterate, call :: declare.enumitem<any>)
+		elseif self.is(call, namefield.notification) then
+			self:invoke((call :: declare.notification<declare.enumitem<any>|{declare.enumitem<any>}>).on, ...)
+			return	
+		elseif type(call) == declare.table then
+			const list = call :: {declare.enumitem<any>}
+			iterate = list
 		end
 
-		for _, v in package.on :: {declare.enumitem} do
+		for _, v in iterate do
 			const connections = private.connections[self][v]
 			if connections then
 				for i = #connections, 1, -1 do
@@ -87,7 +88,7 @@ const class: declare.event = Observable:new({
 						continue
 					end
 
-					b:invoke(unpack(package.pack))
+					b:invoke(...)
 				end
 			end
 		end

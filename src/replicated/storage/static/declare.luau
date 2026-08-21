@@ -96,7 +96,12 @@ export type asyncable = {
 export type stateable <T = unknown, U = unknown> = {
     read get_state_machine: (self: T) -> statemachine<U>
 }
-export type channel_internal_reference = Folder & { send: RemoteEvent, await: RemoteFunction, async: RemoteFunction }
+export type channel_internal_reference = Folder & {
+    read send: RemoteEvent,
+    read await: RemoteFunction,
+    read async: RemoteFunction,
+    read build: RemoteFunction
+}
 
 export type observer_pack <T = unknown> = ((identity: object_identity)->())|thread|observer<T>|string
 
@@ -207,7 +212,7 @@ export type observer<T = enumitem<any>> = construct<{
     
     read subscribe: (self: observer<T>, on: T|enumobject, mode: enumitem_connection_variant, ...observer_pack<T>) -> () -> (),
     read notice: (self: observer<T>, on: package<{T}|T, package<enumitem_connection_variant, observer_pack<T>>>) -> () -> (),
-    read notificate: (self: observer<T>, notification: notification<T>|package<T>) -> (),
+    read notificate: (self: observer<T>, notification: T|{T}|notification<T|{T}>) -> (),
 }, runtimeobject>
 
 export type event<T = enumitem<any>, U... = ...unknown> = construct<{
@@ -215,8 +220,9 @@ export type event<T = enumitem<any>, U... = ...unknown> = construct<{
 
     read connect: <T0> (self: event<T,U...>, on: T|enumitem_default_variant, f: ((U...) -> ())|thread|observer<T>) -> connection<T>,
     read once: <T0> (self: event<T,U...>, on: T|enumitem_default_variant, f: ((U...) -> ())|thread|observer<T>) -> connection<T>,
-    read wait: (self: event<T,U...>, on: T|enumitem_default_variant) -> U... 
-} & invokeable<event<T,U...>, package<{T}|T,unknown>|T, U...> & expected_calltype<T?> & linkable<event<T,U...>, connection>, observer<T>> 
+    read wait: (self: event<T,U...>, on: T|enumitem_default_variant) -> U...,
+    read invoke: (self: event<T,U...>, on: T|{T}|notification<T|{T}>, U...) -> (),
+} & expected_calltype<T?> & linkable<event<T,U...>, connection>, observer<T>> 
 
 export type connection<T = enumitem<any>, U... = ()> = construct<{
     read type: namefield.connection,
@@ -256,8 +262,8 @@ export type channel <T = enumitem_network_replication, U... = ...unknown, E... =
     echo: boolean,
 
     read send: (self: channel<T,U...,E...>, to: T, U...) -> (),
-    read await: (self: channel<T,U...,E...>, to: T, U...) -> result<{unknown}, E...>,
-    read async: (self: channel<T,U..., E...>, to: T, U...) -> result<object>,
+    read sync: (self: channel<T,U...,E...>, to: T, U...) -> {[user]: (() -> E...)?},
+    read async: (self: channel<T,U...,E...>, to: T, U...) -> {[user]: (() -> E...)?},
 
     read set_await_response: (self: channel<T,U...,E...>, to: T, f: ((U...) -> E...)? ) -> (),
     read get_await_response: (self: channel<T,U...,E...>, to: T) -> ((U...) -> E...)?,
@@ -351,15 +357,20 @@ export type attribute<T = unknown, U = Instance> = construct<{
     read get_current_value: (self: attribute<T,U>) -> T?
 } & nameable<string> & referenceable<attribute<T,U>,U?>, disposable<enumitem_attribute_notification>>
 
-export type actmapped = construct<{
-    read type: namefield.actmapped,
-    read related: enumitem_action_map_variant,
+export type input = construct<{
+    read type: namefield.input,
 
-    read code: {Enum.KeyCode},
     strengh: number,
     duration: number,
+    clamped: boolean,
+    pressed: boolean,
 
-}, channel<enumitem_action_map_variant, (), ()>>
+    read get_code: (self: input) -> {Enum.KeyCode},
+    read set_code: (self: input, of: Enum.KeyCode, to: boolean?) -> (),
+
+    read get_related: (self: input) -> enumitem_action_map_variant?,
+    read set_related: (self: input, new: enumitem_action_map_variant?) -> (),
+}, disposable<enumitem_input_notification>>
 
 
 
@@ -496,7 +507,6 @@ export type result<T = unknown, U... = ...unknown> = construct<{
     read state: boolean,
     read result: T,
 
-    read call_of: <T,U> (f: (...T) -> U, ...U) -> result,
     read unpack: (self: result<T,U...>) -> U...
 }, record>
 
@@ -629,10 +639,16 @@ export type enum_direction_variant = construct<{
     read Back: enumitem_direction_variant,
 }, enumobject>
 
-export type enumitem_message_variant = enumitem<enum_message_variant>
-export type enum_message_variant = construct<{
-    read Invoke: enumitem_message_variant,
-    read Await: enumitem_message_variant,
+export type enumitem_input_notification = enumitem<enum_input_notification>
+export type enum_input_notification = construct<{
+    read CodeAdded: enumitem_input_notification,
+    read CodeRemoved: enumitem_input_notification,
+    read Pressed: enumitem_input_notification,
+    read Clamped: enumitem_input_notification,
+    read Unpressed: enumitem_input_notification,
+    read Unclampled: enumitem_input_notification,
+    read RelatedChanged: enumitem_input_notification,
+    read RelatedNullified: enumitem_input_notification
 }, enumobject>
 
 export type enumitem_state = enumitem<enum_state>

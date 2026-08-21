@@ -1,6 +1,7 @@
 --!strict
 const Package = require("@game/ReplicatedStorage/class/common/notification/Package")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
+const Notification = require("@game/ReplicatedStorage/class/common/notification/Notification")
 const runtimeobject = require("@game/ReplicatedStorage/runtimeobject")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const namefield = require("@game/ReplicatedStorage/static/namefield")
@@ -55,8 +56,37 @@ const class: declare.observer = runtimeobject:new({
 		end
 	end,
 
-	notificate = function (self: declare.observer, notification: declare.notification<declare.enumitem> ): ()
-		const target = private.notificatable[self][notification.on]
+	notificate = function (self: declare.observer, notification: declare.enumitem|{declare.enumitem}|declare.notification<declare.enumitem|{declare.enumitem}> ): ()
+		if self.is(notification, namefield.enumitem) then
+			self:notificate(Notification:new {
+				on = notification :: declare.enumitem
+			})
+			return
+		elseif self.is(notification, namefield.notification) then
+			const notice = notification :: declare.notification<declare.enumitem|{declare.enumitem}>
+			if self.is(notice.on, namefield.enumitem) then
+				if type(notice.on) == declare.table then
+					for _, v in notice.on :: {declare.enumitem} do
+						self:notificate(Notification:new {
+							on = v
+						})
+					end
+				end
+			end
+
+			return
+		elseif type(notification) == declare.table then
+			for _, v in notification :: {declare.enumitem} do
+				self:notificate(Notification:new {
+					on = v
+				})
+			end
+			
+			return
+		end
+		
+		const needle_notification = notification :: declare.notification<declare.enumitem<any>>
+		const target = private.notificatable[self][needle_notification.on]
 		
 		if target then
 			const seen: {[unknown]: unknown } = {}
@@ -74,7 +104,6 @@ const class: declare.observer = runtimeobject:new({
 
 				if t.on == ConnectionVariant.Never then
 					table.remove(target, i)
-					project.console_out_error "package with never enumitem, removed"
 					continue
 				elseif t.on == ConnectionVariant.Once then
 					table.remove(target, i)
@@ -102,21 +131,21 @@ const class: declare.observer = runtimeobject:new({
 					end
 
 					if T == declare["function"] then
-						if project.run(v, notification.identity) == 4 then
+						if project.run(v, needle_notification.identity) == 4 then
 							project.console_out "cannot run this item now, code 4"
 							continue
 						end
 					elseif T == declare.thread then
-						if project.run(v, notification.identity) == 4 then
+						if project.run(v, needle_notification.identity) == 4 then
 							project.console_out "cannot run this item now, code 4"
 							continue
 						end
 					elseif T == declare.table then
 						if self.is(v, namefield.observer) then
-							const observer = v :: declare.observer
+							const observer = v :: declare.observer<declare.enumitem<any>>
 
 							if project.debug then
-								const search_in = private.notificatable[observer][notification.on]
+								const search_in = private.notificatable[observer][needle_notification.on]
 
 								if search_in then
 									const pos = table.find(search_in, self :: any)
@@ -129,7 +158,9 @@ const class: declare.observer = runtimeobject:new({
 								end
 							end
 
-							observer:notificate(notification)
+							observer:notificate(needle_notification :: any)
+							-- expected enumitem, but got enumitem & {read type: "notification"} & object (?)
+							-- needle_notification.on.type == "enumitem" | "object" | string
 						end
 					elseif T == declare.string then
 						if type(self[v]) == declare["function"] then

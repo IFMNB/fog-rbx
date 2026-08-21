@@ -8,14 +8,6 @@ const class : declare.result = Record:new {
     state = false,
     result = nil,
 
-    call_of = function <T,U> (self: declare.result, f: (...T) -> U, ...: T) : declare.result
-        const state, out = pcall(f, ...)
-        return self:renew({
-            state = state,
-            result = out
-        })
-    end,
-
     unpack = function (self: declare.result) : ...unknown
         if type(self.result) == declare.table then
             return unpack(self.result :: {unknown})

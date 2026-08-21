@@ -105,6 +105,7 @@ export type watcher = literal<"watcher">
 export type remote = literal<"remote">
 export type statemachine = literal<"statemachine">
 export type signal = literal<"signal">
+export type input = literal<"input">
 
 export type classfield = {
 	read object: object,
@@ -181,7 +182,8 @@ export type classfield = {
 	read remote: remote,
 	read message: message,
 	read statemachine: statemachine,
-	read signal: signal
+	read signal: signal,
+	read input: input
 }
 
 export type types =
