@@ -92,6 +92,19 @@ export type weaponsfx = literal<"weaponsfx">
 export type enumgroup = literal<"enumgroup">
 export type mechasfx = literal<"mechasfx">
 export type actmapped = literal<"actmapped">
+export type observer = literal<"observer">
+export type efx = literal<"efx">
+export type ifx = literal<"ifx">
+export type vfx = literal<"vfx">
+export type sfx = literal<"sfx">
+export type physx = literal<"physx">
+export type emitter = literal<"emitter">
+export type tasky = literal<"tasky">
+export type package = literal<"package">
+export type watcher = literal<"watcher">
+export type remote = literal<"remote">
+export type statemachine = literal<"statemachine">
+export type signal = literal<"signal">
 
 export type classfield = {
 	read object: object,
@@ -122,9 +135,9 @@ export type classfield = {
 	read result: result,
 	read httprequest: httprequest,
 	read server: server,
+	read event: event,
 	read browser: browser,
 	read config: config,
-	read face: face,
 	read sharednet: sharednet,
 	read actmap: actmap,
 	read round: round,
@@ -154,15 +167,88 @@ export type classfield = {
 	read weaponsfx: weaponsfx,
 	read enumgroup: enumgroup,
 	read mechasfx: mechasfx,
-	read actmapped: actmapped
+	read actmapped: actmapped,
+	read observer: observer,
+	read efx: efx,
+	read ifx: ifx,
+	read vfx: vfx,
+	read sfx: sfx,
+	read physx: physx,
+	read emitter: emitter,
+	read tasky: tasky,
+	read package: package,
+	read watcher: watcher,
+	read remote: remote,
+	read message: message,
+	read statemachine: statemachine,
+	read signal: signal
 }
+
+export type types =
+	"nil"
+	| "number"
+	| "string"
+	| "boolean"
+	| "table"
+	| "vector"
+	| "function"
+	| "thread"
+	| "userdata"
+	| "buffer"
+	| "AdReward"
+	| "Axes"
+	| "BrickColor"
+	| "CatalogSearchParams"
+	| "CFrame"
+	| "Color3"
+	| "ColorSequence"
+	| "ColorSequenceKeypoint"
+	| "Content"
+	| "DateTime"
+	| "DockWidgetPluginGuiInfo"
+	| "Enum"
+	| "EnumItem"
+	| "Enums"
+	| "Faces"
+	| "FloatCurve"
+	| "Font"
+	| "Instance"
+	| "NumberRange"
+	| "NumberSequence"
+	| "NumberSequenceKeypoint"
+	| "OverlapParams"
+	| "Path2DControlPoint"
+	| "PathWaypoint"
+	| "PhysicalProperties"
+	| "Random"
+	| "Ray"
+	| "RaycastParams"
+	| "RaycastResult"
+	| "RBXScriptConnection"
+	| "RBXScriptSignal"
+	| "Rect"
+	| "Region3"
+	| "Region3int16"
+	| "RotationCurveKey"
+	| "Secret"
+	| "SecurityCapabilities"
+	| "SharedTable"
+	| "TweenInfo"
+	| "UDim"
+	| "UDim2"
+	| "UserValue"
+	| "Vector2"
+	| "Vector2int16"
+	| "Vector3"
+	| "Vector3int16"
+
 export type names = keyof<classfield>
 
 const reflection = newproxy(true)
 const meta = getmetatable(reflection)
 
-meta.__index = function (self, indexer)
-    return tostring(indexer)
+meta.__index = function(self, indexer)
+	return tostring(indexer)
 end
 
 meta.__metatable = "reflection"

@@ -1,45 +1,44 @@
 --!strict
 
-const Notification = require("@game/ReplicatedStorage/class/common/Notification")
-const ControllerNotificationVariant =
-	require("@game/ReplicatedStorage/enums/notifications/ControllerNotificationVariant")
-const runtimeobject = require("@game/ReplicatedStorage/runtimeobject")
+const Observable = require("@game/ReplicatedStorage/class/arch/Observable")
+const Notification = require("@game/ReplicatedStorage/class/common/notification/Notification")
+const ControllerState = require("@game/ReplicatedStorage/enums/state/ControllerState")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const namefield = require("@game/ReplicatedStorage/static/namefield")
 const project = require("@game/ReplicatedStorage/static/project")
 
-const class: declare.controller = runtimeobject:new({
+const class: declare.controller = Observable:new({
 	type = namefield.controller,
-	state = ControllerNotificationVariant.Pause,
+	state = ControllerState.Pause,
 
 	continue = function(self: declare.controller): ()
-		if self.state == ControllerNotificationVariant.Continue then
+		if self.state == ControllerState.Continue then
 			project.console_out("contoller already running")
 			return
 		end
 
-		self.state = ControllerNotificationVariant.Continue
-		self:notificate(Notification:new({ call_on = ControllerNotificationVariant.Continue }))
+		self.state = ControllerState.Continue
+		self:notificate(Notification:new({ on = ControllerState.Continue }))
 	end,
 
 	pause = function(self: declare.controller): ()
-		if self.state == ControllerNotificationVariant.Pause then
+		if self.state == ControllerState.Pause then
 			project.console_out("contoller already paused")
 			return
 		end
 
-		self.state = ControllerNotificationVariant.Pause
-		self:notificate(Notification:new({ call_on = ControllerNotificationVariant.Pause }))
+		self.state = ControllerState.Pause
+		self:notificate(Notification:new({ on = ControllerState.Pause }))
 	end,
 
 	reset = function(self: declare.controller): ()
-		if self.state == ControllerNotificationVariant.Reset then
+		if self.state == ControllerState.Reset then
 			project.console_out("contoller already dropped(reset)")
 			return
 		end
 
-		self.state = ControllerNotificationVariant.Reset
-		self:notificate(Notification:new({ call_on = ControllerNotificationVariant.Reset }))
+		self.state = ControllerState.Reset
+		self.notificate(self, Notification:new({ on = ControllerState.Reset }))
 	end,
 })
 

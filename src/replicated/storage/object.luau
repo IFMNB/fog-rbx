@@ -10,9 +10,9 @@ const class: declare.object = {
 	identity = "never",
 	type = namefield.object,
 
-	new = function(self, that, ...)
+	new = function <T,U> (self: T, that: U?, ...)
 		const T = (
-			project.prototype_oop
+			project.proto
 				and setmetatable(table.clone(self), {
 					__index = function(t, i)
 						const var = rawget(t, i)
@@ -29,8 +29,18 @@ const class: declare.object = {
 		return T :: any
 	end, 
 
-	renew = function(self: declare.object, that) : any
-		return assert(self:base<<declare.object>>(), "base corruption"):new(that)
+	renew = function <T> (self: declare.object, that: { [unknown]: unknown }?) : any
+		const compared: {[unknown]: unknown} = {}
+
+		--[=[ Не позволяем из данной функции билдить новые объекты с новой семантикой ]=]
+
+		if that then
+			for i,v in self :: {[unknown]: unknown} do
+				compared[i] = that[i]
+			end
+		end
+
+		return assert(self:base<<declare.object>>(), "base corruption"):new(compared)
 	end,
 
 	is = function(this, that)
@@ -59,7 +69,7 @@ const class: declare.object = {
 		return state and cached.__type == that or false
 	end,
 
-	base = function(self: any, expected: namefield.names|string|nil) : any
+	base = function <T> (self: T & declare.object, expected: namefield.names|string|nil) : any
 		const base = private.ever[self]
 		if expected then 
 			if self.is(base, expected) then
@@ -74,14 +84,13 @@ const class: declare.object = {
 		return nil
 	end,
 
-	toggle_host = function (self: any, f: (any) -> ())
+	host = function <T> (self: T & declare.object, f: (any) -> ())
 		const state, cached = private.get_cached<<T,unknown>>(self)
 
 		if state then
 			const pos = table.find(cached.hosts, f)
 			if pos then
 				table.remove(cached.hosts, pos)
-				if project.debug_object_hosts then project.console_out_error "host deleted" end
 				return
 			else
 				table.insert(cached.hosts, f)
@@ -92,8 +101,25 @@ const class: declare.object = {
 		end
 	end,
 
-	require = function (identity: unknown) : declare.object?
-		return private.identity[identity] :: declare.object?
+	require = function (identity: unknown, assertion) : any
+		const required = private.identity[identity]
+		
+		if assertion then
+			const state, cached = private.get_cached(required)
+			
+			assert(state, "cannot get necessary object, cache empty")
+			assert(cached.__type == assertion, "retrieved object isn't an assertion")
+		end
+		
+		assert(required ~= nil, "necessary object is never exists")
+
+		return required
+	end,
+
+	rebuild = function <T> (self: T, that: {[string]: unknown}) : T
+		assert(type(that) == declare.table, "cannot rebuild that object, his type isn't a table type")
+
+		return (self :: declare.object):renew(that)
 	end
 }
 
@@ -111,7 +137,7 @@ do --private_region
 	private.cached = setmetatable({} :: { [unknown]: cached }, private.frozen)
 	private.ever = setmetatable({} :: { [declare.object | unknown]: unknown }, private.frozen)
 	private.identity = setmetatable({} :: {[unknown]: declare.object|unknown}, private.frozen)
-
+	private.type_build_location = {} :: {[string]: ModuleScript?}
 
 	function private.get_cached_by_instance<T,U>(this: unknown): (boolean, cached<T,U>)
 		const ever = private.ever[this]
@@ -142,7 +168,7 @@ do --private_region
 		const meta: cached = private.cached[this]
 			or {
 				__index = parent,
-				__metatable = if not project.prototype_oop then nil else if project.develop or project.debug then "<metatable>" else empty,
+				__metatable = if not project.proto then nil else if project.debug then "<metatable>" else empty,
 				__type = Ttype == "table" and tostring((this :: any).type) or Ttype,
 
 				self = this,
@@ -156,7 +182,7 @@ do --private_region
 	function private.wake_hosts(inside: cached, to: declare.object)
 		for _, v in inside.hosts do
 			if not project.debug then
-				project.mcall(v, to)
+				pcall(v, to)
 			else
 				v(to)
 			end
@@ -214,12 +240,14 @@ do --private_region
 	end
 
 	private.bootload_new(class)
+
+	if project.debug then
+		class:host(function(new: declare.object)
+			project.console_out(string.format("new %s", new.type))
+		end)
+	end
 end
 
-if project.debug then
-	class:toggle_host(function(new: declare.object)
-		project.console_out(string.format("new %s object", new.type))
-	end)
-end
+
 
 return class

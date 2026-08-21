@@ -1,6 +1,6 @@
 --!strict
-const Notification = require("@game/ReplicatedStorage/class/common/Notification")
-const InstanceNotificationVariant = require("@game/ReplicatedStorage/enums/notifications/InstanceNotificationVariant")
+const Notification = require("@game/ReplicatedStorage/class/common/notification/Notification")
+const OperationVariant = require("@game/ReplicatedStorage/enums/descriptor/OperationVariant")
 const runtimeobject = require("@game/ReplicatedStorage/runtimeobject")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const namefield = require("@game/ReplicatedStorage/static/namefield")
@@ -28,16 +28,16 @@ const class: declare.reference = runtimeobject:new({
 			const that = to :: Instance
 
 			private.connections[self] = that.Destroying:Once(function()
-				self:notificate(Notification:new({ call_on = InstanceNotificationVariant.Destroyed }))
+				self:notificate(Notification:new({ on = OperationVariant.Remove }))
 			end)
 		end
 
 		if stored == nil and to == nil then
-			self:notificate(Notification:new({ call_on = InstanceNotificationVariant.Nullified }))
+			self:notificate(Notification:new({ on = OperationVariant.Null }))
 		elseif stored == nil and to ~= nil then
-			self:notificate(Notification:new({ call_on = InstanceNotificationVariant.Newwie }))
+			self:notificate(Notification:new({ on = OperationVariant.New }))
 		elseif stored ~= to then
-			self:notificate(Notification:new({ call_on = InstanceNotificationVariant.Changed }))
+			self:notificate(Notification:new({ on = OperationVariant.Change }))
 		else
 			project.console_out("missmatch reference")
 		end

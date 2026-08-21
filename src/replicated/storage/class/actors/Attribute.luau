@@ -1,16 +1,13 @@
 --!strict
-
-const ConnectionMode = require("../../enums/ConnectionMode")
-const InstanceNotificationVariant = require("@game/ReplicatedStorage/enums/notifications/InstanceNotificationVariant")
-const NotificationType = require("@game/ReplicatedStorage/enums/notifications/NotificationVariant")
-const ValueNotificationVariant = require("@game/ReplicatedStorage/enums/notifications/ValueNotificationVariant")
-const OperationalVariant = require("@game/ReplicatedStorage/enums/required/OperationalVariant")
-const declare = require("../../static/declare")
-const namefield = require("../../static/namefield")
-const project = require("../../static/project")
-const Disposable = require("../arch/Disposable")
-const Reference = require("../common/Reference")
-const Value = require("../common/Value")
+const Disposable = require("@game/ReplicatedStorage/class/arch/Disposable")
+const Reference = require("@game/ReplicatedStorage/class/common/Reference")
+const Value = require("@game/ReplicatedStorage/class/common/Value")
+const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
+const OperationVariant = require("@game/ReplicatedStorage/enums/descriptor/OperationVariant")
+const DisposableNotification = require("@game/ReplicatedStorage/enums/notification/DisposableNotification")
+const declare = require("@game/ReplicatedStorage/static/declare")
+const namefield = require("@game/ReplicatedStorage/static/namefield")
+const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
 const class: declare.attribute = Disposable:new({
@@ -41,7 +38,7 @@ const class: declare.attribute = Disposable:new({
 	end,
 })
 
-class:toggle_host(function(new: declare.attribute)
+class:host(function(new: declare.attribute)
 	const param: declare.value<any> = Value:new()
 	const refer: declare.reference<any> = Reference:new()
 
@@ -60,39 +57,12 @@ class:toggle_host(function(new: declare.attribute)
 
 			if not ok then
 				project.console_out_error("attribute unexpected valuetype", err)
-				if new:get_state(OperationalVariant.Working) then
-					new:toggle_state(OperationalVariant.Working)
-				end
-
-				if not new:get_state(OperationalVariant.Paused) then
-					new:toggle_state(OperationalVariant.Paused)
-				end
-			else
-				if not new:get_state(OperationalVariant.Working) then
-					new:toggle_state(OperationalVariant.Working)
-				end
-
-				if new:get_state(OperationalVariant.Paused) then
-					new:toggle_state(OperationalVariant.Paused)
-				end
 			end
 		end
 	end
 
-	const toggle_listeners = function()
-		refer:toggle_notice(update_value_attribute, InstanceNotificationVariant.Newwie, ConnectionMode.Ever)
-		refer:toggle_notice(update_value_attribute, InstanceNotificationVariant.Changed, ConnectionMode.Ever)
-		param:toggle_notice(update_value_attribute, ValueNotificationVariant.ValueChanged, ConnectionMode.Ever)
-		param:toggle_notice(update_value_attribute, ValueNotificationVariant.ValueNew, ConnectionMode.Ever)
-		param:toggle_notice(update_value_attribute, ValueNotificationVariant.ValueRemoved, ConnectionMode.Ever)
-	end
-
-	toggle_listeners()
-	new:toggle_notice(function()
-		toggle_listeners()
-		refer:set_instance(nil)
-		param:set_value(nil)
-	end, NotificationType.PreRelease, ConnectionMode.Once)
+	const resource: (...any) -> () = refer:subscribe(OperationVariant, ConnectionVariant.Ever, update_value_attribute)
+	new:subscribe(DisposableNotification.OnRelease, ConnectionVariant.Once, resource)
 end)
 
 do

@@ -1,49 +1,43 @@
 --!strict
 const AssetService = game:GetService("AssetService")
-const Notification = require("@game/ReplicatedStorage/class/common/Notification")
-const DefaultVariant = require("@game/ReplicatedStorage/enums/DefaultVariant")
-const AssetStateVariant = require("@game/ReplicatedStorage/enums/descriptor/AssetStateVariant")
-const AssetRequireNotificationVariant =
-	require("@game/ReplicatedStorage/enums/notifications/AssetRequireNotificationVariant")
-const AssetVariant = require("@game/ReplicatedStorage/enums/required/AssetVariant")
-const runtimeobject = require("@game/ReplicatedStorage/runtimeobject")
+const Observable = require("@game/ReplicatedStorage/class/arch/Observable")
+const Notification = require("@game/ReplicatedStorage/class/common/notification/Notification")
+const AssetTypeVariant = require("@game/ReplicatedStorage/enums/descriptor/AssetTypeVariant")
+const DefaultVariant = require("@game/ReplicatedStorage/enums/descriptor/DefaultVariant")
+const State = require("@game/ReplicatedStorage/enums/state/State")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const namefield = require("@game/ReplicatedStorage/static/namefield")
 const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
-const class: declare.asset = runtimeobject:new({
+const class: declare.asset = Observable:new({
 	type = namefield.asset,
 	variant = DefaultVariant.Unknown,
 	rid = 0,
-	state = AssetStateVariant.Never,
+	state = State.Nothing,
 
 	get_asset = function(self: declare.asset): any
-		if self.state ~= AssetStateVariant.Never then
-			self.state = AssetStateVariant.Reload
-		end
+		self.state = State.Loading
+		self:notificate(Notification:new({ on = State.Loading }))
 
 		local loader = private.loaders[self.variant]
 
 		if not loader then
-			self.state = AssetStateVariant.Fail
+			self.state = State.Failure
+			self:notificate(Notification:new {on = State.Failure})
 			project.console_out_error("unknown AssetVariant")
 			return nil
 		end
 
-		self.state = AssetStateVariant.Making
-		self:notificate(Notification:new({ call_on = AssetRequireNotificationVariant.Loading }))
 		local ok, result = pcall(loader, self)
 
 		if ok then
-			self.state = AssetStateVariant.Loaded
-			self:notificate(
-				Notification:new({ call_on = AssetRequireNotificationVariant.Successful, pack = { result } })
-			)
+			self.state = State.Successful
+			self:notificate(Notification:new({ on = State.Successful }))
 			return result
 		else
-			self.state = AssetStateVariant.Fail
-			self:notificate(Notification:new({ call_on = AssetRequireNotificationVariant.Failure, pack = { result } }))
+			self.state = State.Failure
+			self:notificate(Notification:new({ on = State.Failure }))
 			project.console_out_error(result)
 			return nil
 		end
@@ -53,17 +47,17 @@ const class: declare.asset = runtimeobject:new({
 do
 	private.loaders = table.freeze({
 
-		[AssetVariant.Model] = function(that: declare.asset): Instance
+		[AssetTypeVariant.Model] = function(that: declare.asset): Instance
 			return AssetService:LoadAssetAsync(that.rid)
 		end,
 
-		[AssetVariant.Sound] = function(that: declare.asset): Sound
+		[AssetTypeVariant.Sound] = function(that: declare.asset): Sound
 			local sound = Instance.new("Sound")
 			sound.SoundId = string.format("rbxassetid://%d", that.rid)
 			return sound
 		end,
 
-		[AssetVariant.Image] = function(that: declare.asset): ImageLabel
+		[AssetTypeVariant.Image] = function(that: declare.asset): ImageLabel
 			local image = Instance.new("ImageLabel")
 			image.Image = string.format("rbxassetid://%d", that.rid)
 			return image

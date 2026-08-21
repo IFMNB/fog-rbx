@@ -4,7 +4,9 @@ const Cryptography = require("@game/ReplicatedStorage/dependency/Cryptography")
 const object = require("@game/ReplicatedStorage/object")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const namefield = require("@game/ReplicatedStorage/static/namefield")
+const project = require("@game/ReplicatedStorage/static/project")
 
+const private = {}
 const class: declare.enumobject = object:new({
 	type = namefield.enumobject,
 	name = script.Name,
@@ -33,31 +35,57 @@ const class: declare.enumobject = object:new({
 		return unpack(result)
 	end,
 
+	get_enumitem_by_hashlink = function(hashlink: string): declare.enumitem
+		return assert(
+			private.item_builded[hashlink],
+			"enumitem with received hashlink does not exists or loaded right now"
+		)
+	end,
+
 	is_my_enumitem = function(self: declare.enumobject, that: declare.enumitem): boolean
 		return self[that.name] ~= nil
 	end,
 
-	assert_is_my_enumitem = function (self: declare.enumobject, that: unknown) : boolean
-		return assert(object.is(that, namefield.enumitem) and self:is_my_enumitem(that :: declare.enumitem), "received data isn't expected enumitem")
-	end
-});
+	assert_is_my_enumitem = function(self: declare.enumobject, that: unknown): boolean
+		return assert(
+			object.is(that, namefield.enumitem) and self:is_my_enumitem(that :: declare.enumitem),
+			"received data isn't expected enumitem"
+		)
+	end,
+})
 
-class:toggle_host(function(new: declare.enumobject)
+class:host(function(new: declare.enumobject)
 	for i, v in new:get_enums_list() do
-		const name = tostring(i)
+		const name = tostring(i);
 
-		if v.enum == nil then
-			v:child(new)
+		(v :: any).enum = new;
+		v.name = name;
+		(v :: any).hashlink = Cryptography.Hashing.Blake3.Digest(buffer.fromstring(name));
+	
+		if project.debug then
+			const collision = private.item_builded[v.hashlink]
+
+			if collision then
+				project.console_out_error(
+					string.format(
+						"enumitem hashlink collision with: \n\n %s (%s) \n %s (%s) \n\n parents: \n\n %s \n %s  ",
+						v.name,
+						v.hashlink,
+						collision.name,
+						collision.hashlink,
+						v.enum and v.enum.name or "null",
+						collision.enum and collision.enum.name or "null"
+					)
+				)
+			end
 		end
 
-		if v.name == "" then
-			v.name = name
-		end
-
-		if v.hashlink == "" then
-			(v :: any).hashlink = Cryptography.Hashing.Blake3.Digest(buffer.fromstring(name))
-		end
+		private.item_builded[v.hashlink] = v
 	end
 end)
+
+do
+	private.item_builded = setmetatable({} :: { [string]: declare.enumitem }, table.freeze({ __mode = "vs" }))
+end
 
 return class

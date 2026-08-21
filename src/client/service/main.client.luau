@@ -1,4 +1,6 @@
 --!strict
+const root = "@game/StarterPlayer/StarterPlayerScripts/"
+const tasky = require("@game/ReplicatedStorage/class/tasky"):new()
 
--- Здесь пока пусто, т.к клиент не работает
--- Это главный скрипт для запуска всего клиента
+tasky:deploy(root .. "dependency/lori")
+tasky:deploy(root .. "dependency/konsole")

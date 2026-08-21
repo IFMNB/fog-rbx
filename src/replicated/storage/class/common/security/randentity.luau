@@ -1,10 +1,10 @@
 --!strict
 const Cryptography = require("@game/ReplicatedStorage/dependency/Cryptography")
-const object = require("@game/ReplicatedStorage/object")
+const runtimeobject = require("@game/ReplicatedStorage/runtimeobject")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const namefield = require("@game/ReplicatedStorage/static/namefield")
 
-const class : declare.randentity = object:new {
+const class : declare.randentity = runtimeobject:new {
     type = namefield.randentity,
     input = "" :: unknown,
     output = nil :: declare.randentity?,

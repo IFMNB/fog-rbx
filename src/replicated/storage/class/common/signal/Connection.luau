@@ -1,123 +1,73 @@
 --!strict
+const Observable = require("@game/ReplicatedStorage/class/arch/Observable")
+const Notification = require("@game/ReplicatedStorage/class/common/notification/Notification")
+const Package = require("@game/ReplicatedStorage/class/common/notification/Package")
+const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
+const DefaultVariant = require("@game/ReplicatedStorage/enums/descriptor/DefaultVariant")
+const ActionNotification = require("@game/ReplicatedStorage/enums/notification/ActionNotification")
+const SetupNotification = require("@game/ReplicatedStorage/enums/notification/SetupNotification")
+const declare = require("@game/ReplicatedStorage/static/declare")
+const namefield = require("@game/ReplicatedStorage/static/namefield")
 
-const DefaultVariant = require("@game/ReplicatedStorage/enums/DefaultVariant")
-const NotificationVariant = require("@game/ReplicatedStorage/enums/notifications/NotificationVariant")
-const ConnectionStateVariant = require("@game/ReplicatedStorage/enums/state/ConnectionStateVariant")
-const ConnectionMode = require("../../../enums/ConnectionMode")
-const runtimeobject = require("../../../runtimeobject")
-const declare = require("../../../static/declare")
-const namefield = require("../../../static/namefield")
-const project = require("../../../static/project")
-const Notification = require("../Notification")
-
-const private = {}
-const class: declare.connection = runtimeobject:new({
+const class : declare.connection = Observable:new {
 	type = namefield.connection,
-	state = DefaultVariant.Unknown,
-	call_on = DefaultVariant.Unknown,
+	state = ConnectionVariant.Never,
+	on = DefaultVariant.Unknown,
+	count = math.huge,
 
-	disconnect = function(self: declare.connection): ()
-		if self.state ~= ConnectionMode.Disconnected then
-			project.console_out("disconnecting connection")
+	disconnect = function (self: declare.connection)
+		self.state = ConnectionVariant.Never
+		self:notificate(Notification:new {on = self.state})
+	end,
 
-			self.state = ConnectionMode.Disconnected
-			self:notificate(Notification:new({
-				call_on = ConnectionMode.Disconnected,
-			}))
+	invoke = function (self: declare.connection, ...)
+		if self.state ~= ConnectionVariant.Never then
+			self:notificate(Package:new {on = ActionNotification.Emit, pack = {...}})
 		end
 	end,
 
-	link = function(self: declare.connection, that: declare.face): ()
-		const identity = self.identity
-		local closure_up: declare.connection
-		const lambda = function(notification: declare.notification, ...)
-			const self_connection = that.require(identity) :: declare.connection?
-			if self_connection then
-				self_connection:notificate(notification)
-			else
-				closure_up:disconnect()
-			end
-		end
-
-		closure_up = that:get_notification_event():connect(lambda, NotificationVariant.Emit)
-		private.face_links[self][that] = closure_up
+	link = function (self: declare.connection, that: declare.event)
+		return that:link(self)
 	end,
 
-	unlink = function(self: declare.connection, that: declare.face): ()
-		const connection = private.face_links[self][that] :: declare.connection?
-		if connection then
-			connection:disconnect()
-			private.face_links[self][that] = nil
-		end
-	end,
+	unlink = function (self: declare.connection, that: declare.event)
+		return that:unlink(self)
+	end
+}
 
-	reload = function(self: declare.connection): ()
-		self:notificate(Notification:new({ call_on = ConnectionStateVariant.ChangingCallOn }))
-	end,
-})
+class:host(function(new: declare.connection)
+	new:subscribe(SetupNotification.Install, ConnectionVariant.Once, function (identity: declare.object_identity)
+		const package = new.require <<declare.package<declare.enumitem_setup_notification, unknown>>>(identity, namefield.package)
+		const closure = assert(package.pack[1], "unknown value") :: (...unknown) -> ()
+		
+		new:subscribe(ActionNotification.Emit, ConnectionVariant.Ever, function (identity: declare.object_identity)
+			const package = new.require <<declare.package<declare.enumitem_action_notification, unknown>>>(identity, namefield.package)
+			--[=[ -- self:invoke() не делает проверки по self.on, так как это принудительный вызов
+			const enumitem = new.on :: declare.enumitem
 
-class:toggle_host(function(new: declare.connection)
-	private.face_links[new] = setmetatable({}, private.frozen)
-
-	new:toggle_notice(function(notification)
-		const closeup_f = notification:get_packed()
-		const is_runtimeobject = runtimeobject.is(closeup_f, runtimeobject.type)
-		const main_f = private.get_main_f(new, closeup_f, is_runtimeobject)
-		const regenerate = private.get_regenerator(new, main_f)
-
-		new:toggle_notice(main_f, new.call_on, ConnectionMode.Ever)
-		new:toggle_notice(regenerate, ConnectionStateVariant.ChangingCallOn, ConnectionMode.Ever)
-		new:notificate(Notification:new({ call_on = NotificationVariant.Initialize }))
-	end, NotificationVariant.Setup, ConnectionMode.Once)
-
-	project.console_out("connection waiting for setup notification")
-end)
-
-do
-	private.frozen = table.freeze({ __mode = "ks" })
-	private.face_links = setmetatable(
-		{} :: setmetatable<{ [declare.connection]: { [declare.face]: declare.connection? } }, typeof(private.frozen)>,
-		private.frozen
-	)
-
-	function private.get_main_f(new: declare.connection, closeup_f: any, is_runtimeobject: boolean)
-		const lambda = function(notification)
-			const result = project.run(closeup_f, notification:get_packed())
-			if result == 0 then
-				if is_runtimeobject then
-					const closeup_obj = closeup_f :: declare.runtimeobject
-
-					project.console_out(string.format("%q %s", closeup_obj.type, "got a notification"))
-					closeup_obj:notificate(notification)
-				else
-					project.console_out_error("unknown calltype in connection, disconnecting")
-					new:disconnect()
+			if enumitem.enum then
+				if not enumitem.enum:is_my_enumitem(package.on) then
+					project.console_out(string.format(
+						"received enumitem isn't my target scope | Expected: %s (%s) | Got: %s (%s)", 
+						tostring(enumitem.name), tostring(enumitem.enum.name),
+						tostring(package.on.name), tostring(package.on and package.on.enum.name)
+					))
+					return
 				end
-			elseif result == 4 then
-				project.console_out("calltype is a Signal, waiting for it to be called")
-
-				new:toggle_notice(function()
-					if is_runtimeobject then
-						(closeup_f :: declare.runtimeobject):notificate(notification)
-					else
-						project.exec(closeup_f, notification:get_packed())
-					end
-				end, NotificationVariant.Signal, ConnectionMode.Once)
 			end
-		end
+			]=]
 
-		return lambda
-	end
+			closure(unpack(package.pack))
+			new.count -= 1
 
-	function private.get_regenerator(new: declare.connection, main_f)
-		return function()
-			for i = 1, 2 do
-				new:toggle_notice(main_f, new.call_on, ConnectionMode.Ever)
+			if new.count <= 0 then
+				new:disconnect()
 			end
+		end)
 
-			new:notificate(Notification:new({ call_on = ConnectionStateVariant.Normal }))
-		end
-	end
-end
+		new:notificate(Notification:new {on = SetupNotification.Installed})
+		new:notificate(Notification:new {on = new.state})
+	end)
+end)
 
 return class

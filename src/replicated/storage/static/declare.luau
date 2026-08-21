@@ -1,25 +1,27 @@
---!strict
-
+--!strict 
+-- #10
 const namefield = require("./namefield")
 
-export type construct<T = {}, U = object> = T & U
-export type extend<T = {}> = construct<T>
-export type prototype<T = {}, U = object> = construct<setmetatable<T, { __index: U }>, U>
 
-type f_action <T... = (), U... = ()> = (T...) -> U...
-type writeable_f_action <T... = (), U... = ()> = f_action|f_action<T...>|f_action<T..., U...>
-type instanceable<T = {},U = Instance> = {
+
+
+export type construct<T = {}, U = object> = T & U
+export type nameof<T = string> = T|string
+--export type extend<T = {}> = construct<T>
+--export type prototype<T = {}, U = object> = construct<setmetatable<T, { __index: U }>, U>
+
+export type instanceable<T = {},U = Instance> = {
     read set_instance: (self: T, to: U) -> (),                 
     read get_instance: (self: T) -> U,
     read is_instance_exists: (self: T) -> boolean                      
 }
-type expected_calltype <T=unknown> = {
-    call_on: T
+export type expected_calltype <T=unknown> = {
+    on: T
 }
-type nameable <T=string> = {
+export type nameable <T=string> = {
     name: T|string
 }
-type math_operations<T=unknown,U... = ()> = {
+export type math_operations<T=unknown,U... = ()> = {
     read multiple: (self: T, to: number) -> U...,
     read divide: (self: T, to: number) -> U...,
     read invert: (self: T) -> U...,
@@ -31,72 +33,162 @@ type math_operations<T=unknown,U... = ()> = {
     read null: (self: T) -> U...,
     read infinity: (self: T) -> U...,
 }
-type vector_operations<T=unknown,U... = ()> = {
+export type vector_operations<T=unknown,U... = ()> = {
     read to_cframe: (self: T) -> CFrame,
-    read to_vector3: (self: T) -> Vector3,
-    read to_vector2: (self: T) -> Vector2
+    read to_vector: (self: T) -> vector
 }
-type positioned<T=Vector3> = {
+export type positioned<T=vector> = {
     position: T
 }
-type normals<T=unknown, U=Vector3> = {
+export type normals<T=unknown, U=vector> = {
     read get_normal_geometric: (self: T) -> U,
     read get_normal_interpolated: (self: T) -> U,
 }
-type stream_identity_type = string
-type face_default_type = nil
-type linkable<T=unknown,U=unknown> = {
+export type linkable<T=unknown,U=unknown> = {
     read link: (self: T, that: U) -> (),
     read unlink: (self: T, that: U) -> ()
 }
-type operatable<T = unknown> = {
+export type operatable<T = unknown> = {
     read continue: (self: T) -> (),
     read pause: (self: T) -> (),
     read reset: (self: T) -> ()
 }
-type controllable<T = unknown> = {
+export type controllable<T = unknown> = {
     read get_control: (self: T) -> controller
 }
-type modifier<T = unknown> = {
+export type modifier<T = unknown> = {
     modifier: T
 }
-type iterations<T = unknown> = {
+export type iterations<T = unknown> = {
     iterate: T
 }
-type loopable<T = unknown> = {
+export type loopable<T = unknown> = {
     read get_loop: (self: T) -> timer
 }
-type referenceable<T = unknown, U = unknown> = {
+export type referenceable<T = unknown, U = unknown> = {
     read get_reference: (self: T) -> reference<U>,
 }
-
-type reloadable<T = unknown> = {
-    read reload: (self: T) -> ()
+export type reloadable<T = unknown, U... = ()> = {
+    read reload: (self: T, U...) -> ()
 }
-type axisable<T = unknown> = {
+export type axisable<T = unknown> = {
     right: T,
     up: T,
     front: T
 }
-type centerable<T = unknown> = {
-    read get_center: (self: T) -> Vector3
+export type centerable<T = unknown> = {
+    read get_center: (self: T) -> vector
 }
-type parallel_identity = unknown
-type unit_identity = unknown
+export type switchable<T = unknown> = {
+    enabled: boolean
+}
+export type rotateable<T = unknown> = {
+    rotation: directions
+}
+export type invokeable<T = unknown, U... = (), E... = ()> = {
+    read invoke: (self: T, U...) -> E...
+}
+export type asyncable = {
+    time_to_hold: number,
+    time_to_response: number,
+    attempts: number,
+}
+export type stateable <T = unknown, U = unknown> = {
+    read get_state_machine: (self: T) -> statemachine<U>
+}
+export type channel_internal_reference = Folder & { send: RemoteEvent, await: RemoteFunction, async: RemoteFunction }
+
+export type observer_pack <T = unknown> = ((identity: object_identity)->())|thread|observer<T>|string
+
+export type remote_identity = string
+export type parallel_identity = unknown
+export type unit_identity = unknown
+export type user_identity = unknown
+export type object_identity = unknown
 
 export type object = {
     read type: namefield.object,
-	read identity: unknown,
+	read identity: object_identity,
     
-    read new: <T,U> (self: T, that: U?, ...any) -> construct<T,U>,
-    read renew: <T,U> (self: T, that: U?) -> T,
+    read new: <T,U> (self: T, that: U?) -> construct<T,U>,
+    read renew: <T> (self: T, that: --[=[*based-on-base-object*]=] {[string]: unknown}?) -> construct<T, {}>,
 
     read equals: (this: unknown, that: any) -> boolean,
     read is: (self: unknown, that: namefield.names | string) -> boolean,
     read base: <T> (self: unknown, expected: namefield.names|string|nil) -> T?,
-    read toggle_host: <T> (self: unknown, f: (new: T) -> ()) -> (),
-    read require: (identity: unknown) -> object?
+    read host: <T> (self: unknown, f: (new: T) -> ()) -> (),
+    read rebuild: <T> (self: T, that: {[string]: unknown}) -> T,
+    read require: <T> (identity: object_identity, assert: namefield.names|string?) -> T
 }
+
+export type enumobject = construct<{
+    read type: namefield.enumobject,
+    
+    read get_enums_list: (self: enumobject) -> {[unknown]: enumitem},                        
+    read get_enums_count: (self: enumobject) -> number,
+    read get_enums_name: (...enumitem) -> ...string,
+    read get_enumitem_by_hashlink: (hashlink: string) -> enumitem<>,
+    read assert_is_my_enumitem: (self: enumobject, that: unknown) -> boolean,
+    read is_my_enumitem: (self: enumobject, that: enumitem) -> boolean,
+} & nameable , object>
+
+export type enumitem<T = enumobject?> = construct<{
+    read type: namefield.enumitem,
+    read hashlink: string,
+    read enum: T,
+} & nameable, object>
+
+
+export type notification<T = enumitem<any>> = construct<{
+    read type: namefield.notification,
+} & expected_calltype<T>, object>
+
+export type package<T = enumitem<any>, U = unknown> = construct<{
+    read type: namefield.package,
+    read pack: {U}, -- #11
+}, notification<T>>
+
+export type tasky<current --[=[*based-on-current-realization*]=]> = construct<{
+    read type: namefield.tasky,
+
+    read deploy: (self: tasky<current>, path: string) -> (),
+    read get_online: (self: tasky<current>) -> {[string]: current},
+    read get_offline: (self: tasky<current>) -> {[string]: current},
+    read get_existed: (self: tasky<current>, path: string) -> current?,
+    read is_exists: (self: tasky<current>, path: string) -> boolean
+} & asyncable, object>
+
+export type user = construct<{
+    read type: namefield.user,
+    read uid: number,
+    
+    read request_data: <T> (self: user, of: enumitem_user_data_require) -> userdata<result<T>>,
+    read get_unit: (self: user) -> unit?,
+    read set_unit: (self: user, to: unit?) -> (),
+
+
+    read get_local_user: (self: user) -> user,
+    read get_player: (self: user) -> reference<Player?>
+}, object>
+
+export type runtimeobject = construct<{
+    read type: namefield.runtimeobject,
+    created_at: DateTime,
+}, object>
+
+export type maybe = construct<{
+    read type: namefield.maybe,
+
+    read extract: <T> (self: maybe, it: unknown, make: () -> T) -> T,
+    read erase: (self: maybe, it: unknown) -> (),
+    read exist: (self: maybe, it: unknown) -> boolean
+}, runtimeobject>
+
+export type userdata<T = unknown> = construct<{
+    read type: namefield.userdata,
+    read stored: T,
+    read datatype: enumitem_user_data_require,
+}, runtimeobject>
 
 export type randentity = construct<{
     read type: namefield.randentity,
@@ -107,284 +199,149 @@ export type randentity = construct<{
 
     read to_sha256: (self: randentity) -> (),
     read to_blake3: (self: randentity) -> (),
-}, object>
+}, runtimeobject>
 
-export type enumobject = construct<{
-    read type: namefield.enumobject,
-    read get_enums_list: (self: enumobject) -> {[unknown]: enumitem},                        
-    read get_enums_count: (self: enumobject) -> number,
-    read get_enums_name: (...enumitem) -> ...string,
 
-    read assert_is_my_enumitem: (self: enumobject, that: unknown) -> boolean,
-    read is_my_enumitem: (self: enumobject, that: enumitem) -> boolean,
-} & nameable , object>
-
-export type enumitem<T = enumobject?> = construct<{
-    read type: namefield.enumitem,
-    read hashlink: string,
-    read enum: T,
-
-    read child: (self: enumitem, of: enumobject) -> boolean
-} & nameable, object>
-
-export type enumitem_default = enumitem<enum_default>
-export type enum_default = construct<{
-    read Unknown: enumitem_default,
-    read Any: enumitem_default,
-}, enumobject>
-
-export type enumitem_bb_variant = enumitem<enum_bb_variant>
-export type enum_bb_variant = construct<{
-    read AABB: enumitem_bb_variant,
-    read OBB: enumitem_bb_variant,
-}, enumobject>
-
-export type enumitem_direction_variant = enumitem<enum_direction_variant>
-export type enum_direction_variant = construct<{
-    read Top: enumitem_direction_variant,
-    read Bottom: enumitem_direction_variant,
-    read Left: enumitem_direction_variant,
-    read Right: enumitem_direction_variant,
-    read Front: enumitem_direction_variant,
-    read Back: enumitem_direction_variant,
-}, enumobject>
-
-export type enumitem_asset_state_variant = enumitem<enum_asset_state_variant>
-export type enum_asset_state_variant = construct<{
-    read Fail: enumitem_asset_state_variant,
-	read Loaded: enumitem_asset_state_variant,
-	read Making: enumitem_asset_state_variant,
-	read Reload: enumitem_asset_state_variant,
-	read Never: enumitem_asset_state_variant,
-}, enumobject>
-
-export type enumitem_message_notification_variant = enumitem<enum_message_notification_variant>
-export type enum_message_notification_variant = construct<{
-    read Invoke: enumitem_message_notification_variant,
-    read Await: enumitem_message_notification_variant,
-}, enumobject>
-
-export type enumitem_asset_require_notification_variant = enumitem<enum_asset_require_notification_variant>
-export type enum_asset_require_notification_variant = construct<{
-    read Failure: enumitem_asset_require_notification_variant,
-    read Loading: enumitem_asset_require_notification_variant,
-    read Successful: enumitem_asset_require_notification_variant,
-}, enumobject>
-
-export type enumitem_connection_state_variant = enumitem<enum_connection_state_variant>
-export type enum_connection_state_variant = construct<{
-    read Normal: enumitem_connection_state_variant,
-    read ChangingCallOn: enumitem_connection_state_variant,
-}, enumobject>
-
-export type enumitem_controller_notification_variant = enumitem<enum_controller_notification_variant>
-export type enum_controller_notification_variant = construct<{
-    read Continue: enumitem_controller_notification_variant,
-    read Pause: enumitem_controller_notification_variant,
-    read Reset: enumitem_controller_notification_variant,
-}, enumobject>
-
-export type enumitem_instance_notification_variant = enumitem<enum_instance_notification_variant>
-export type enum_instance_notification_variant = construct<{
-    read Destroyed: enumitem_instance_notification_variant,
-    read Newwie: enumitem_instance_notification_variant,
-    read Changed: enumitem_instance_notification_variant,
-    read Nullified: enumitem_instance_notification_variant,
-}, enumobject>
-
-export type enumitem_node_notification_variant = enumitem<enum_node_notification_variant>
-export type enum_node_notification_variant = construct<{
-    read ProcessStepped: enumitem_node_notification_variant,
-    read SimulationStepped: enumitem_node_notification_variant,
-    read AttributeAdded: enumitem_node_notification_variant,
-    read AttributeRemoved: enumitem_node_notification_variant,
-}, enumobject>
-
-export type enumitem_notification_variant = enumitem<enum_notification_variant>
-export type enum_notification_variant = construct<{
-    read Signal: enumitem_notification_variant,
-    read Initialize: enumitem_notification_variant,
-    read Setup: enumitem_notification_variant,
-    read PreRelease: enumitem_notification_variant,
-    read ConnectionAdded: enumitem_notification_variant,
-    read ConnectionRemoved: enumitem_notification_variant,
-    read Stepped: enumitem_notification_variant,
-    read Emit: enumitem_notification_variant,
-}, enumobject>
-
-export type enumitem_value_notification_variant = enumitem<enum_value_notification_variant>
-export type enum_value_notification_variant = construct<{
-	read LazyValueNew: enumitem_value_notification_variant,
-	read LazyValueGet: enumitem_value_notification_variant,
-	read LazyValueRemoved: enumitem_value_notification_variant,
-	read LazyValueChanged: enumitem_value_notification_variant,
-	read ValueNew: enumitem_value_notification_variant,
-	read ValueGet: enumitem_value_notification_variant,
-	read ValueRemoved: enumitem_value_notification_variant,
-	read ValueChanged: enumitem_value_notification_variant,
-}, enumobject>
-
-export type enumitem_asset_variant = enumitem<enum_asset_variant>
-export type enum_asset_variant = construct<{
-    read Model: enumitem_asset_variant,
-	read Sound: enumitem_asset_variant,
-	read Image: enumitem_asset_variant,
-}, enumobject>
-
-export type enumitem_operational_variant = enumitem<enum_operational_variant>
-export type enum_operational_variant = construct<{
-    read Working: enumitem_operational_variant,
-	read Paused: enumitem_operational_variant,
-	read Corrupted: enumitem_operational_variant,
-}, enumobject>
-
-export type enumitem_user_data_variant = enumitem<enum_user_data_variant>
-export type enum_user_data_variant = construct<{
+export type observer<T = enumitem<any>> = construct<{
+    read type: namefield.observer,
     
-}, enumobject>
+    read subscribe: (self: observer<T>, on: T|enumobject, mode: enumitem_connection_variant, ...observer_pack<T>) -> () -> (),
+    read notice: (self: observer<T>, on: package<{T}|T, package<enumitem_connection_variant, observer_pack<T>>>) -> () -> (),
+    read notificate: (self: observer<T>, notification: notification<T>|package<T>) -> (),
+}, runtimeobject>
 
-export type enumitem_connection_mode_variant = enumitem<enum_connection_mode_variant>
-export type enum_connection_mode_variant = construct<{
-    read Ever: enumitem_connection_mode_variant,
-    read Once: enumitem_connection_mode_variant,
-    read Disconnected: enumitem_connection_mode_variant
-}, enumobject>
+export type event<T = enumitem<any>, U... = ...unknown> = construct<{
+    read type: namefield.event,
 
-export type enumitem_disposable_state_variant = enumitem<enum_disposable_state_variant>
-export type enum_disposable_state_variant = construct<{
-    read PreRelease: enumitem_disposable_state_variant,
-    read Normal: enumitem_disposable_state_variant,
-    read Released: enumitem_disposable_state_variant,
-    read New: enumitem_disposable_state_variant,
-}, enumobject>
+    read connect: <T0> (self: event<T,U...>, on: T|enumitem_default_variant, f: ((U...) -> ())|thread|observer<T>) -> connection<T>,
+    read once: <T0> (self: event<T,U...>, on: T|enumitem_default_variant, f: ((U...) -> ())|thread|observer<T>) -> connection<T>,
+    read wait: (self: event<T,U...>, on: T|enumitem_default_variant) -> U... 
+} & invokeable<event<T,U...>, package<{T}|T,unknown>|T, U...> & expected_calltype<T?> & linkable<event<T,U...>, connection>, observer<T>> 
 
-
-
-
-
-export type notification<T...=...unknown> = construct<{
-    read type: namefield.notification,
-    pack: {unknown},
-
-    read get_packed: (self: notification<T...>) -> T...
-} & expected_calltype<enumitem<any>>, object>
-
-
-
-export type runtimeobject = construct<{
-    read type: namefield.runtimeobject, 
-    created_at: DateTime,
- 
-    read get_notification_event: (self: runtimeobject) -> face<notification>,
-    read toggle_notice: (self: runtimeobject, f: (notification: notification) -> ()|thread|runtimeobject, call_on: enumitem?, mode: enumitem?) -> (),
-    read notificate: (self: runtimeobject, notification: notification?) -> (),
-}, object>
-
-
-
-export type face<T... = ...face_default_type> = construct<{
-    read type: namefield.face,
-
-    read connect: (self: face<T...>, f: ((T...) -> ())|thread|runtimeobject, call_on: enumitem?) -> connection,
-    read once: (self: face<T...>, f: ((T...) -> ())|thread|runtimeobject, call_on: enumitem?) -> connection,
-    read wait: (self: face<T...>, call_on: enumitem?) -> T...,
-    read invoke: (self: face<T...>, notification: notification?) -> ()
-} & linkable<face<T...>, connection>, runtimeobject> 
-
-export type connection = construct<{
+export type connection<T = enumitem<any>, U... = ()> = construct<{
     read type: namefield.connection,
-    state: enumitem_connection_mode_variant,
+    state: enumitem_connection_variant,
+    count: number,
 
-    read disconnect: (self: connection) -> (),
-    read reload: (self: connection) -> (),
-} & linkable<connection, face> & expected_calltype<enumitem<any>>, runtimeobject>
+    read disconnect: (self: connection<T,U...>) -> (),
+} & invokeable<connection<T,U...>,U...> & linkable<connection<T,U...>, event> & expected_calltype<T>,
+observer<T|enumitem_connection_variant|enumitem_setup_notification|enumitem_action_notification>>
 
 export type value<T = unknown> = construct<{
     read type: namefield.value,
 
     read get_value: (self: value<T>) -> T?,                    
-    read set_value: (self: value<T>, new: T?) -> (),            
-    read get_value_default: (self: value<T>) -> T?,             
-    read set_value_default: (self: value<T>, new: T?) -> (),    
-}, runtimeobject>
+    read set_value: (self: value<T>, new: T?, default: boolean?) -> (),
+    read on_operation_event: (self: value<T>) -> event<enumitem_operation_variant>
+}, observer<enumitem_operation_variant>>
 
 export type timer = construct<{
     read type: namefield.timer,
     seconds: number,
     previous_stepped: DateTime,
 
-    read schedule: (self: timer) -> (),
-    read wait: (self: timer) -> (),
-    read bind: (self: timer, f: (()->())|thread) -> connection,
-    
+    read schedule: (self: timer) -> (),    
     read get_delta: (self: timer) -> number,
-} & iterations<number> & modifier<number> & controllable<timer>, runtimeobject>
-
-export type maybe = construct<{
-    read type: namefield.maybe,
-
-    read extract: <T> (self: maybe, it: unknown, make: () -> T) -> T,
-    read erase: (self: maybe, it: unknown) -> (),
-    read exist: (self: maybe, it: unknown) -> boolean
-}, runtimeobject>
+} & iterations<number> & modifier<number> & controllable<timer>, observer<enumitem_action_notification>>
 
 export type reference<T = Instance> = construct<{
     read type: namefield.reference
-} & instanceable<reference<T>, T>, runtimeobject>
+} & instanceable<reference<T>, T>, observer<enumitem_operation_variant>>
+
+export type channel <T = enumitem_network_replication, U... = ...unknown, E... = ...unknown> = construct<{
+    read type: namefield.channel,
+    read reference: reference<channel_internal_reference?>,
+    read event: event<T,E...>,
+
+    echo: boolean,
+
+    read send: (self: channel<T,U...,E...>, to: T, U...) -> (),
+    read await: (self: channel<T,U...,E...>, to: T, U...) -> result<{unknown}, E...>,
+    read async: (self: channel<T,U..., E...>, to: T, U...) -> result<object>,
+
+    read set_await_response: (self: channel<T,U...,E...>, to: T, f: ((U...) -> E...)? ) -> (),
+    read get_await_response: (self: channel<T,U...,E...>, to: T) -> ((U...) -> E...)?,
+
+    read set_async_response: (self: channel<T,U...,E...>, to: T, f: ((U...) -> object)?) -> (),
+    read get_async_response: (self: channel<T,U...,E...>, to: T) -> ((U...) -> object)?,
+
+    read get_peer: (self: channel<T,U...,E...>) -> {user},
+    read set_peer: (self: channel<T,U...,E...>, of: user, to: boolean?) -> (),
+    read is_peer: (self: channel<T,U...,E...>, of: user) -> boolean,
+    read request_from: (self: channel<T,U...,E...>) -> user?,
+
+    read get_variant: (self: channel<T,U...,E...>) -> enumitem_channel_variant?,
+    read set_variant: (self: channel<T,U...,E...>, to: enumitem_channel_variant?) -> (),
+    read is_variant: (self: channel<T,U..., E...>, of: enumitem_channel_variant) -> boolean
+} & asyncable & switchable<channel<T,U...,E...>>, observer<enumitem_channel_notification>>
+
+export type signal<T... = ...unknown> = construct<{
+    read type: namefield.signal,
+
+    read get_signal_event: (self: signal<T...>) -> event<enumitem_action_notification, T...>
+}, reference<RBXScriptSignal<T...>>>
 
 export type controller = construct<{
     read type: namefield.controller,
-    state: enumitem_controller_notification_variant
-} & operatable<controller>, runtimeobject>
+    state: enumitem_controller_state
+} & operatable<controller>, observer<enumitem_controller_state>>
 
 export type asset<T = unknown> = construct<{
     read type: namefield.asset,
-    read variant: enumitem_asset_variant|enumitem_default,
+    read variant: enumitem_asset_type_variant|enumitem_default_variant,
     read rid: number,
-    state: enumitem_asset_state_variant,
+    state: enumitem_state,
 
     read get_asset: (self: asset<T>) -> T?
-}, runtimeobject>
+}, observer<enumitem_state>>
+
+export type statemachine<T = unknown> = construct<{
+    read type: namefield.statemachine,
+
+    read get_state: (self: statemachine<T>, of: T) -> boolean,
+    read set_state: (self: statemachine<T>, of: T, to: boolean?) -> (),
+    read enable_state: (self: statemachine<T>, of: T, to: boolean) -> ()
+}, observer<enumitem_operation_variant>>
 
 
-export type actmapped = construct<{
-    read type: namefield.actmapped,
-    code: Enum.KeyCode,
-
-
-} & nameable, runtimeobject>
-
-
-
-
-export type parallelable = construct<{
-    read type: namefield.parallelable,
-    read pid: parallel_identity,
-    version: number,
-
-    read snapshot: (self: parallelable) -> (),
-    read get_snapshot: <T> (self: T, version: number?) -> T?
-}, runtimeobject>
-
-export type luaumachine = construct<{
-    read type: namefield.luaumachine,
-    read verification: randentity,
-
-    read require_parallel: (self: luaumachine, pid: parallel_identity) -> parallelable?
-}, parallelable>
-
-
-
-
-
-export type disposable = construct<{
+export type disposable<T = enumitem<any>> = construct<{
     read type: namefield.disposable,
 
-    read free: (self: disposable) -> (), 
-    read queue_free: (self: disposable) -> (),
-    read get_state: (self: disposable, state: enumitem) -> boolean,
-    read toggle_state: (self: disposable, state: enumitem) -> ()
-}, runtimeobject> 
+    read free: (self: disposable<T>) -> (), 
+    read queue_free: (self: disposable<T>) -> (),
+}, observer<T|enumitem_disposable_notification>> 
+
+export type maid = construct<{
+    read type: nameof<"maid">,
+
+    read add_object: (self: maid, that: connection|disposable|RBXScriptConnection) -> (),
+    read add_key: <T> (self: maid, of: {[T]: unknown}, key: T) -> (),
+
+    read remove_object: (self: maid, that: connection|disposable) -> (),
+    read remove_key: <T> (self: maid, of: {[T]: unknown}, key: T) -> (),
+}, disposable>
+
+export type node<T = Instance, U = enumitem<any>> = construct<{
+    read type: namefield.node,
+    read rid: remote_identity,
+
+    auto_free_on_destroying: boolean,
+
+    read get_attribute_list: (self: node<T,U>) -> {[string]: value},
+    read get_attribute: (self: node<T,U>, name: string) -> value?,
+    read add_attribute: (self: node<T,U>, name: string) -> value,
+    read remove_attribute: (self: node<T,U>, name: string) -> (),
+} & referenceable<node<T,U>,T?> , disposable<U>>
+
+export type noderuntime<T = Instance, U = enumitem<any>> = construct<{
+    read type: namefield.noderuntime,
+    last_delta: number,
+    last_emit: number,
+
+    read process: (self: noderuntime<T,U>, delta: number) -> (),
+    read simulate: (self: noderuntime<T,U>, delta: number) -> (),
+    read get_timer: (self: noderuntime<T,U>) -> timer,
+}, node<T,U|enumitem_noderuntime_notification>>
 
 export type attribute<T = unknown, U = Instance> = construct<{
     read type: namefield.attribute,
@@ -392,65 +349,41 @@ export type attribute<T = unknown, U = Instance> = construct<{
 
     read get_params: (self: attribute<T,U>) -> value<T>,
     read get_current_value: (self: attribute<T,U>) -> T?
-} & nameable<string> & referenceable<attribute<T,U>,U?>, disposable>
+} & nameable<string> & referenceable<attribute<T,U>,U?>, disposable<enumitem_attribute_notification>>
 
-export type node<T = Instance> = construct<{
-    read type: namefield.node,
+export type actmapped = construct<{
+    read type: namefield.actmapped,
+    read related: enumitem_action_map_variant,
 
-    read get_attribute_list: (self: node<T>) -> {value},
-    read get_attribute: (self: node<T>, name: string) -> value?,
-    read add_attribute: (self: node<T>, name: string) -> value,
-    read remove_attribute: (self: node<T>, name: string) -> () 
-} & referenceable<node<T>,T?> , disposable>
+    read code: {Enum.KeyCode},
+    strengh: number,
+    duration: number,
 
-export type noderuntime<T = Instance> = construct<{
-    read type: namefield.noderuntime,
-    last_delta: number,
-    last_emit: number,
-
-    process: (self: noderuntime<T>, delta: number) -> (),
-    simulate: (self: noderuntime<T>, delta: number) -> (),
-
-    read get_runtime: (self: noderuntime<T>) -> timer,
-}, node<T>>
-
-export type user = construct<{
-    read type: namefield.user,
-    unit: unit_identity,
-    
-    read request_data: <T> (self: user, of: enumitem_user_data_variant) -> userdata<T>,
-}, runtimeobject>
-
-export type userdata<T = {}> = construct<{
-    read type: namefield.userdata,
-    read stored: T,
-    read datatype: enumitem_user_data_variant,
-
-    read request_self_new: (self: userdata<T>) -> userdata<T>,
-    read request_update: (self: userdata<T>) -> boolean
-}, runtimeobject>
-
-export type channel <T = unknown> = construct<{
-    read type: namefield.channel,
-    peers: {user},
-
-
-}, node<RemoteEvent>>
+}, channel<enumitem_action_map_variant, (), ()>>
 
 
 
 
-export type inventory = construct<{
+
+
+export type inventory<T = item> = construct<{
     read type: namefield.inventory,
     read owner: unit,
-    items: {item},
+    read items: {item},
 
-    read get_items_with_type: (self: inventory, type: string|namefield.names) -> {item}
+    can_insert_items: boolean,
+    can_remove_items: boolean,
+
+    read get_items_with_type: (self: inventory<T>, type: string|namefield.names) -> {T},
+    read get_items: (self: inventory<T>) -> {T},
+    read insert: (self: inventory<T>, that: T) -> (),
+    read remove: (self: inventory<T>, that: T) -> (),
+    read is_in_inventory: (self: inventory<T>, that: T) -> boolean,
 }, node<Configuration>>
 
 export type item = construct<{
     read type: namefield.item,
-
+    
     equipable: boolean,
     dropable: boolean,
     deliverable: boolean,
@@ -458,81 +391,39 @@ export type item = construct<{
 
 export type weapon = construct<{
     read type: namefield.weapon,
+    ammo: number,
 
     statistics: weaponstat,
-    
-    
     muzzle: reference<Attachment>,
     chamber: reference<Attachment>,
 
+    read fire: (self: weapon) -> boolean,
+    read aim: (self: weapon) -> boolean,
+    read special: (self: weapon) -> boolean,
+    read action: (self: weapon) -> boolean,
 
 
 }, item>
 
-export type weaponvfx = construct<{
-    read type: namefield.weaponvfx
 
-
-
-}, record>
-
-type sfx = () -> AudioPlayer
-
-export type weaponsfx = construct<{
-    read type: namefield.weaponsfx,
-
-    primary: sfx?,
-    secondary: sfx?,
-    special: sfx?,
-    action: sfx?,
-
-    reload: sfx?,
-    check: sfx?,
-
-
-
-}, record>
-
-export type mechasfx = construct<{
-    read type: namefield.mechasfx,
-
-    pull: {sfx},
-    eject: {sfx},
-    release: {sfx},
-    relax: {sfx},
-
-    read get_random: (self: mechasfx) -> AudioPlayer?,
-}, record>
-
-export type weaponstat = construct<{
-    read type: namefield.weaponstat,
-
-    has_primary: boolean,
-    has_secondary: boolean,
-    has_special: boolean,
-    has_action: boolean,
-
-    damage: number,
-
-
-
-    reload_speed: number,
-    attack_speed: number,
-
-    max_hit_distance: number,
-
-
-}, record>
-
-
-
-export type config<T = unknown> = construct<{
+export type config<T = unknown, U = enumitem_config_require> = construct<{
     read type: namefield.config,
-    updateable: boolean,
+    related: U,
+    auto_updateable: boolean,
 
     read update_to_newest: (self: config<T>) -> ()
 }, value<T>>
 
+
+
+
+
+export type physx = construct<{
+    read type: namefield.physx,
+    mode: enumitem_physx_mode_variant,
+    stats: physics,
+
+} & rotateable<physx> & positioned<physx> & controllable<physx>, noderuntime<PVInstance>>
 
 
 
@@ -542,21 +433,41 @@ export type config<T = unknown> = construct<{
 
 export type unit = construct<{
     read type: namefield.unit,
-    read uid: unit_identity,
 
-    equipped: {item}
-}, node<PVInstance>>
+    can_equip_items: boolean,
+    speed: number,
+
+    read get_description: (self: unit) -> unitdescription,
+    read set_description: (self: unit, to: unitdescription) -> (),
+
+    read get_equipped: (self: unit) -> {item},
+    read set_equipped: (self: unit, that: item?) -> (),
+    read is_equipped: (self: unit, that: item) -> boolean,
+
+    read get_inventory: (self: unit) -> inventory?,
+    read set_inventory: (self: unit, to: inventory?) -> ()
+} & stateable<unit, enumitem_unit_state>, noderuntime<PVInstance>>
+
+export type unitdescription = construct<{
+    read type: nameof<"unitdescription">,
+
+    read max_health: number,
+    read regeneration: number,
+    
+    read speed: number,
+    read run_speed: number,
+    read max_speed: number,
+
+    read jump_height: number,
+    
+}, runtimeobject>
 
 
 
 
-
-
-
-
-export type service = construct<{
+export type service<T = enumitem<any>> = construct<{
     read type: namefield.service,
-    read code: enumitem,
+    read code: T,
 
     read log: (self: service, ...any) -> (),
 } & nameable, runtimeobject>
@@ -580,20 +491,21 @@ export type record = construct<{
     read each: <T> (self: record, type: string, f: (value: T) -> T) -> ()
 }, object>
 
-export type result<T = unknown> = construct<{
+export type result<T = unknown, U... = ...unknown> = construct<{
     read type: namefield.result,
-    state: boolean,
-    result: T,
+    read state: boolean,
+    read result: T,
 
-    read call_of: <Y,U> (f: (...Y) -> U, ...Y) -> result,       write call_of: (f: (...unknown) -> unknown) -> result
+    read call_of: <T,U> (f: (...T) -> U, ...U) -> result,
+    read unpack: (self: result<T,U...>) -> U...
 }, record>
 
 export type boundbox = construct<{
     read type: namefield.boundbox,
     variant: enumitem_bb_variant,
-    half: Vector3,
-    min: Vector3,
-    max: Vector3,
+    half: vector,
+    min: vector,
+    max: vector,
 
     read is_inside: (self: boundbox, ...boundbox|BasePart|Model) -> boolean,
     read is_belong: (self: boundbox, ...vertex) -> boolean,
@@ -602,12 +514,12 @@ export type boundbox = construct<{
     read to_region3: (self: boundbox) -> Region3,
     read to_region3int16: (self: boundbox) -> Region3int16,
     read to_part: (self: boundbox) -> Part,
-    read to_aabb: (self: boundbox) -> (Vector3, Vector3),
-    read to_obb: (self: boundbox) -> (Vector3, Vector3, Vector3, Vector3, Vector3, Vector3),
+    read to_aabb: (self: boundbox) -> (vector, vector),
+    read to_obb: (self: boundbox) -> (vector, vector, vector, vector, vector, vector),
 
     read from_region3: (from: Region3) -> boundbox,
     read from_region3int16: (from: Region3int16) -> boundbox,
-    read from_aabb: (min: Vector3, max: Vector3) -> boundbox,
+    read from_aabb: (min: vector, max: vector) -> boundbox,
     read from_middle: (variant: enumitem_bb_variant, ...boundbox|BasePart|Model) -> boundbox,
     read from_invarianted: (variant: enumitem_bb_variant, ...boundbox|BasePart|Model) -> {boundbox},
     read from: (variant: enumitem_bb_variant, ...boundbox|BasePart|Model) -> boundbox,
@@ -617,7 +529,7 @@ export type boundbox = construct<{
     read get_mininum_translation: (self: boundbox, ...boundbox|BasePart|Model) -> vertex,
     read get_origin_directions: (self: boundbox) -> directions,
     read get_axis: (self: boundbox) -> directions,
-    read get_origin_size: (self: boundbox) -> Vector3,
+    read get_origin_size: (self: boundbox) -> vector,
 
     read get_recalculated: (self: boundbox) -> boundbox
 }, cube>
@@ -625,7 +537,7 @@ export type boundbox = construct<{
 export type triangle = construct<{
     read type: namefield.triangle,
 
-    read from_vector3: (self: triangle, right: Vector3?, up: Vector3?, front: Vector3?) -> triangle
+    read from_vector: (self: triangle, right: vector?, up: vector?, front: vector?) -> triangle
 } & centerable<triangle> & axisable<vertex> & normals<triangle> & math_operations<triangle, triangle>, record>
 
 export type quad = construct<{
@@ -636,41 +548,366 @@ export type quad = construct<{
 
 export type directions = construct<{
     read type: namefield.directions,
-} & axisable<Vector3> & vector_operations<directions, directions> & math_operations<directions, directions>, record>
+} & axisable<vector> & vector_operations<directions, directions> & math_operations<directions, directions>, record>
 
 export type vertex = construct<{
     read type: namefield.vertex,
-    normal: Vector3,
+    normal: vector,
     mtv_min: number,
 
-    read from_global_point: (self: vertex, position: Vector3?) -> vertex,
-    read from_local_point: (self: vertex, local_position: Vector3?, position: Vector3?) -> vertex
-} & positioned<Vector3> & math_operations<vertex, vertex>, record>
+    read from_global_point: (self: vertex, position: vector?) -> vertex,
+    read from_local_point: (self: vertex, local_position: vector?, position: vector?) -> vertex
+} & positioned<vector> & math_operations<vertex, vertex>, record>
 
 export type cube = construct<{
     read type: namefield.cube,
-    top: Vector3,
-    bottom: Vector3,
-    left: Vector3,
-    right: Vector3,
-    front: Vector3,
-    back: Vector3,
+    top: vector,
+    bottom: vector,
+    left: vector,
+    right: vector,
+    front: vector,
+    back: vector,
 
     read get_corners: (self: boundbox) -> {vertex},
-    read get_direction: (self: boundbox, direction: enumitem_direction_variant) -> Vector3,
+    read get_direction: (self: boundbox, direction: enumitem_direction_variant) -> vector,
     read get_quad: (self: boundbox, direction: enumitem_direction_variant) -> quad,
 } & centerable<cube> & math_operations<cube, cube> & vector_operations<cube,cube>, record>
 
+export type weaponstat = construct<{
+    read type: namefield.weaponstat,
+    ammo_variant: enumitem_ammo_variant,
+
+    has_primary: boolean,
+    has_secondary: boolean,
+    has_special: boolean,
+    has_action: boolean,
+
+    damage: number,
+    distance_modificator: number,
+    max_ammo: number,
+    min_ammo: number,
 
 
+    reload_speed: number,
+    attack_speed: number,
+
+    max_hit_distance: number,
 
 
+}, record>
+
+export type physics = construct<{
+    read type: namefield.physics,
+    read locked_rotation: {enumitem_direction_variant},
+    read locked_position: {enumitem_direction_variant},
+
+    read is_locked_rotation: (self: physics, variant: enumitem_direction_variant?) -> boolean,
+    read is_locked_position: (self: physics, variant: enumitem_direction_variant?) -> boolean,
+    read is_locked_both: (self: physics, variant: enumitem_direction_variant?) -> boolean
+}, record>
 
 
+export type enumitem_default_variant = enumitem<enum_default_variant>
+export type enum_default_variant = construct<{
+    read Unknown: enumitem_default_variant,
+    read Any: enumitem_default_variant,
+}, enumobject>
 
---runtype_line
-export type typeobject = extend<{
+export type enumitem_bb_variant = enumitem<enum_bb_variant>
+export type enum_bb_variant = construct<{
+    read AABB: enumitem_bb_variant,
+    read OBB: enumitem_bb_variant,
+}, enumobject>
 
-}>
+export type enumitem_direction_variant = enumitem<enum_direction_variant>
+export type enum_direction_variant = construct<{
+    read Top: enumitem_direction_variant,
+    read Bottom: enumitem_direction_variant,
+    read Left: enumitem_direction_variant,
+    read Right: enumitem_direction_variant,
+    read Front: enumitem_direction_variant,
+    read Back: enumitem_direction_variant,
+}, enumobject>
 
-return nil :: never
+export type enumitem_message_variant = enumitem<enum_message_variant>
+export type enum_message_variant = construct<{
+    read Invoke: enumitem_message_variant,
+    read Await: enumitem_message_variant,
+}, enumobject>
+
+export type enumitem_state = enumitem<enum_state>
+export type enum_state = construct<{
+    read Failure: enumitem_state,
+    read Loading: enumitem_state,
+    read Successful: enumitem_state,
+    read Nothing: enumitem_state,
+}, enumobject>
+
+export type enumitem_controller_state = enumitem<enum_controller_state>
+export type enum_controller_state = construct<{
+    read Continue: enumitem_controller_state,
+    read Pause: enumitem_controller_state,
+    read Reset: enumitem_controller_state,
+}, enumobject>
+
+export type enumitem_operation_variant = enumitem<enum_operation_variant>
+export type enum_operation_variant = construct<{
+    read Get: enumitem_operation_variant,
+    read Remove: enumitem_operation_variant,
+    read New: enumitem_operation_variant,
+    read Change: enumitem_operation_variant,
+    read Null: enumitem_operation_variant,
+}, enumobject>
+
+export type enumitem_noderuntime_notification = enumitem<enum_noderuntime_notification>
+export type enum_noderuntime_notification = construct<{
+    read Process: enumitem_noderuntime_notification,
+    read Simulation: enumitem_noderuntime_notification,
+}, enumobject>
+
+export type enumitem_attribute_notification = enumitem<enum_attribute_notification>
+export type enum_attribute_notification = construct<{
+    read Added: enumitem_attribute_notification,
+    read Changed: enumitem_attribute_notification,
+    read Removed: enumitem_attribute_notification,
+}, enumobject>
+
+export type enumitem_setup_notification = enumitem<enum_setup_notification>
+export type enum_setup_notification = construct<{
+    read Install: enumitem_setup_notification,
+    read Installed: enumitem_setup_notification
+}, enumobject>
+
+export type enumitem_unit_state = enumitem<enum_unit_state>
+export type enum_unit_state = construct<{
+    read Ragdolled: enumitem_unit_state,
+    read Alive: enumitem_unit_state,
+    read Dead: enumitem_unit_state,
+    read Moving: enumitem_unit_state,
+    read Jumped: enumitem_unit_state,
+    read Flying: enumitem_unit_state,
+    read Running: enumitem_unit_state,
+    read Lying: enumitem_unit_state,
+    read Crounching: enumitem_unit_state,
+    read Idle: enumitem_unit_state
+}, enumobject>
+
+export type enumitem_type_variant = enumitem<enum_type_variant>
+export type enum_type_variant  = construct<{
+    read Object: enumitem_type_variant,
+    read Function: enumitem_type_variant,
+    read Thread: enumitem_type_variant,
+    read Value: enumitem_type_variant
+}, enumobject>
+
+export type enumitem_type_element_variant = enumitem<enum_type_element_variant>
+export type enum_type_element_variant  = construct<{
+    read Getter: enumitem_type_element_variant,
+    read Setter: enumitem_type_element_variant,
+    read Toggler: enumitem_type_element_variant,
+    read Switcher: enumitem_type_element_variant,
+
+    read LazyEvent: enumitem_type_element_variant,
+    read LazyValue: enumitem_type_element_variant,
+    read LazyObject: enumitem_type_element_variant,
+    read NonElement: enumitem_type_element_variant,
+}, enumobject>
+
+export type enumitem_action_notification = enumitem<enum_action_notification>
+export type enum_action_notification = construct<{
+    read Signal: enumitem_action_notification,
+    read Step: enumitem_action_notification,
+    read Emit: enumitem_action_notification,
+    read Unobservable: enumitem_action_notification,
+    read Observable: enumitem_action_notification,
+}, enumobject>
+
+export type enumitem_asset_type_variant = enumitem<enum_asset_type_variant>
+export type enum_asset_type_variant = construct<{
+    read Model: enumitem_asset_type_variant,
+	read Sound: enumitem_asset_type_variant,
+	read Image: enumitem_asset_type_variant,
+}, enumobject>
+
+export type enumitem_operational_variant = enumitem<enum_operational_variant>
+export type enum_operational_variant = construct<{
+    read Work: enumitem_operational_variant,
+	read Pause: enumitem_operational_variant,
+	read Corrupt: enumitem_operational_variant,
+}, enumobject>
+
+export type enumitem_user_data_require = enumitem<enum_user_data_require>
+export type enum_user_data_require = construct<{
+    read Weaponry: enumitem_user_data_require,
+    read Specialization: enumitem_user_data_require,
+    read Profile: enumitem_user_data_require,
+    read Perk: enumitem_user_data_require,
+    read Loadout: enumitem_user_data_require,
+}, enumobject>
+
+export type enumitem_browser_require = enumitem<enum_browser_require>
+export type enum_browser_require = construct<{
+    read ListOfServers: enumitem_browser_require,
+    read ServerInfo: enumitem_browser_require,
+}, enumobject>
+
+export type enumitem_config_require = enumitem<enum_config_require>
+export type enum_config_require = construct<{
+    
+}, enumobject>
+
+export type enumitem_channel_notification = enumitem<enum_channel_notification>
+export type enum_channel_notification = construct<{
+    read AsyncChanged: enumitem_channel_notification,
+    read AsyncRemoved: enumitem_channel_notification,
+    read AwaitChanged: enumitem_channel_notification,
+    read AwaitRemoved: enumitem_channel_notification,
+    read PeerAdded: enumitem_channel_notification,
+    read PeerRemoved: enumitem_channel_notification,
+    read VariantChanged: enumitem_channel_notification
+}, enumobject>
+
+export type enumitem_action_map_variant = enumitem<enum_action_map_variant>
+export type enum_action_map_variant = construct<{
+    read MoveForward: enumitem_action_map_variant,
+    read MoveBackward: enumitem_action_map_variant,
+    read MoveLeft: enumitem_action_map_variant,
+    read MoveRight: enumitem_action_map_variant,
+    read MoveJump: enumitem_action_map_variant,
+    read MoveCrounch: enumitem_action_map_variant,
+    read MoveLying: enumitem_action_map_variant,
+    read MoveRun: enumitem_action_map_variant,
+    read MoveSlow: enumitem_action_map_variant,
+
+    read PeekLeft: enumitem_action_map_variant,
+    read PeekRight: enumitem_action_map_variant,
+
+    read PickInventorySlot: enumitem_action_map_variant,
+    read PickToInventoryItemInZone: enumitem_action_map_variant,
+    read PickToInventoryItemOnLineOfSight: enumitem_action_map_variant,
+    read PickItemInZone: enumitem_action_map_variant,
+    read PickItemOnLineOfSight: enumitem_action_map_variant,
+
+    read DoPrimary: enumitem_action_map_variant,
+    read DoSecondary: enumitem_action_map_variant,
+    read DoSpecial: enumitem_action_map_variant,
+    read DoAction: enumitem_action_map_variant,
+
+    read Say: enumitem_action_map_variant,
+}, enumobject>
+
+export type enumitem_network_replication = enumitem_user_data_require|enumitem_action_map_variant|enumitem_browser_require
+export type enum_network_replication = enum_user_data_require|enum_action_map_variant|enum_browser_require
+
+export type enumitem_connection_variant = enumitem<enum_connection_variant>
+export type enum_connection_variant = construct<{
+    read Ever: enumitem_connection_variant,
+    read Once: enumitem_connection_variant,
+    read Never: enumitem_connection_variant,
+    read Hold: enumitem_connection_variant,
+    read Skip: enumitem_connection_variant, -- -> Once 
+    read Next: enumitem_connection_variant, -- -> Ever
+}, enumobject>
+
+export type enumitem_remote_variant = enumitem<enum_remote_variant>
+export type enum_remote_variant = construct<{
+    read AwaitResponse: enumitem_remote_variant,
+    read SendedEvent: enumitem_remote_variant,
+}, enumobject>
+
+export type enumitem_physx_mode_variant = enumitem<enum_physx_mode_variant>
+export type enum_physx_mode_variant = construct<{
+    read Local: enumitem_physx_mode_variant,
+    read Global: enumitem_physx_mode_variant
+}, enumobject>
+
+export type enumitem_channel_variant = enumitem<enum_channel_variant>
+export type enum_channel_variant = construct<{
+    read UserData: enumitem_channel_variant,
+    read ActionMap: enumitem_channel_variant,
+    read Abyss: enumitem_channel_variant,
+}, enumobject>
+
+
+export type enumitem_disposable_notification = enumitem<enum_disposable_notification>
+export type enum_disposable_notification = construct<{
+    read OnRelease: enumitem_disposable_notification,
+    read Released: enumitem_disposable_notification,
+}, enumobject>
+
+export type enumitem_ammo_variant = enumitem<enum_ammo_variant>
+export type enum_ammo_variant = construct<{
+    read ["5.8x"]: enumitem_ammo_variant,
+    read ["6.4x"]: enumitem_ammo_variant,
+    read ["14.4x"]: enumitem_ammo_variant,
+    read ["9.3x"]: enumitem_ammo_variant,
+}, enumobject>
+
+export type enumitem_weapon_variant = enumitem<enum_weapon_variant>
+export type enum_weapon_variant = construct<{
+    read Ray: enumitem_weapon_variant,
+    read Shell: enumitem_weapon_variant,
+    read Zone: enumitem_weapon_variant,
+}, enumobject>
+
+return table.freeze {
+    ["nil"] = "nil" :: "nil",
+    ["number"] = "number" :: "number",
+    ["string"] = "string" :: "string",
+    ["boolean"] = "boolean" :: "boolean",
+    ["table"] = "table" :: "table",
+    ["vector"] = "vector" :: "vector",
+    ["function"] = "function" :: "function",
+    ["thread"] = "thread" :: "thread",
+    ["userdata"] = "userdata" :: "userdata",
+    ["buffer"] = "buffer" :: "buffer",
+
+    ["roblox"] = table.freeze {
+        ["AdReward"] = "AdReward" :: "AdReward",
+        ["Axes"] = "Axes" :: "Axes",
+        ["BrickColor"] = "BrickColor" :: "BrickColor",
+        ["CatalogSearchParams"] = "CatalogSearchParams" :: "CatalogSearchParams",
+        ["CFrame"] = "CFrame" :: "CFrame",
+        ["Color3"] = "Color3" :: "Color3",
+        ["ColorSequence"] = "ColorSequence" :: "ColorSequence",
+        ["ColorSequenceKeypoint"] = "ColorSequenceKeypoint" :: "ColorSequenceKeypoint",
+        ["Content"] = "Content" :: "Content",
+        ["DateTime"] = "DateTime" :: "DateTime",
+        ["DockWidgetPluginGuiInfo"] = "DockWidgetPluginGuiInfo" :: "DockWidgetPluginGuiInfo",
+        ["Enum"] = "Enum" :: "Enum",
+        ["EnumItem"] = "EnumItem" :: "EnumItem",
+        ["Enums"] = "Enums" :: "Enums",
+        ["Faces"] = "Faces" :: "Faces",
+        ["FloatCurve"] = "FloatCurve" :: "FloatCurve",
+        ["Font"] = "Font" :: "Font",
+        ["Instance"] = "Instance" :: "Instance",
+        ["NumberRange"] = "NumberRange" :: "NumberRange",
+        ["NumberSequence"] = "NumberSequence" :: "NumberSequence",
+        ["NumberSequenceKeypoint"] = "NumberSequenceKeypoint" :: "NumberSequenceKeypoint",
+        ["OverlapParams"] = "OverlapParams" :: "OverlapParams",
+        ["Path2DControlPoint"] = "Path2DControlPoint" :: "Path2DControlPoint",
+        ["PathWaypoint"] = "PathWaypoint" :: "PathWaypoint",
+        ["PhysicalProperties"] = "PhysicalProperties" :: "PhysicalProperties",
+        ["Random"] = "Random" :: "Random",
+        ["Ray"] = "Ray" :: "Ray",
+        ["RaycastParams"] = "RaycastParams" :: "RaycastParams",
+        ["RaycastResult"] = "RaycastResult" :: "RaycastResult",
+        ["RBXScriptConnection"] = "RBXScriptConnection" :: "RBXScriptConnection",
+        ["RBXScriptSignal"] = "RBXScriptSignal" :: "RBXScriptSignal",
+        ["Rect"] = "Rect" :: "Rect",
+        ["Region3"] = "Region3" :: "Region3",
+        ["Region3int16"] = "Region3int16" :: "Region3int16",
+        ["RotationCurveKey"] = "RotationCurveKey" :: "RotationCurveKey",
+        ["Secret"] = "Secret" :: "Secret",
+        ["SecurityCapabilities"] = "SecurityCapabilities" :: "SecurityCapabilities",
+        ["SharedTable"] = "SharedTable" :: "SharedTable",
+        ["TweenInfo"] = "TweenInfo" :: "TweenInfo",
+        ["UDim"] = "UDim" :: "UDim",
+        ["UDim2"] = "UDim2" :: "UDim2",
+        ["UserValue"] = "UserValue" :: "UserValue",
+        ["Vector2"] = "Vector2" :: "Vector2",
+        ["Vector2int16"] = "Vector2int16" :: "Vector2int16",
+        ["Vector3"] = "Vector3" :: "Vector3",
+        ["Vector3int16"] = "Vector3int16" :: "Vector3int16",
+    },
+}

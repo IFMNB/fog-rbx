@@ -1,10 +1,12 @@
 --!strict
 
 const Node = require("@game/ReplicatedStorage/class/actors/Node")
-const Notification = require("@game/ReplicatedStorage/class/common/Notification")
+const Notification = require("@game/ReplicatedStorage/class/common/notification/Notification")
 const Timer = require("@game/ReplicatedStorage/class/common/runtime/Timer")
-const InstanceNotificationVariant = require("@game/ReplicatedStorage/enums/notifications/InstanceNotificationVariant")
-const NodeNotificationVariant = require("@game/ReplicatedStorage/enums/notifications/NodeNotificationVariant")
+const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
+const OperationVariant = require("@game/ReplicatedStorage/enums/descriptor/OperationVariant")
+const ActionNotification = require("@game/ReplicatedStorage/enums/notification/ActionNotification")
+const NodeRuntimeNotification = require("@game/ReplicatedStorage/enums/notification/NodeRuntimeNotification")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const namefield = require("@game/ReplicatedStorage/static/namefield")
 
@@ -18,37 +20,35 @@ const class: declare.noderuntime = Node:new({
 
 	simulate = function(self: declare.noderuntime, delta: number): () end,
 
-	get_runtime = function(self: declare.noderuntime): declare.timer
+	get_timer = function(self: declare.noderuntime): declare.timer
 		return private.schedules[self]
 	end,
 })
 
-class:toggle_host(function(new: declare.noderuntime)
+class:host(function(new: declare.noderuntime)
 	const timer = Timer:new({ seconds = math.huge, modifier = 0.001 })
-	const reference_notification_channel = new:get_reference():get_notification_event()
+	const reference_notification_channel = new:get_reference()
 	local can = false
 
-	reference_notification_channel:connect(function()
+	private.schedules[new] = timer
+
+	reference_notification_channel:subscribe(OperationVariant.New, ConnectionVariant.Ever, function()
 		can = true
-		print("can")
-	end, InstanceNotificationVariant.Newwie)
-	reference_notification_channel:connect(function()
-		can = false
-		print("fuck")
-	end, InstanceNotificationVariant.Nullified)
-
-	timer:bind(function()
-		if not can then
-			return
-		end
-
-		new:process(timer:get_delta())
-		new:notificate(Notification:new({ call_on = NodeNotificationVariant.ProcessStepped }))
-		new:simulate(timer:get_delta())
-		new:notificate(Notification:new({ call_on = NodeNotificationVariant.SimulationStepped }))
 	end)
 
-	private.schedules[new] = timer
+	reference_notification_channel:subscribe(OperationVariant.Null, ConnectionVariant.Ever,function()
+		can = false
+	end)
+
+	timer:subscribe(ActionNotification.Step, ConnectionVariant.Ever, function ()
+		if not can then return end
+
+		new:process(timer:get_delta())
+		new:notificate(Notification:new({ call_on = NodeRuntimeNotification.Process }))
+		new:simulate(timer:get_delta())
+		new:notificate(Notification:new({ call_on = NodeRuntimeNotification.Simulation }))
+	end)
+
 end)
 
 do

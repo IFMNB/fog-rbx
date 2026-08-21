@@ -3,13 +3,15 @@ const Attribute = require("@game/ReplicatedStorage/class/actors/Attribute")
 const Disposable = require("@game/ReplicatedStorage/class/arch/Disposable")
 const Maybe = require("@game/ReplicatedStorage/class/common/Maybe")
 const Reference = require("@game/ReplicatedStorage/class/common/Reference")
-const NotificationVariant = require("@game/ReplicatedStorage/enums/notifications/NotificationVariant")
+const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
+const DisposableNotification = require("@game/ReplicatedStorage/enums/notification/DisposableNotification")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const namefield = require("@game/ReplicatedStorage/static/namefield")
 
 const private = {}
 const class: declare.node = Disposable:new({
 	type = namefield.node,
+    rid = "",
 
 	get_reference = function(self: declare.node): declare.reference<any>
 		return private.maybe_ref:extract(self, function()
@@ -67,14 +69,16 @@ const class: declare.node = Disposable:new({
     end
 })
 
-class:toggle_host(function(new: declare.node)
-    new:get_notification_event():connect(function ()
+class:host(function(new: declare.node)
+
+
+    new:subscribe(DisposableNotification.OnRelease, ConnectionVariant.Once, function ()
         const attributes = private.get_attributes(new)
         for _, v in attributes do
             v:free()
         end
         table.clear(attributes)
-    end, NotificationVariant.PreRelease)
+    end)
 end)
 
 do

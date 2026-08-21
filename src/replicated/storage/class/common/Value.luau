@@ -1,66 +1,76 @@
 --!strict
 
-const ValueNotificationVariant = require("@game/ReplicatedStorage/enums/notifications/ValueNotificationVariant")
-const runtimeobject = require("../../runtimeobject")
+const Observable = require("@game/ReplicatedStorage/class/arch/Observable")
+const Maybe = require("@game/ReplicatedStorage/class/common/Maybe")
+const Notification = require("@game/ReplicatedStorage/class/common/notification/Notification")
+const Event = require("@game/ReplicatedStorage/class/common/signal/Event")
+const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
+const OperationVariant = require("@game/ReplicatedStorage/enums/descriptor/OperationVariant")
 const declare = require("../../static/declare")
 const namefield = require("../../static/namefield")
 const project = require("../../static/project")
-const Notification = require("./Notification")
 
 const private = {}
-const class: declare.value = runtimeobject:new({
+const class: declare.value = Observable:new({
 	type = namefield.value,
 
-	get_value = function(self: declare.value): any
+	get_value = function(self: declare.value<any> ): any
 		const value: any = private.values[self]
 		if value ~= nil then
-			self:notificate(Notification:new({ call_on = ValueNotificationVariant.ValueGet, pack = { value } }))
+			self:notificate(Notification)
 			return value
+		else
+			const default = private.defaults[self]
+			if default then
+				self:notificate(Notification:new({ on = OperationVariant.Get }))
+				return default
+			end
 		end
 
-		return self:get_value_default()
+		return nil
 	end,
 
-	set_value = function(self: declare.value, value: any): ()
+	set_value = function(self: declare.value, value: any, default: boolean?): ()
 		const stored: any = private.values[self]
-		private.values[self] = value
+
+		if default then
+			private.defaults[self] = value
+		else
+			private.values[self] = value
+		end
 
 		if stored == nil then
-			self:notificate(Notification:new({ call_on = ValueNotificationVariant.ValueNew }))
+			self:notificate(Notification:new({ on = OperationVariant.New }))
 		elseif stored ~= value then
-			self:notificate(Notification:new({ call_on = ValueNotificationVariant.ValueChanged }))
+			self:notificate(Notification:new({ on = OperationVariant.Change }))
 		elseif value == nil then
-			self:notificate(Notification:new({ call_on = ValueNotificationVariant.ValueRemoved }))
+			self:notificate(Notification:new({ on = OperationVariant.Remove }))
 		else
 			project.console_out_error("unexpected value behaviour")
 		end
 	end,
 
-	get_value_default = function(self: declare.value): any
-		const value: any = private.defaults[self]
-		self:notificate(Notification:new({ call_on = ValueNotificationVariant.LazyValueGet, pack = { value } }))
-		return value
-	end,
+	on_operation_event = function (self: declare.value) : declare.event<declare.enumitem_operation_variant>
+		return private.maybe:extract(self, function()
+			const new = Event:new({
+				on = OperationVariant.New
+			})
 
-	set_value_default = function(self: declare.value, value: any): ()
-		const stored: any = private.defaults[self]
-		private.defaults[self] = value
+			self:subscribe(OperationVariant, ConnectionVariant.Ever, function (identity: declare.object_identity)
+				const notice = new.require <<declare.notification<declare.enumitem_operation_variant>>>(identity, namefield.notification)
+				new:invoke(notice)
+			end)
 
-		if stored == nil then
-			self:notificate(Notification:new({ call_on = ValueNotificationVariant.LazyValueNew }))
-		elseif stored ~= value then
-			self:notificate(Notification:new({ call_on = ValueNotificationVariant.LazyValueChanged }))
-		elseif value == nil then
-			self:notificate(Notification:new({ call_on = ValueNotificationVariant.LazyValueRemoved }))
-		else
-			project.console_out_error("unexpected value behaviour")
-		end
-	end,
+			return new
+		end)
+	end
 })
 
 do
-	private.values = setmetatable({} :: { [declare.value]: any }, { __mode = "ks" })
-	private.defaults = setmetatable({} :: { [declare.value]: any }, { __mode = "ks" })
+	private.meta = table.freeze { __mode = "ks"}
+	private.values = setmetatable({} :: { [declare.value]: any }, private.meta)
+	private.defaults = setmetatable({} :: { [declare.value]: any }, private.meta)
+	private.maybe = Maybe:new()
 end
 
 return class

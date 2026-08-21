@@ -1,9 +1,7 @@
 --!strict
-const ValueNotificationVariant = require("@game/ReplicatedStorage/enums/notifications/ValueNotificationVariant")
 const runtimeobject = require("../../runtimeobject")
 const declare = require("../../static/declare")
 const namefield = require("../../static/namefield")
-const Notification = require("../common/Notification")
 
 const private = {}
 const class: declare.maybe = runtimeobject:new({
@@ -14,10 +12,7 @@ const class: declare.maybe = runtimeobject:new({
 
 		if private.stored[self][it] == nil then
 			private.stored[self][it] = that
-			self:notificate(Notification:new({ call_on = ValueNotificationVariant.LazyValueNew }))
 		end
-
-		self:notificate(Notification:new({ call_on = ValueNotificationVariant.LazyValueGet }))
 
 		return that
 	end,
@@ -28,11 +23,10 @@ const class: declare.maybe = runtimeobject:new({
 
 	erase = function(self: declare.maybe, it: unknown): ()
 		private.stored[self][it] = nil
-		self:notificate(Notification:new({ call_on = ValueNotificationVariant.LazyValueRemoved }))
 	end,
 })
 
-class:toggle_host(function(new: declare.maybe)
+class:host(function(new: declare.maybe)
 	private.stored[new] = setmetatable({}, private.frozen)
 end)
 

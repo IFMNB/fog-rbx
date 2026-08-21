@@ -1,0 +1,14 @@
+--!strict
+const EnumItem = require("@game/ReplicatedStorage/class/arch/EnumItem")
+const EnumObject = require("@game/ReplicatedStorage/class/arch/EnumObject")
+const declare = require("@game/ReplicatedStorage/static/declare")
+
+const class: declare.enum_state = EnumObject:new({
+	name = script.Name,
+	Failure = EnumItem:new() :: declare.enumitem<any>,
+	Loading = EnumItem:new() :: declare.enumitem<any>,
+	Successful = EnumItem:new() :: declare.enumitem<any>,
+	Nothing = EnumItem:new() :: declare.enumitem<any>,
+})
+
+return class
