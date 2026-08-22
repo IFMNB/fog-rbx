@@ -323,8 +323,10 @@ export type maid = construct<{
     read add_object: (self: maid, that: connection|disposable|RBXScriptConnection) -> (),
     read add_key: <T> (self: maid, of: {[T]: unknown}, key: T) -> (),
 
-    read remove_object: (self: maid, that: connection|disposable) -> (),
+    read remove_object: (self: maid, that: connection|disposable|RBXScriptConnection) -> (),
     read remove_key: <T> (self: maid, of: {[T]: unknown}, key: T) -> (),
+
+    read is_supported: (self: maid, that: unknown) -> boolean
 }, disposable>
 
 export type node<T = Instance, U = enumitem<any>> = construct<{
@@ -337,17 +339,21 @@ export type node<T = Instance, U = enumitem<any>> = construct<{
     read get_attribute: (self: node<T,U>, name: string) -> value?,
     read add_attribute: (self: node<T,U>, name: string) -> value,
     read remove_attribute: (self: node<T,U>, name: string) -> (),
+
+    read add_dependent: (self: node<T,U>, t: object) -> (),
+    read remove_dependent: (self: node<T,U>, t: object) -> (),
+    read get_dependents: (self: node<T,U>, like: object) -> {object}
 } & referenceable<node<T,U>,T?> , disposable<U>>
 
-export type noderuntime<T = Instance, U = enumitem<any>> = construct<{
-    read type: namefield.noderuntime,
+export type executor<T = enumitem<any>> = construct<{
+    read type: namefield.executor,
     last_delta: number,
     last_emit: number,
 
-    read process: (self: noderuntime<T,U>, delta: number) -> (),
-    read simulate: (self: noderuntime<T,U>, delta: number) -> (),
-    read get_timer: (self: noderuntime<T,U>) -> timer,
-}, node<T,U|enumitem_noderuntime_notification>>
+    read process: (self: executor<T>, delta: number) -> (),
+    read simulate: (self: executor<T>, delta: number) -> (),
+    read get_timer: (self: executor<T>) -> timer,
+}, disposable<T|enumitem_executor_notification>>
 
 export type attribute<T = unknown, U = Instance> = construct<{
     read type: namefield.attribute,
@@ -370,7 +376,7 @@ export type input = construct<{
 
     read get_related: (self: input) -> enumitem_action_map_variant?,
     read set_related: (self: input, new: enumitem_action_map_variant?) -> (),
-}, disposable<enumitem_input_notification>>
+} & invokeable<input>, disposable<enumitem_input_notification>>
 
 
 
@@ -434,7 +440,7 @@ export type physx = construct<{
     mode: enumitem_physx_mode_variant,
     stats: physics,
 
-} & rotateable<physx> & positioned<physx> & controllable<physx>, noderuntime<PVInstance>>
+} & rotateable<physx> & positioned<physx> & controllable<physx>, node<PVInstance>>
 
 
 
@@ -457,7 +463,7 @@ export type unit = construct<{
 
     read get_inventory: (self: unit) -> inventory?,
     read set_inventory: (self: unit, to: inventory?) -> ()
-} & stateable<unit, enumitem_unit_state>, noderuntime<PVInstance>>
+} & stateable<unit, enumitem_unit_state>, node<PVInstance>>
 
 export type unitdescription = construct<{
     read type: nameof<"unitdescription">,
@@ -675,10 +681,10 @@ export type enum_operation_variant = construct<{
     read Null: enumitem_operation_variant,
 }, enumobject>
 
-export type enumitem_noderuntime_notification = enumitem<enum_noderuntime_notification>
-export type enum_noderuntime_notification = construct<{
-    read Process: enumitem_noderuntime_notification,
-    read Simulation: enumitem_noderuntime_notification,
+export type enumitem_executor_notification = enumitem<enum_executor_notification>
+export type enum_executor_notification = construct<{
+    read Process: enumitem_executor_notification,
+    read Simulation: enumitem_executor_notification,
 }, enumobject>
 
 export type enumitem_attribute_notification = enumitem<enum_attribute_notification>

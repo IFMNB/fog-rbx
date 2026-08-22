@@ -3,6 +3,7 @@ const Disposable = require("@game/ReplicatedStorage/class/arch/Disposable")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
 const DisposableNotification = require("@game/ReplicatedStorage/enums/notification/DisposableNotification")
 const declare = require("@game/ReplicatedStorage/static/declare")
+const namefield = require("@game/ReplicatedStorage/static/namefield")
 const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
@@ -38,6 +39,20 @@ const class : declare.maid = Disposable:new {
             table.remove(private.pairs[self][of], pos)
         end
     end,
+
+    is_supported = function (self: declare.maid, that: unknown) : boolean
+        for _, v in private.supported do
+            if self.is(that, v) then
+                return true
+            else
+                if typeof(that) == v then
+                    return true
+                end
+            end
+        end
+
+        return false
+    end
 }
 
 class:host(function(new: declare.maid)
@@ -55,6 +70,9 @@ class:host(function(new: declare.maid)
             elseif typeof(v) == declare.roblox.RBXScriptConnection then
                 const connection = v :: RBXScriptConnection
                 connection:Disconnect()
+            elseif typeof(v) == declare.roblox.Instance then
+                const instance = v :: Instance
+                instance:Destroy()
             else
                 project.console_out("unknown object, skip")
             end
@@ -74,8 +92,15 @@ end)
 
 do
     private.meta = table.freeze {__mode = "ks"}
-    private.objects = setmetatable({ } :: {[declare.maid]: {declare.connection|declare.disposable|RBXScriptConnection}}, private.meta)
+    private.objects = setmetatable({ } :: {[declare.maid]: {declare.connection|declare.disposable|RBXScriptConnection|Instance}}, private.meta)
     private.pairs = setmetatable({ } :: {[declare.maid]: {[{[unknown]: unknown}]: {unknown}}}, private.meta)
+
+    private.supported = table.freeze {
+        namefield.connection,
+        namefield.disposable,
+        declare.roblox.RBXScriptConnection,
+        declare.roblox.Instance
+    }
 end
 
 return class

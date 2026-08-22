@@ -106,6 +106,7 @@ export type remote = literal<"remote">
 export type statemachine = literal<"statemachine">
 export type signal = literal<"signal">
 export type input = literal<"input">
+export type executor = literal<"executor">
 
 export type classfield = {
 	read object: object,
@@ -150,7 +151,6 @@ export type classfield = {
 	read reference: reference,
 	read maybe: maybe,
 	read controller: controller,
-	read noderuntime: noderuntime,
 	read cube: cube,
 	read directions: directions,
 	read vertex: vertex,
@@ -183,7 +183,8 @@ export type classfield = {
 	read message: message,
 	read statemachine: statemachine,
 	read signal: signal,
-	read input: input
+	read input: input,
+	read executor: executor
 }
 
 export type types =
