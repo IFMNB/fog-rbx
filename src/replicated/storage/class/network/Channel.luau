@@ -1,4 +1,5 @@
 --!strict
+const RunService = game:GetService("RunService")
 const EnumObject = require("@game/ReplicatedStorage/class/arch/EnumObject")
 const Observable = require("@game/ReplicatedStorage/class/arch/Observable")
 const Maid = require("@game/ReplicatedStorage/class/common/Maid")
@@ -25,6 +26,7 @@ const class: declare.channel = Observable:new({
     attempts = project.retry,
 	time_to_hold = 0,
 	time_to_response = project.retry_time,
+    everyone = false,
 
     event = Event:new() :: declare.event<declare.enumitem_network_replication, ...unknown>,
     reference = Reference:new() :: declare.reference<declare.channel_internal_reference?>,
@@ -36,7 +38,11 @@ const class: declare.channel = Observable:new({
                 task.wait(self.time_to_hold)
             end
 
-            if game.RunService:IsServer() then
+            if RunService:IsServer() then
+                if project.debug and project.debug_show_channel_send_actions then
+                    project.console_out(to.name, " | sending data to the peers in a batch", ...)
+                end
+
                 for _, v in self:get_peer() do
                     const player = v:get_player():get_instance()
                     if player then
@@ -44,10 +50,19 @@ const class: declare.channel = Observable:new({
                     end
                 end
             else
+                if project.debug and project.debug_show_channel_send_actions then
+                    project.console_out(to.name, " | sending data to the server in a batch", ...)
+                end
+
                 base.send:FireServer(to.hashlink, ...)
             end
         else
-            project.console_out_error "cannot find base, abort, echo continued"
+            if self:get_variant() then
+                project.console_out_error ("base has not been found, although the channel variant has been installed. Internal class error", base )
+            else
+                project.console_out("the channel does not have an installed variant, the network event has been dropped")
+            end
+
         end
 
         if self.echo then
@@ -59,7 +74,7 @@ const class: declare.channel = Observable:new({
 	await = function(self: declare.channel, to: declare.enumitem_network_replication, ...: unknown): {[declare.user]: (() -> ...unknown)?}
         const base = self.reference:get_instance()
         if base then
-            if game.RunService:IsServer() then
+            if RunService:IsServer() then
                 const result: {[declare.user]: (() -> ...unknown)?} = {}
                 const peers = self:get_peer()
                 local to_wait = #peers
@@ -127,7 +142,7 @@ const class: declare.channel = Observable:new({
     async = function(self: declare.channel, to: declare.enumitem_network_replication, ...: unknown): {[declare.user]: (() -> ...unknown)?}
         const base = self.reference:get_instance()
         if base then
-            if game.RunService:IsServer() then
+            if RunService:IsServer() then
                 const result: {[declare.user]: (() -> ...unknown)?} = {}
                 const peers = self:get_peer()
 
@@ -195,9 +210,16 @@ const class: declare.channel = Observable:new({
         const peers = private.peers[self]
         const result: {declare.user} = {}
 
-        for _, v in peers do
-            table.insert(result, v)
+        if self.everyone then
+            for _, v in game:GetService("Players"):GetPlayers() do
+                table.insert(result, User:new {uid = v.User.Id})
+            end
+        else
+            for _, v in peers do
+                table.insert(result, v)
+            end
         end
+
 
         return result
     end,
@@ -247,6 +269,10 @@ const class: declare.channel = Observable:new({
             end
         else
             self.reference:set_instance(nil)
+
+            if project.debug then
+                project.console_out "base related to nil, is this perhaps an incorrect behavior?"
+            end
         end
 
         self:notificate(Notification:new {on = ChannelNotification.VariantChanged})
@@ -268,23 +294,29 @@ class:host(function(new: declare.channel)
         (new :: any).event = Event:new()
     end
 
+    private.peers[new] = {}
 
     new.reference:notice(Package:new <<declare.enumitem_operation_variant>> {
         on = {
             OperationVariant.Change,
             OperationVariant.New
         },
-        pack = Package:new {
-            on = ConnectionVariant.Ever,
-            pack = {
-                function ()
-                    if private.maids:exist(new) then
-                        private.get_maid(new):free()
-                    end
+        pack = {
+            Package:new {
+                on = ConnectionVariant.Ever,
+                pack = {
+                    function ()
+                        if project.debug and project.debug_show_channel_internal then
+                            project.console_out ("reference changed, rebuilding")
+                        end
 
-                    private.build(new, private.checker(new.reference:get_instance() :: any))
-                    new:set_variant(nil)
-                end
+                        if private.maids:exist(new) then
+                            private.get_maid(new):free()
+                        end
+
+                        private.build(new, private.checker(new.reference:get_instance() :: any))
+                    end
+                }
             }
         }
     })
@@ -294,9 +326,6 @@ class:host(function(new: declare.channel)
             private.get_maid(new):free()
         end
     end)
-
-    private.peers[new] = {}
-
 end)
 
 do
@@ -313,10 +342,14 @@ do
     private.maids = Maybe:new()
 
 	private.get_base = function(variant: declare.enumitem<any>): rbx_type
-		if game.RunService:IsServer() then
+		if RunService:IsServer() then
 			const folder = game.ReplicatedStorage.shared:FindFirstChild(variant.hashlink)
 
 			if folder then
+                if project.debug and project.debug_show_channel_internal then
+                    project.console_out ("found precreated channel base")
+                end
+
 				return folder :: any
 			else
 				const new_folder = Instance.new("Folder")
@@ -324,7 +357,6 @@ do
 				const new_async = Instance.new("RemoteFunction")
 				const new_await = Instance.new("RemoteFunction")
                 --const new_build = Instance.new("RemoteFunction")
-
 
 				new_folder.Name = variant.hashlink
 				new_event.Name = "send"
@@ -336,12 +368,31 @@ do
 				new_async.Parent = new_folder
 				new_await.Parent = new_folder
                 --new_build.Parent = new_folder
-                new_folder.Parent = shared
+                new_folder.Parent = game.ReplicatedStorage.shared
+
+                if project.debug and project.debug_show_channel_internal then
+                    if RunService:IsServer() then
+                        new_event.OnServerEvent:Connect(function(a0: Player, ...)
+                            project.console_out("raw event content ", a0.Name, ...)
+                        end)
+                    else
+                        new_event.OnClientEvent:Connect(function(...)
+                            project.console_out("raw event content " , ...) 
+                        end)
+                    end
+                end
+
+                if project.debug and project.debug_show_channel_internal then
+                    project.console_out ("creating channel base")
+                end
 
 				return new_folder :: any
 			end
 		else
 			const unknown_that: any = game.ReplicatedStorage.shared:WaitForChild(variant.hashlink, 5)
+            if not unknown_that then
+                project.console_out_error("cannot find base on the client")
+            end
 
             return unknown_that :: rbx_type
 		end
@@ -353,6 +404,7 @@ do
 		assert(assert(of:FindFirstChild("async"), "folder doesn't have function"):IsA("RemoteFunction"))
         assert(assert(of:FindFirstChild("await"), "folder doesn't have function"):IsA("RemoteFunction"))
         --assert(assert(of:FindFirstChild("build"), "folder doesn't have function"):IsA("RemoteFunction"))
+
         return of :: rbx_type
     end
 
@@ -380,17 +432,24 @@ do
 
     private.build = function (channel: declare.channel, of: rbx_type)
         const maid = private.get_maid(channel)
-        maid:add_key(of.async :: {[string]: unknown}, "OnServerInvoke")
-        maid:add_key(of.async :: {[string]: unknown}, "OnClientInvoke")
-        maid:add_key(of.await :: {[string]: unknown}, "OnServerInvoke")
-        maid:add_key(of.await :: {[string]: unknown}, "OnClientInvoke")
 
-        if game.RunService:IsServer() then
-            maid:add_key(of.send :: {[unknown]: unknown}, of.send.OnServerEvent:Connect(function(a0: Player, to: enumitem_hashlink, ...)
+        if project.debug and project.debug_show_channel_internal then
+            project.console_out ("building channel low-level")
+        end
+
+        if RunService:IsServer() then
+            const send_event_rbx = of.send.OnServerEvent:Connect(function(a0: Player, to: enumitem_hashlink, ...)
                 const enumitem = private.get_enumitem_from_string(to)
                 private.requests[channel] = a0.User.Id
+
+                if project.debug and project.debug_show_channel_send_actions then
+                    project.console_out(enumitem.name, a0.Name, " | received a data packet from the client")
+                end
+
                 channel.event:invoke(enumitem, ...)
-            end)) 
+            end)
+
+            maid:add_object(send_event_rbx)
 
             of.async.OnServerInvoke = function (player: Player, to: enumitem_hashlink, ...)
                 const enumitem = private.get_enumitem_from_string(to)
@@ -418,10 +477,17 @@ do
                 end
             end
         else
-            maid:add_key(of.send :: {[unknown]: unknown}, of.send.OnClientEvent:Connect(function(to: enumitem_hashlink, ...)
+            const send_event_rbx = of.send.OnClientEvent:Connect(function(to: enumitem_hashlink, ...)
                 const enumitem = private.get_enumitem_from_string(to)
+                
+                if project.debug and project.debug_show_channel_send_actions then
+                    project.console_out(enumitem.name, " | received a data packet from the server")
+                end
+                
                 channel.event:invoke(enumitem, ...)
-            end))
+            end)
+
+            maid:add_object(send_event_rbx)
 
             of.async.OnClientInvoke = function (to: enumitem_hashlink, ...)
                 assert(type(to) == declare.string)

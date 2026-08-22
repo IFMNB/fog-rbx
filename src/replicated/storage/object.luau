@@ -241,7 +241,7 @@ do --private_region
 
 	private.bootload_new(class)
 
-	if project.debug then
+	if project.debug and project.debug_show_created_objects then
 		class:host(function(new: declare.object)
 			project.console_out(string.format("new %s", new.type))
 		end)

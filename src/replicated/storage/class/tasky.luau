@@ -39,7 +39,7 @@ const class: declare.tasky<concur_instance> = object:new({
 					end
 				end
 
-				project.console_out_error("tasky deploy fail")
+				project.console_out "tasky couldn't start the task, it was thrown away"
 			end
 		end)
 	end,

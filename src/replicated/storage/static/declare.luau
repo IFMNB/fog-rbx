@@ -44,10 +44,6 @@ export type normals<T=unknown, U=vector> = {
     read get_normal_geometric: (self: T) -> U,
     read get_normal_interpolated: (self: T) -> U,
 }
-export type linkable<T=unknown,U=unknown> = {
-    read link: (self: T, that: U) -> (),
-    read unlink: (self: T, that: U) -> ()
-}
 export type operatable<T = unknown> = {
     read continue: (self: T) -> (),
     read pause: (self: T) -> (),
@@ -218,11 +214,13 @@ export type observer<T = enumitem<any>> = construct<{
 export type event<T = enumitem<any>, U... = ...unknown> = construct<{
     read type: namefield.event,
 
-    read connect: <T0> (self: event<T,U...>, on: T|enumitem_default_variant, f: ((U...) -> ())|thread|observer<T>) -> connection<T>,
-    read once: <T0> (self: event<T,U...>, on: T|enumitem_default_variant, f: ((U...) -> ())|thread|observer<T>) -> connection<T>,
+    read connect: <T0> (self: event<T,U...>, on: T|enumitem_default_variant, f: ((U...) -> ())|thread|observer<T>) -> connection<T,U...>,
+    read once: <T0> (self: event<T,U...>, on: T|enumitem_default_variant, f: ((U...) -> ())|thread|observer<T>) -> connection<T,U...>,
     read wait: (self: event<T,U...>, on: T|enumitem_default_variant) -> U...,
     read invoke: (self: event<T,U...>, on: T|{T}|notification<T|{T}>, U...) -> (),
-} & expected_calltype<T?> & linkable<event<T,U...>, connection>, observer<T>> 
+    read link: (self: event<T,U...>, that: connection<T,U...>) -> (),
+    read unlink: (self: event<T,U...>, that: connection<T, U...>) -> ()
+} & expected_calltype<T?>, observer<T>> 
 
 export type connection<T = enumitem<any>, U... = ()> = construct<{
     read type: namefield.connection,
@@ -230,7 +228,9 @@ export type connection<T = enumitem<any>, U... = ()> = construct<{
     count: number,
 
     read disconnect: (self: connection<T,U...>) -> (),
-} & invokeable<connection<T,U...>,U...> & linkable<connection<T,U...>, event> & expected_calltype<T>,
+    read link: (self: connection<T,U...>, that: event<T,U...>) -> (),
+    read unlink: (self: connection<T,U...>, that: event<T, U...>) -> ()
+} & invokeable<connection<T,U...>,U...> & expected_calltype<T>,
 observer<T|enumitem_connection_variant|enumitem_setup_notification|enumitem_action_notification>>
 
 export type value<T = unknown> = construct<{
@@ -259,6 +259,7 @@ export type channel <T = enumitem_network_replication, U... = ...unknown, E... =
     read reference: reference<channel_internal_reference?>,
     read event: event<T,E...>,
 
+    everyone: boolean,
     echo: boolean,
 
     read send: (self: channel<T,U...,E...>, to: T, U...) -> (),

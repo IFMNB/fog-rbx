@@ -1,12 +1,14 @@
 --!strict
 
 const root = "@game/ServerScriptService/"
-const tasky = require("@game/ReplicatedStorage/class/tasky"):new()
+const tasky = require("@game/ReplicatedStorage/class/tasky")
+const main = tasky:new()
 
 
-tasky:deploy(root .. "dependency/konsole_host")
+main:deploy(root .. "dependency/konsole_host")
 
 
 if game.RunService:IsStudio() then
-    tasky:deploy(root .. "debug/unit")
+    main:deploy(root .. "debug/unit")
+    main:deploy(root .. "debug/input")
 end

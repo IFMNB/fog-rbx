@@ -1,13 +1,13 @@
 --!strict
+const Observable = require("@game/ReplicatedStorage/class/arch/Observable")
 const Notification = require("@game/ReplicatedStorage/class/common/notification/Notification")
 const OperationVariant = require("@game/ReplicatedStorage/enums/descriptor/OperationVariant")
-const runtimeobject = require("@game/ReplicatedStorage/runtimeobject")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const namefield = require("@game/ReplicatedStorage/static/namefield")
 const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
-const class: declare.reference = runtimeobject:new({
+const class: declare.reference = Observable:new({
 	type = namefield.reference,
 
 	get_instance = function(self: declare.reference): any?

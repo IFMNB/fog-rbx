@@ -3,6 +3,7 @@ const UserInputService = game:GetService("UserInputService")
 const Observable = require("@game/ReplicatedStorage/class/arch/Observable")
 const Channel = require("@game/ReplicatedStorage/class/network/Channel")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
+const DisposableNotification = require("@game/ReplicatedStorage/enums/notification/DisposableNotification")
 const InputNotification = require("@game/ReplicatedStorage/enums/notification/InputNotification")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const namefield = require("@game/ReplicatedStorage/static/namefield")
@@ -66,6 +67,7 @@ const class : declare.input = Observable:new {
 
 class:host(function(new: declare.input)
     const channel = Channel:new()
+    channel.everyone = true
     
     private.codes[new] = {}
     private.channels[new] = channel
@@ -80,6 +82,13 @@ class:host(function(new: declare.input)
     new:subscribe(InputNotification.RelatedNullified, ConnectionVariant.Ever, function ()
         channel.enabled = false
 		channel:set_variant(new:get_related() :: declare.enumitem_action_map_variant)
+    end)
+
+    new:subscribe(DisposableNotification.OnRelease, ConnectionVariant.Once, function ()
+        const pos = table.find(private.inputs, new)
+        if pos then
+            table.remove(private.inputs, pos)
+        end
     end)
 end)
 

@@ -30,6 +30,13 @@ const class: declare.observer = runtimeobject:new({
 			notification.on = {notification.on :: declare.enumitem}
 		end
 
+		if project.debug then
+			if self.is(notification.pack :: unknown?, namefield.package) then
+				project.console_out_error("to the place in the notice() .an object has been passed to pack, but the package array is expected")
+				return function () end
+			end
+		end
+
 		for _, v in notification.on :: {declare.enumitem} do
 			const target = private.notificatable[self][v]
 
@@ -61,21 +68,35 @@ const class: declare.observer = runtimeobject:new({
 			self:notificate(Notification:new {
 				on = notification :: declare.enumitem
 			})
+
+			if project.debug and project.debug_show_notifications_path then
+				project.console_out ("notification has been normalized from enumitem to notification object")
+			end
+
 			return
 		elseif self.is(notification, namefield.notification) then
 			const notice = notification :: declare.notification<declare.enumitem|{declare.enumitem}>
 			if self.is(notice.on, namefield.enumitem) then
-				if type(notice.on) == declare.table then
-					for _, v in notice.on :: {declare.enumitem} do
-						self:notificate(Notification:new {
-							on = v
-						})
-					end
+				if project.debug and project.debug_show_notifications_path then
+					const item = notice.on :: declare.enumitem
+					project.console_out (item.name, item.enum and item.enum.name or "*null*", " \n\n| notification has the correct format and will be processed now")
 				end
+			elseif type(notice.on) == declare.table then
+				for _, v in notice.on :: {declare.enumitem} do
+					self:notificate(Notification:new {
+						on = v
+					})
+				end
+			else
+				project.console_out_error ("notification has an incorrect format, aborted")
+				return
+			end
+		elseif type(notification) == declare.table then
+			if project.debug and project.debug_show_notifications_path then
+				project.console_out ("notification was received as an enumitem table and will now be normalized into a notification object")
 			end
 
-			return
-		elseif type(notification) == declare.table then
+			
 			for _, v in notification :: {declare.enumitem} do
 				self:notificate(Notification:new {
 					on = v
@@ -89,6 +110,10 @@ const class: declare.observer = runtimeobject:new({
 		const target = private.notificatable[self][needle_notification.on]
 		
 		if target then
+			if project.debug and project.debug_show_notifications_path then
+				project.console_out ("| notification has been sent, [type] ", self.type)
+			end
+
 			const seen: {[unknown]: unknown } = {}
 
 			for i = #target, 1, -1 do
@@ -180,6 +205,10 @@ const class: declare.observer = runtimeobject:new({
 						continue
 					end
 				end
+			end
+		else
+			if project.debug and project.debug_show_notifications_path then
+				project.console_out("| notification did not arrive to any recipient because there was not a single subscription to it, [type]", self.type)
 			end
 		end
 	end,
