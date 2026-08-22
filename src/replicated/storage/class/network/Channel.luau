@@ -8,7 +8,6 @@ const Notification = require("@game/ReplicatedStorage/class/common/notification/
 const Package = require("@game/ReplicatedStorage/class/common/notification/Package")
 const Event = require("@game/ReplicatedStorage/class/common/signal/Event")
 const User = require("@game/ReplicatedStorage/class/local/User")
-const ChannelVariant = require("@game/ReplicatedStorage/enums/descriptor/ChannelVariant")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
 const OperationVariant = require("@game/ReplicatedStorage/enums/descriptor/OperationVariant")
 const ChannelNotification = require("@game/ReplicatedStorage/enums/notification/ChannelNotification")
@@ -232,12 +231,11 @@ const class: declare.channel = Observable:new({
         end
     end,
 
-    get_variant = function (self: declare.channel ) : declare.enumitem_channel_variant?
+    get_variant = function (self: declare.channel ) : declare.enumitem_network_replication?
         return private.variant[self]
     end,
 
-    set_variant = function (self: declare.channel, to: declare.enumitem_channel_variant?) : ()
-        ChannelVariant:assert_is_my_enumitem(to)
+    set_variant = function (self: declare.channel, to: declare.enumitem_network_replication?) : ()
         private.variant[self] = to
 
         if to then
@@ -254,7 +252,7 @@ const class: declare.channel = Observable:new({
         self:notificate(Notification:new {on = ChannelNotification.VariantChanged})
     end,
 
-    is_variant = function (self: declare.channel, of: declare.enumitem_channel_variant) : boolean
+    is_variant = function (self: declare.channel, of: declare.enumitem_network_replication) : boolean
         const variant = private.variant[self]
         if variant then
             return variant.hashlink == of.hashlink
@@ -308,7 +306,7 @@ do
     private.meta = table.freeze {__mode = 'ks'}
     private.async = setmetatable({} :: { [declare.channel]: { [declare.enumitem_network_replication]: ((...unknown) -> declare.object)?}}, private.meta)
 	private.await = setmetatable({} :: { [declare.channel]: { [declare.enumitem_network_replication]: ((...unknown) -> ...unknown)? } }, private.meta)
-    private.variant = setmetatable({} :: { [declare.channel]: declare.enumitem_channel_variant? } , private.meta)
+    private.variant = setmetatable({} :: { [declare.channel]: declare.enumitem_network_replication? } , private.meta)
 	private.peers = setmetatable({} :: { [declare.channel]: {[string]: declare.user} }, private.meta)
     private.requests = setmetatable({} :: { [declare.channel]: number?}, private.meta)
     

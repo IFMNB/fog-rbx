@@ -276,9 +276,9 @@ export type channel <T = enumitem_network_replication, U... = ...unknown, E... =
     read is_peer: (self: channel<T,U...,E...>, of: user) -> boolean,
     read request_from: (self: channel<T,U...,E...>) -> user?,
 
-    read get_variant: (self: channel<T,U...,E...>) -> enumitem_channel_variant?,
-    read set_variant: (self: channel<T,U...,E...>, to: enumitem_channel_variant?) -> (),
-    read is_variant: (self: channel<T,U..., E...>, of: enumitem_channel_variant) -> boolean
+    read get_variant: (self: channel<T,U...,E...>) -> enumitem_network_replication?,
+    read set_variant: (self: channel<T,U...,E...>, to: enumitem_network_replication?) -> (),
+    read is_variant: (self: channel<T,U..., E...>, of: enumitem_network_replication) -> boolean
 } & asyncable & switchable<channel<T,U...,E...>>, observer<enumitem_channel_notification>>
 
 export type signal<T... = ...unknown> = construct<{
@@ -836,14 +836,6 @@ export type enum_physx_mode_variant = construct<{
     read Local: enumitem_physx_mode_variant,
     read Global: enumitem_physx_mode_variant
 }, enumobject>
-
-export type enumitem_channel_variant = enumitem<enum_channel_variant>
-export type enum_channel_variant = construct<{
-    read UserData: enumitem_channel_variant,
-    read ActionMap: enumitem_channel_variant,
-    read Abyss: enumitem_channel_variant,
-}, enumobject>
-
 
 export type enumitem_disposable_notification = enumitem<enum_disposable_notification>
 export type enum_disposable_notification = construct<{
