@@ -5,7 +5,7 @@ const Notification = require("@game/ReplicatedStorage/class/common/notification/
 const Timer = require("@game/ReplicatedStorage/class/common/runtime/Timer")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
 const ActionNotification = require("@game/ReplicatedStorage/enums/notification/ActionNotification")
-const NodeRuntimeNotification = require("@game/ReplicatedStorage/enums/notification/NodeRuntimeNotification")
+const ExecutorNotification = require("@game/ReplicatedStorage/enums/notification/ExecutorNotification")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const namefield = require("@game/ReplicatedStorage/static/namefield")
 
@@ -30,9 +30,9 @@ class:host(function(new: declare.executor)
 
 	timer:subscribe(ActionNotification.Step, ConnectionVariant.Ever, function ()
 		new:process(timer:get_delta())
-		new:notificate(Notification:new({ call_on = NodeRuntimeNotification.Process }))
+		new:notificate(Notification:new({ call_on = ExecutorNotification.Process }))
 		new:simulate(timer:get_delta())
-		new:notificate(Notification:new({ call_on = NodeRuntimeNotification.Simulation }))
+		new:notificate(Notification:new({ call_on = ExecutorNotification.Simulation }))
 	end)
 
 end)

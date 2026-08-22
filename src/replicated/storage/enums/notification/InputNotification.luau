@@ -10,8 +10,7 @@ const class: declare.enum_input_notification = EnumObject:new({
 	CodeRemoved = EnumItem:new() :: declare.enumitem<any>,
 	Pressed = EnumItem:new() :: declare.enumitem<any>,
 	Clamped = EnumItem:new() :: declare.enumitem<any>,
-	Unpressed = EnumItem:new() :: declare.enumitem<any>,
-	Unclampled = EnumItem:new() :: declare.enumitem<any>,
+	Stopped = EnumItem:new() :: declare.enumitem<any>,
 	RelatedChanged = EnumItem:new() :: declare.enumitem<any>,
 	RelatedNullified = EnumItem:new() :: declare.enumitem<any>,
 })

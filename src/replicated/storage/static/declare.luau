@@ -366,17 +366,17 @@ export type attribute<T = unknown, U = Instance> = construct<{
 export type input = construct<{
     read type: namefield.input,
 
-    strengh: number,
     duration: number,
     clamped: boolean,
     pressed: boolean,
+    network: boolean,
 
     read get_code: (self: input) -> {Enum.KeyCode},
     read set_code: (self: input, of: Enum.KeyCode, to: boolean?) -> (),
 
     read get_related: (self: input) -> enumitem_action_map_variant?,
     read set_related: (self: input, new: enumitem_action_map_variant?) -> (),
-} & invokeable<input>, disposable<enumitem_input_notification>>
+} & switchable<input> & invokeable<input>, disposable<enumitem_input_notification>>
 
 
 
@@ -651,8 +651,7 @@ export type enum_input_notification = construct<{
     read CodeRemoved: enumitem_input_notification,
     read Pressed: enumitem_input_notification,
     read Clamped: enumitem_input_notification,
-    read Unpressed: enumitem_input_notification,
-    read Unclampled: enumitem_input_notification,
+    read Stopped: enumitem_input_notification,
     read RelatedChanged: enumitem_input_notification,
     read RelatedNullified: enumitem_input_notification
 }, enumobject>
