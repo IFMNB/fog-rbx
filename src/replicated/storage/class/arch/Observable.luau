@@ -13,9 +13,9 @@ const private = {}
 const class: declare.observer = runtimeobject:new({
 	type = namefield.observer,
 
-	subscribe = function (self: declare.observer, on: declare.enumitem|declare.enumobject, mode: declare.enumitem_connection_variant, ...: pack): () -> ()
+	subscribe = function (self: declare.observer, on: declare.enumitem|declare.enumobject|{declare.enumitem}, mode: declare.enumitem_connection_variant, ...: pack): () -> ()
 		return self:notice(Package:new <<declare.package<declare.enumitem_connection_variant, pack>>> {
-			on = assert(self.is(on, namefield.enumitem) and on or self.is(on, namefield.enumobject) and (on :: declare.enumobject):get_enums_list(), "fail to create allocations"),
+			on = assert(self.is(on, namefield.enumitem) and on or self.is(on, namefield.enumobject) and (on :: declare.enumobject):get_enums_list() or type(on) == declare.table and on :: {declare.enumitem}, "fail to create allocations"),
 			pack = {
 				Package:new <<(() -> ()) | thread | declare.observer | string>> {
 					on = mode,

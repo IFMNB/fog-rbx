@@ -7,5 +7,6 @@ main:deploy(root .. "dependency/lori")
 main:deploy(root .. "dependency/konsole")
 
 if game.RunService:IsStudio() then
-	main:deploy(root .. "debug/input")
+	--main:deploy(root .. "debug/input")
+    main:deploy(root .. "debug/userdata")
 end

@@ -35,7 +35,7 @@ do --data
 	project.debug_show_notifications_path = false
 	project.debug_show_channel_send_actions = false
 	project.debug_show_maids_releasing = false
-	project.debug_show_channel_internal = false
+	project.debug_show_channel_internal = true
 end
 
 do --properties
@@ -59,7 +59,9 @@ type console_out_type = never
 function project.console_out_error(...: unknown): console_out_type
 	if project.debug then
 		warn("error ", debug.traceback(), ...)
-		error("prev")
+		const run = coroutine.running()
+
+		coroutine.close(run)
 	else
 		warn("error ", debug.traceback())
 	end

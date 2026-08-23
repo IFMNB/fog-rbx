@@ -188,7 +188,7 @@ export type randentity = construct<{
 export type observer<T = enumitem<any>> = construct<{
     read type: namefield.observer,
     
-    read subscribe: (self: observer<T>, on: T|enumobject, mode: enumitem_connection_variant, ...observer_pack<T>) -> () -> (),
+    read subscribe: (self: observer<T>, on: T|{T}|enumobject, mode: enumitem_connection_variant, ...observer_pack<T>) -> () -> (),
     read notice: (self: observer<T>, on: package<{T}|T, package<enumitem_connection_variant, observer_pack<T>>>) -> () -> (),
     read notificate: (self: observer<T>, notification: T|{T}|notification<T|{T}>) -> (),
 }, runtimeobject>
@@ -197,7 +197,7 @@ export type user = construct<{
     read type: namefield.user,
     read uid: number,
     
-    read request_data: <T> (self: user, of: enumitem_user_data_require) -> userdata<result<T>>,
+    read request_data: <T...> (self: user, of: enumitem_user_data_require) -> userdata<T...>,
     read get_unit: (self: user) -> unit?,
     read set_unit: (self: user, to: unit?) -> (),
 
@@ -208,17 +208,11 @@ export type user = construct<{
     read get_config: (self: user) -> userconfig
 }, observer>
 
-export type userdata<T = unknown> = construct<{
-    read type: namefield.userdata,
-    read stored: T,
-    read datatype: enumitem_user_data_require,
-}, runtimeobject>
-
 export type userconfig = construct<{
     read type: nameof<"userconfig">,
 
     read get_map: (self: userconfig) -> {[enumitem_action_map_variant]: {Enum.KeyCode}},
-    read get_last_changed: (self: userconfig) -> (enumitem_operation_variant, enum_action_map_variant, Enum.KeyCode),
+    read get_last_changed: (self: userconfig) -> (enumitem_operation_variant, enumitem_action_map_variant|enumitem_default_variant, Enum.KeyCode),
     read insert_item: (self: userconfig, item: enumitem_action_map_variant, to: Enum.KeyCode) -> (),
     read remove_item: (self: userconfig, item: enumitem_action_map_variant, to: Enum.KeyCode) -> (),
     read is_exists: (self: userconfig, item: enumitem_action_map_variant, to: Enum.KeyCode) -> boolean,
@@ -279,8 +273,8 @@ export type channel <T = enumitem_network_replication, U... = ...unknown, E... =
     read sync: (self: channel<T,U...,E...>, to: T, U...) -> {[user]: (() -> E...)?},
     read async: (self: channel<T,U...,E...>, to: T, U...) -> {[user]: (() -> E...)?},
 
-    read set_await_response: (self: channel<T,U...,E...>, to: T, f: ((U...) -> E...)? ) -> (),
-    read get_await_response: (self: channel<T,U...,E...>, to: T) -> ((U...) -> E...)?,
+    read set_sync_response: (self: channel<T,U...,E...>, to: T, f: ((U...) -> E...)? ) -> (),
+    read get_sync_response: (self: channel<T,U...,E...>, to: T) -> ((U...) -> E...)?,
 
     read set_async_response: (self: channel<T,U...,E...>, to: T, f: ((U...) -> object)?) -> (),
     read get_async_response: (self: channel<T,U...,E...>, to: T) -> ((U...) -> object)?,
@@ -385,13 +379,15 @@ export type input = construct<{
     duration: number,
     clamped: boolean,
     pressed: boolean,
-    network: boolean,
 
     read get_code: (self: input) -> {Enum.KeyCode},
     read set_code: (self: input, of: Enum.KeyCode, to: boolean?) -> (),
 
     read get_related: (self: input) -> enumitem_action_map_variant?,
     read set_related: (self: input, new: enumitem_action_map_variant?) -> (),
+
+    read set_network: (self: input, to: boolean) -> (),
+    read is_network_active: (self: input) -> boolean
 } & switchable<input> & invokeable<input>, disposable<enumitem_input_notification>>
 
 
@@ -510,7 +506,7 @@ export type service<T = enumitem<any>> = construct<{
     read code: T,
 
     read log: (self: service, ...any) -> (),
-} & nameable, runtimeobject>
+} & switchable<service<T>> & nameable, runtimeobject>
 
 
 
@@ -559,6 +555,12 @@ export type result<T = unknown, U... = ...unknown> = construct<{
 
     read unpack: (self: result<T,U...>) -> U...
 }, record>
+
+export type userdata<U... = ...unknown> = construct<{
+    read type: namefield.userdata,
+    read of: enumitem_user_data_require
+
+}, result<{unknown}, U...>>
 
 export type boundbox = construct<{
     read type: namefield.boundbox,
@@ -685,7 +687,9 @@ export type enum_input_notification = construct<{
     read Clamped: enumitem_input_notification,
     read Stopped: enumitem_input_notification,
     read RelatedChanged: enumitem_input_notification,
-    read RelatedNullified: enumitem_input_notification
+    read RelatedNullified: enumitem_input_notification,
+    read NetworkEnabled: enumitem_input_notification,
+    read NetworkDisabled: enumitem_input_notification,
 }, enumobject>
 
 export type enumitem_state = enumitem<enum_state>
@@ -814,13 +818,6 @@ export type enum_asset_type_variant = construct<{
 	read Image: enumitem_asset_type_variant,
 }, enumobject>
 
-export type enumitem_operational_variant = enumitem<enum_operational_variant>
-export type enum_operational_variant = construct<{
-    read Work: enumitem_operational_variant,
-	read Pause: enumitem_operational_variant,
-	read Corrupt: enumitem_operational_variant,
-}, enumobject>
-
 export type enumitem_user_data_require = enumitem<enum_user_data_require>
 export type enum_user_data_require = construct<{
     read Weaponry: enumitem_user_data_require,
@@ -881,8 +878,8 @@ export type enum_action_map_variant = construct<{
     read Say: enumitem_action_map_variant,
 }, enumobject>
 
-export type enumitem_network_replication = enumitem_user_data_require|enumitem_action_map_variant|enumitem_browser_require
-export type enum_network_replication = enum_user_data_require|enum_action_map_variant|enum_browser_require
+export type enumitem_network_replication = enumitem_user_data_require|enumitem_action_map_variant|enumitem_browser_require|enumitem_internal_channel_variant
+export type enum_network_replication = enum_user_data_require|enum_action_map_variant|enum_browser_require|enum_internal_channel_variant
 
 export type enumitem_connection_variant = enumitem<enum_connection_variant>
 export type enum_connection_variant = construct<{
@@ -894,10 +891,9 @@ export type enum_connection_variant = construct<{
     read Next: enumitem_connection_variant, -- -> Ever
 }, enumobject>
 
-export type enumitem_remote_variant = enumitem<enum_remote_variant>
-export type enum_remote_variant = construct<{
-    read AwaitResponse: enumitem_remote_variant,
-    read SendedEvent: enumitem_remote_variant,
+export type enumitem_internal_channel_variant = enumitem<enum_internal_channel_variant>
+export type enum_internal_channel_variant = construct<{
+    read UserData: enumitem_internal_channel_variant
 }, enumobject>
 
 export type enumitem_physx_mode_variant = enumitem<enum_physx_mode_variant>

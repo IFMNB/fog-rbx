@@ -4,8 +4,8 @@ const Reference = require("@game/ReplicatedStorage/class/common/Reference")
 const Package = require("@game/ReplicatedStorage/class/common/notification/Package")
 const Event = require("@game/ReplicatedStorage/class/common/signal/Event")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
-const OperationVariant = require("@game/ReplicatedStorage/enums/descriptor/OperationVariant")
 const ActionNotification = require("@game/ReplicatedStorage/enums/notification/ActionNotification")
+const ReferenceNotification = require("@game/ReplicatedStorage/enums/notification/ReferenceNotification")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const namefield = require("@game/ReplicatedStorage/static/namefield")
 
@@ -21,7 +21,7 @@ const class : declare.signal = Reference:new <<declare.reference<RBXScriptSignal
 }
 
 class:host(function(new: declare.signal)
-    new:subscribe(OperationVariant.Change, ConnectionVariant.Ever, function ()
+    new:subscribe(ReferenceNotification.ChangedInstance, ConnectionVariant.Ever, function ()
         const con = private.con[new]
         if con then
             con:Disconnect()
@@ -38,7 +38,7 @@ class:host(function(new: declare.signal)
             end
         end)
     end)
-    new:subscribe(OperationVariant.Null, ConnectionVariant.Ever, function ()
+    new:subscribe(ReferenceNotification.NullifiedInstance, ConnectionVariant.Ever, function ()
         const con = private.con[new]
         if con then
             private.con[new] = nil

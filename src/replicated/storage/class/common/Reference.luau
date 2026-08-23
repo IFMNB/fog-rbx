@@ -1,7 +1,7 @@
 --!strict
 const Observable = require("@game/ReplicatedStorage/class/arch/Observable")
 const Notification = require("@game/ReplicatedStorage/class/common/notification/Notification")
-const OperationVariant = require("@game/ReplicatedStorage/enums/descriptor/OperationVariant")
+const ReferenceNotification = require("@game/ReplicatedStorage/enums/notification/ReferenceNotification")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const namefield = require("@game/ReplicatedStorage/static/namefield")
 const project = require("@game/ReplicatedStorage/static/project")
@@ -28,16 +28,16 @@ const class: declare.reference = Observable:new({
 			const that = to :: Instance
 
 			private.connections[self] = that.Destroying:Once(function()
-				self:notificate(Notification:new({ on = OperationVariant.Remove }))
+				self:notificate(Notification:new({ on = ReferenceNotification.DestroyedInstance }))
 			end)
 		end
 
 		if stored == nil and to == nil then
-			self:notificate(Notification:new({ on = OperationVariant.Null }))
+			self:notificate(Notification:new({ on = ReferenceNotification.NullifiedInstance }))
 		elseif stored == nil and to ~= nil then
-			self:notificate(Notification:new({ on = OperationVariant.New }))
+			self:notificate(Notification:new({ on = ReferenceNotification.NewInstance }))
 		elseif stored ~= to then
-			self:notificate(Notification:new({ on = OperationVariant.Change }))
+			self:notificate(Notification:new({ on = ReferenceNotification.ChangedInstance }))
 		else
 			project.console_out("missmatch reference")
 		end

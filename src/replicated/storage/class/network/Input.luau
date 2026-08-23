@@ -51,7 +51,7 @@ const class : declare.input = Observable:new {
     end,
 
     invoke = function (self: declare.input) : ()
-        if not self.network then
+        if not self:is_network_active() then
             project.console_out "input isn't enabled, network invoke aborted"
             return
         end
@@ -62,6 +62,22 @@ const class : declare.input = Observable:new {
         else
             project.console_out "cannot send input event, related does not exists"
         end        
+    end,
+
+    set_network = function (self: declare.input, to: boolean) : ()
+        const prev = private.net_active[self]
+        private.net_active[self] = to
+        if not to then
+            if prev == to or not prev then return end
+            self:notificate(InputNotification.NetworkDisabled)
+        else
+            if prev == to then return end
+            self:notificate(InputNotification.NetworkEnabled)
+        end
+    end,
+
+    is_network_active = function (self: declare.input) : boolean
+    	return private.net_active[self] or false
     end
 }
 
@@ -76,13 +92,28 @@ class:host(function(new: declare.input)
     table.insert(private.inputs, new)
 
     new:subscribe(InputNotification.RelatedChanged, ConnectionVariant.Ever,  function ()
+        if not new:is_network_active() then return end
+
         channel:set_variant(new:get_related() :: declare.enumitem_action_map_variant)
         channel.enabled = true
     end)
     new:subscribe(InputNotification.RelatedNullified, ConnectionVariant.Ever, function ()
+        if not new:is_network_active() then return end
+
         channel.enabled = false
-		channel:set_variant(new:get_related() :: declare.enumitem_action_map_variant)
+		channel:set_variant(new:get_related())
     end)
+
+    new:subscribe(InputNotification.NetworkEnabled, ConnectionVariant.Ever, function ()
+        if not new:get_related() then return end
+
+        channel.enabled = true
+    end)
+	new:subscribe(InputNotification.NetworkDisabled, ConnectionVariant.Ever, function()
+        if not new:get_related() then return end
+
+		channel.enabled = false
+	end)
 
     new:subscribe(DisposableNotification.OnRelease, ConnectionVariant.Once, function ()
         const pos = table.find(private.inputs, new)
@@ -108,6 +139,7 @@ do
     private.inputs = setmetatable({} :: {declare.input}, table.freeze {__mode = "vs"})
     private.invoke_at = setmetatable({} :: {[declare.input]: number}, private.meta)
     private.pressed = {} :: {[unknown]: Enum.KeyCode}
+    private.net_active = setmetatable({} :: {[declare.input]: boolean?}, private.meta)
 
     UserInputService.InputBegan:Connect(function(a0: InputObject, intercepted: boolean)
         if intercepted then return end

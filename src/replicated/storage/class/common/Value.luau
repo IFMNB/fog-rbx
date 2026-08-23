@@ -22,7 +22,6 @@ const class: declare.value = Observable:new({
 		else
 			const default = private.defaults[self]
 			if default then
-				self:notificate(Notification:new({ on = OperationVariant.Get }))
 				return default
 			end
 		end

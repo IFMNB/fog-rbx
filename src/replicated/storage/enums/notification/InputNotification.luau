@@ -13,6 +13,9 @@ const class: declare.enum_input_notification = EnumObject:new({
 	Stopped = EnumItem:new() :: declare.enumitem<any>,
 	RelatedChanged = EnumItem:new() :: declare.enumitem<any>,
 	RelatedNullified = EnumItem:new() :: declare.enumitem<any>,
+    NetworkEnabled = EnumItem:new() :: declare.enumitem<any>,
+	NetworkDisabled = EnumItem:new() :: declare.enumitem<any>,
+
 })
 
 return class

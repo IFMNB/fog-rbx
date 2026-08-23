@@ -8,7 +8,7 @@ const project = require("@game/ReplicatedStorage/static/project")
 const input_move_forward = Input:new()
 input_move_forward:set_code(Enum.KeyCode.W, true)
 input_move_forward:set_related(ActionMapVariant.MoveForward)
-input_move_forward.network = true
+input_move_forward:set_network(false)
 input_move_forward.enabled = true
 
 input_move_forward:subscribe(InputNotification.Pressed, ConnectionVariant.Ever, function ()
