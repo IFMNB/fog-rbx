@@ -1,8 +1,8 @@
 --!strict
 
 const root = "@game/ServerScriptService/"
-const tasky = require("@game/ReplicatedStorage/class/tasky")
-const main = tasky:new()
+const Tasky = require("@game/ReplicatedStorage/class/Tasky")
+const main = Tasky:new()
 
 
 main:deploy(root .. "dependency/konsole_host")

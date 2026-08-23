@@ -27,11 +27,11 @@ const class : declare.connection = Observable:new {
 	end,
 
 	link = function (self: declare.connection, that: declare.event)
-		return that:link(self)
+		return that:link(self :: declare.connection<any,any>)
 	end,
 
 	unlink = function (self: declare.connection, that: declare.event)
-		return that:unlink(self)
+		return that:unlink(self :: declare.connection<any,any>)
 	end
 }
 
@@ -42,20 +42,6 @@ class:host(function(new: declare.connection)
 		
 		new:subscribe(ActionNotification.Emit, ConnectionVariant.Ever, function (identity: declare.object_identity)
 			const package = new.require <<declare.package<declare.enumitem_action_notification, unknown>>>(identity, namefield.package)
-			--[=[ -- self:invoke() не делает проверки по self.on, так как это принудительный вызов
-			const enumitem = new.on :: declare.enumitem
-
-			if enumitem.enum then
-				if not enumitem.enum:is_my_enumitem(package.on) then
-					project.console_out(string.format(
-						"received enumitem isn't my target scope | Expected: %s (%s) | Got: %s (%s)", 
-						tostring(enumitem.name), tostring(enumitem.enum.name),
-						tostring(package.on.name), tostring(package.on and package.on.enum.name)
-					))
-					return
-				end
-			end
-			]=]
 
 			closure(unpack(package.pack))
 			new.count -= 1

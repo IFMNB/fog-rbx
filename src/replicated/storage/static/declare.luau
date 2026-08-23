@@ -159,18 +159,6 @@ export type tasky<current --[=[*based-on-current-realization*]=]> = construct<{
     read is_exists: (self: tasky<current>, path: string) -> boolean
 } & asyncable, object>
 
-export type user = construct<{
-    read type: namefield.user,
-    read uid: number,
-    
-    read request_data: <T> (self: user, of: enumitem_user_data_require) -> userdata<result<T>>,
-    read get_unit: (self: user) -> unit?,
-    read set_unit: (self: user, to: unit?) -> (),
-
-
-    read get_local_user: (self: user) -> user,
-    read get_player: (self: user) -> reference<Player?>
-}, object>
 
 export type runtimeobject = construct<{
     read type: namefield.runtimeobject,
@@ -183,12 +171,6 @@ export type maybe = construct<{
     read extract: <T> (self: maybe, it: unknown, make: () -> T) -> T,
     read erase: (self: maybe, it: unknown) -> (),
     read exist: (self: maybe, it: unknown) -> boolean
-}, runtimeobject>
-
-export type userdata<T = unknown> = construct<{
-    read type: namefield.userdata,
-    read stored: T,
-    read datatype: enumitem_user_data_require,
 }, runtimeobject>
 
 export type randentity = construct<{
@@ -210,6 +192,37 @@ export type observer<T = enumitem<any>> = construct<{
     read notice: (self: observer<T>, on: package<{T}|T, package<enumitem_connection_variant, observer_pack<T>>>) -> () -> (),
     read notificate: (self: observer<T>, notification: T|{T}|notification<T|{T}>) -> (),
 }, runtimeobject>
+
+export type user = construct<{
+    read type: namefield.user,
+    read uid: number,
+    
+    read request_data: <T> (self: user, of: enumitem_user_data_require) -> userdata<result<T>>,
+    read get_unit: (self: user) -> unit?,
+    read set_unit: (self: user, to: unit?) -> (),
+
+
+    read get_local_user: () -> user,
+
+    read get_player: (self: user) -> reference<Player?>,
+    read get_config: (self: user) -> userconfig
+}, observer>
+
+export type userdata<T = unknown> = construct<{
+    read type: namefield.userdata,
+    read stored: T,
+    read datatype: enumitem_user_data_require,
+}, runtimeobject>
+
+export type userconfig = construct<{
+    read type: nameof<"userconfig">,
+
+    read get_map: (self: userconfig) -> {[enumitem_action_map_variant]: {Enum.KeyCode}},
+    read get_last_changed: (self: userconfig) -> (enumitem_operation_variant, enum_action_map_variant, Enum.KeyCode),
+    read insert_item: (self: userconfig, item: enumitem_action_map_variant, to: Enum.KeyCode) -> (),
+    read remove_item: (self: userconfig, item: enumitem_action_map_variant, to: Enum.KeyCode) -> (),
+    read is_exists: (self: userconfig, item: enumitem_action_map_variant, to: Enum.KeyCode) -> boolean,
+}, observer<enumitem_operation_variant>>
 
 export type event<T = enumitem<any>, U... = ...unknown> = construct<{
     read type: namefield.event,
@@ -252,7 +265,7 @@ export type timer = construct<{
 
 export type reference<T = Instance> = construct<{
     read type: namefield.reference
-} & instanceable<reference<T>, T>, observer<enumitem_operation_variant>>
+} & instanceable<reference<T>, T>, observer<enumitem_reference_notification>>
 
 export type channel <T = enumitem_network_replication, U... = ...unknown, E... = ...unknown> = construct<{
     read type: namefield.channel,
@@ -346,6 +359,8 @@ export type node<T = Instance, U = enumitem<any>> = construct<{
     read get_dependents: (self: node<T,U>, like: object) -> {object}
 } & referenceable<node<T,U>,T?> , disposable<U>>
 
+
+
 export type executor<T = enumitem<any>> = construct<{
     read type: namefield.executor,
     last_delta: number,
@@ -382,7 +397,14 @@ export type input = construct<{
 
 
 
+export type pickup <T = enumitem<any>> = construct<{
+    read type: nameof<"pickup">,
 
+    dropable: boolean,
+    pickable: boolean,
+    distance: number,
+    volume: sphere|boundbox,
+} & switchable<pickup<T>>, node<PVInstance, T|enumitem_pickup_notification>>
 
 export type inventory<T = item> = construct<{
     read type: namefield.inventory,
@@ -397,31 +419,24 @@ export type inventory<T = item> = construct<{
     read insert: (self: inventory<T>, that: T) -> (),
     read remove: (self: inventory<T>, that: T) -> (),
     read is_in_inventory: (self: inventory<T>, that: T) -> boolean,
-}, node<Configuration>>
+}, pickup<>>
 
-export type item = construct<{
+export type item <T = enumitem<any>, U = enumitem<any>> = construct<{
     read type: namefield.item,
     
     equipable: boolean,
-    dropable: boolean,
-    deliverable: boolean,
-} & nameable, node<Model>>
+} & nameable & stateable<item<T,U>, U>, pickup<T|enumitem_item_notification>>
 
 export type weapon = construct<{
     read type: namefield.weapon,
     ammo: number,
 
     statistics: weaponstat,
-    muzzle: reference<Attachment>,
-    chamber: reference<Attachment>,
-
-    read fire: (self: weapon) -> boolean,
-    read aim: (self: weapon) -> boolean,
-    read special: (self: weapon) -> boolean,
-    read action: (self: weapon) -> boolean,
+    read muzzle: reference<Attachment>,
+    read chamber: reference<Attachment>,
 
 
-}, item>
+}, item<enumitem_weapon_notification>>
 
 
 export type config<T = unknown, U = enumitem_config_require> = construct<{
@@ -453,16 +468,20 @@ export type unit = construct<{
     read type: namefield.unit,
 
     can_equip_items: boolean,
+
     speed: number,
+    health: number,
+
+    read get_volume: (self: unit) -> boundbox,
 
     read get_description: (self: unit) -> unitdescription,
     read set_description: (self: unit, to: unitdescription) -> (),
 
     read get_equipped: (self: unit) -> {item},
-    read set_equipped: (self: unit, that: item?) -> (),
-    read is_equipped: (self: unit, that: item) -> boolean,
+    read set_equipped: (self: unit, that: item|{item}, to: boolean?) -> (),
+    read is_equipped: (self: unit, that: item|{item}) -> boolean,
 
-    read get_inventory: (self: unit) -> inventory?,
+    read get_inventory: (self: unit) -> inventory,
     read set_inventory: (self: unit, to: inventory?) -> ()
 } & stateable<unit, enumitem_unit_state>, node<PVInstance>>
 
@@ -472,11 +491,14 @@ export type unitdescription = construct<{
     read max_health: number,
     read regeneration: number,
     
-    read speed: number,
+    read default_speed: number,
     read run_speed: number,
     read max_speed: number,
 
     read jump_height: number,
+    read max_jump_height: number,
+    
+    read height: number,
     
 }, runtimeobject>
 
@@ -509,6 +531,27 @@ export type record = construct<{
     read each: <T> (self: record, type: string, f: (value: T) -> T) -> ()
 }, object>
 
+export type weaponstat = construct<{
+    read type: namefield.weaponstat,
+    ammo_variant: enumitem_ammo_variant,
+
+    has_primary: boolean,
+    has_secondary: boolean,
+    has_special: boolean,
+    has_action: boolean,
+
+    damage: number,
+    distance_modificator: number,
+    max_ammo: number,
+    min_ammo: number,
+
+
+    reload_speed: number,
+    attack_speed: number,
+
+    max_hit_distance: number,
+}, record>
+
 export type result<T = unknown, U... = ...unknown> = construct<{
     read type: namefield.result,
     read state: boolean,
@@ -524,8 +567,8 @@ export type boundbox = construct<{
     min: vector,
     max: vector,
 
-    read is_inside: (self: boundbox, ...boundbox|BasePart|Model) -> boolean,
-    read is_belong: (self: boundbox, ...vertex) -> boolean,
+    read is_inside: (self: boundbox, ...boundbox|BasePart|Model|sphere|vector) -> boolean,
+    read is_belong: (self: boundbox, ...vertex|vector) -> boolean,
     read is_intersection: (self: boundbox, ...boundbox|BasePart|Model) -> boolean,
 
     read to_region3: (self: boundbox) -> Region3,
@@ -550,6 +593,17 @@ export type boundbox = construct<{
 
     read get_recalculated: (self: boundbox) -> boundbox
 }, cube>
+
+export type sphere = construct<{
+    read type: nameof<"sphere">,
+
+    radius: number,
+
+    read is_inside: (self: sphere, ...vector|vertex|boundbox|sphere|Model) -> boolean,
+    read is_intersection: (self: sphere, ...boundbox|sphere|Model) -> boolean,
+
+    read from_boundbox: (from: boundbox) -> sphere
+} & centerable<sphere>, record>
 
 export type triangle = construct<{
     read type: namefield.triangle,
@@ -589,29 +643,6 @@ export type cube = construct<{
     read get_direction: (self: boundbox, direction: enumitem_direction_variant) -> vector,
     read get_quad: (self: boundbox, direction: enumitem_direction_variant) -> quad,
 } & centerable<cube> & math_operations<cube, cube> & vector_operations<cube,cube>, record>
-
-export type weaponstat = construct<{
-    read type: namefield.weaponstat,
-    ammo_variant: enumitem_ammo_variant,
-
-    has_primary: boolean,
-    has_secondary: boolean,
-    has_special: boolean,
-    has_action: boolean,
-
-    damage: number,
-    distance_modificator: number,
-    max_ammo: number,
-    min_ammo: number,
-
-
-    reload_speed: number,
-    attack_speed: number,
-
-    max_hit_distance: number,
-
-
-}, record>
 
 export type physics = construct<{
     read type: namefield.physics,
@@ -674,11 +705,17 @@ export type enum_controller_state = construct<{
 
 export type enumitem_operation_variant = enumitem<enum_operation_variant>
 export type enum_operation_variant = construct<{
-    read Get: enumitem_operation_variant,
-    read Remove: enumitem_operation_variant,
     read New: enumitem_operation_variant,
     read Change: enumitem_operation_variant,
-    read Null: enumitem_operation_variant,
+    read Remove: enumitem_operation_variant,
+}, enumobject>
+
+export type enumitem_reference_notification = enumitem<enum_reference_notification>
+export type enum_reference_notification = construct<{
+    read NewInstance: enumitem_reference_notification,
+    read ChangedInstance: enumitem_reference_notification,
+    read DestroyedInstance: enumitem_reference_notification,
+    read NullifiedInstance: enumitem_reference_notification,
 }, enumobject>
 
 export type enumitem_executor_notification = enumitem<enum_executor_notification>
@@ -712,6 +749,32 @@ export type enum_unit_state = construct<{
     read Lying: enumitem_unit_state,
     read Crounching: enumitem_unit_state,
     read Idle: enumitem_unit_state
+}, enumobject>
+
+export type enumitem_pickup_notification = enumitem<enum_pickup_notification>
+export type enum_pickup_notification = construct<{
+    read PickedUp: enumitem_pickup_notification,
+    read Dropped: enumitem_pickup_notification,
+}, enumobject>
+
+export type enumitem_item_notification = enumitem<enum_item_notification>
+export type enum_item_notification = construct<{
+    read Equipped: enumitem_item_notification, -- -> using now
+    read Unequipped: enumitem_item_notification, -- -> inventory
+}, enumobject>
+
+export type enumitem_weapon_notification = enumitem<enum_weapon_notification>
+export type enum_weapon_notification = construct<{
+    read Shoot: enumitem_item_notification,
+    read Aim: enumitem_item_notification,
+    read Special: enumitem_item_notification,
+    read Action: enumitem_item_notification
+}, enumobject>
+
+export type enumitem_inventory_notification = enumitem<enum_inventory_notification>
+export type enum_inventory_notification = construct<{
+    read ItemAdded: enumitem_inventory_notification,
+    read ItemRemoved: enumitem_inventory_notification,
 }, enumobject>
 
 export type enumitem_type_variant = enumitem<enum_type_variant>

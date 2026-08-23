@@ -19,14 +19,14 @@ const class: declare.event = Observable:new({
 	connect = function(self: declare.event, on: declare.enumitem<any>?, f: declare.observer_pack): declare.connection
 		const new = Connection:new({ on = on or self.on, state = ConnectionVariant.Ever })
 		new:notificate(Package:new({ on = SetupNotification.Install, pack = { f } }))
-		self:link(new)
+		self:link(new :: declare.connection<any, any>)
 		return new
 	end,
 
-	once = function(self: declare.event, on: declare.enumitem<any>?, f: declare.observer_pack ): declare.connection
-		const new = Connection:new {on = on or self.on, state = ConnectionVariant.Once}
-		new:notificate(Package:new { on = SetupNotification.Install, pack = {f} })
-		self:link(new)
+	once = function(self: declare.event, on: declare.enumitem<any>?, f: declare.observer_pack): declare.connection
+		const new = Connection:new({ on = on or self.on, state = ConnectionVariant.Once })
+		new:notificate(Package:new({ on = SetupNotification.Install, pack = { f } }))
+		self:link(new :: declare.connection<any, any>)
 		return new
 	end,
 
@@ -39,7 +39,7 @@ const class: declare.event = Observable:new({
 	link = function(self: declare.event, that: declare.connection): ()
 		const connections = private.connections[self][that.on or self.on] or {}
 		table.insert(connections, that)
-		self:notificate(Package:new({ on = ActionNotification.Observable, pack = {that} }))
+		self:notificate(Package:new({ on = ActionNotification.Observable, pack = { that } }))
 		private.connections[self][that.on] = connections
 	end,
 
@@ -49,22 +49,26 @@ const class: declare.event = Observable:new({
 
 		if pos then
 			table.remove(connections, pos)
-			self:notificate(Package:new({ on = ActionNotification.Unobservable, pack = {that} }))
+			self:notificate(Package:new({ on = ActionNotification.Unobservable, pack = { that } }))
 		end
 
 		private.connections[self][that.on] = connections
 	end,
 
-	invoke = function(self: declare.event, call: declare.enumitem<any>|{declare.enumitem<any>}|declare.notification<declare.enumitem<any>|{declare.enumitem<any>}>, ...): ()
-		local iterate: {declare.enumitem<any>} = {}
-		
+	invoke = function(
+		self: declare.event,
+		call: declare.enumitem<any> | { declare.enumitem<any> } | declare.notification<declare.enumitem<any> | { declare.enumitem<any> }>,
+		...
+	): ()
+		local iterate: { declare.enumitem<any> } = {}
+
 		if self.is(call, namefield.enumitem) then
 			table.insert(iterate, call :: declare.enumitem<any>)
 		elseif self.is(call, namefield.notification) then
-			self:invoke((call :: declare.notification<declare.enumitem<any>|{declare.enumitem<any>}>).on, ...)
-			return	
+			self:invoke((call :: declare.notification<declare.enumitem<any> | { declare.enumitem<any> }>).on, ...)
+			return
 		elseif type(call) == declare.table then
-			const list = call :: {declare.enumitem<any>}
+			const list = call :: { declare.enumitem<any> }
 			iterate = list
 		end
 
@@ -93,10 +97,10 @@ const class: declare.event = Observable:new({
 			end
 		end
 
-		self:notificate(Notification:new {
-			on = ActionNotification.Emit
-		})
-	end
+		self:notificate(Notification:new({
+			on = ActionNotification.Emit,
+		}))
+	end,
 })
 
 class:host(function(new: declare.event)
@@ -104,12 +108,15 @@ class:host(function(new: declare.event)
 end)
 
 do
-	type meta = {__mode: "ks"}
-	private.meta = table.freeze {__mode = "ks"} :: meta
+	type meta = { __mode: "ks" }
+	private.meta = table.freeze({ __mode = "ks" }) :: meta
 
-	private.connections = setmetatable({} :: {[declare.event]: setmetatable<{
-		[declare.enumitem]: {declare.connection}
-	},meta>}, private.meta :: meta)
+	private.connections = setmetatable(
+		{} :: { [declare.event]: setmetatable<{
+			[declare.enumitem]: { declare.connection },
+		}, meta> },
+		private.meta :: meta
+	)
 end
 
 return class
