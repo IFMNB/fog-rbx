@@ -35,7 +35,7 @@ do --data
 	project.debug_show_notifications_path = false
 	project.debug_show_channel_send_actions = false
 	project.debug_show_maids_releasing = false
-	project.debug_show_channel_internal = true
+	project.debug_show_channel_internal = false
 end
 
 do --properties
