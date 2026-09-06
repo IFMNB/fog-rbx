@@ -6,13 +6,13 @@ const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/Conn
 const OperationVariant = require("@game/ReplicatedStorage/enums/descriptor/OperationVariant")
 const DisposableNotification = require("@game/ReplicatedStorage/enums/notification/DisposableNotification")
 const declare = require("@game/ReplicatedStorage/static/declare")
-const namefield = require("@game/ReplicatedStorage/static/namefield")
+
 const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
 const class: declare.attribute = Disposable:new({
-	type = namefield.attribute,
-	name = namefield.attribute,
+	type = "attribute",
+	name = "attribute",
 
 	get_reference = function(self: declare.attribute): declare.reference<any>
 		return private.references[self]

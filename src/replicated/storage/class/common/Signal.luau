@@ -1,17 +1,17 @@
 --!strict
-const Maybe = require("@game/ReplicatedStorage/class/common/Maybe")
 const Reference = require("@game/ReplicatedStorage/class/common/Reference")
-const Package = require("@game/ReplicatedStorage/class/common/notification/Package")
+const Maybe = require("@game/ReplicatedStorage/class/common/gc/Maybe")
 const Event = require("@game/ReplicatedStorage/class/common/signal/Event")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
 const ActionNotification = require("@game/ReplicatedStorage/enums/notification/ActionNotification")
 const ReferenceNotification = require("@game/ReplicatedStorage/enums/notification/ReferenceNotification")
 const declare = require("@game/ReplicatedStorage/static/declare")
-const namefield = require("@game/ReplicatedStorage/static/namefield")
+
+const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
 const class : declare.signal = Reference:new <<declare.reference<RBXScriptSignal>>> {
-    type = namefield.signal,
+    type = "signal",
 
     get_signal_event = function (self: declare.signal) : declare.event<declare.enumitem_action_notification, ...unknown>
         return private.maybe:extract(self, function()
@@ -21,20 +21,23 @@ const class : declare.signal = Reference:new <<declare.reference<RBXScriptSignal
 }
 
 class:host(function(new: declare.signal)
-    new:subscribe(ReferenceNotification.ChangedInstance, ConnectionVariant.Ever, function ()
+    new:subscribe({ReferenceNotification.ChangedInstance, ReferenceNotification.NewInstance}, ConnectionVariant.Ever, function ()
         const con = private.con[new]
         if con then
             con:Disconnect()
         end
 
+        if project.debug_show_signal_internal then
+            project.console_out "changed signal instance"
+        end
+
         private.con[new] = new:get_instance():Connect(function(...: unknown)
             if private.maybe:exist(new) then
-                new:get_signal_event():invoke(Package:new <<declare.enumitem_action_notification>> {
-                    on = ActionNotification.Emit,
-                    pack = {
-                        ...
-                    } 
-                })
+                if project.debug_show_signal_internal then
+                    project.console_out "signal emitted"
+                end
+
+                new:get_signal_event():invoke( ActionNotification.Emit, ...)
             end
         end)
     end)
@@ -43,6 +46,10 @@ class:host(function(new: declare.signal)
         if con then
             private.con[new] = nil
             con:Disconnect()
+        end
+
+        if project.debug_show_signal_internal then
+            project.console_out "signal nullified"
         end
     end)
 end)

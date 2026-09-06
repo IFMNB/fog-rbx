@@ -1,20 +1,19 @@
 --!strict
 const Record = require("@game/ReplicatedStorage/class/arch/Record")
 const declare = require("@game/ReplicatedStorage/static/declare")
-const namefield = require("@game/ReplicatedStorage/static/namefield")
 
-const class : declare.result = Record:new {
-    type = namefield.result,
-    state = false,
-    result = nil,
+const class: declare.result = Record:new({
+	type = "result",
+	state = false,
+	result = nil,
 
-    unpack = function (self: declare.result) : ...unknown
-        if type(self.result) == declare.table then
-            return unpack(self.result :: {unknown})
-        else
-            return nil
-        end
-    end
-}
+	unpack = function(self: declare.result): ...unknown
+		if type(self.result) == declare.table then
+			return unpack(self.result :: { unknown })
+		else
+			return nil
+		end
+	end,
+})
 
 return class

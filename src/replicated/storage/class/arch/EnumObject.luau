@@ -3,18 +3,17 @@
 const Cryptography = require("@game/ReplicatedStorage/dependency/Cryptography")
 const object = require("@game/ReplicatedStorage/object")
 const declare = require("@game/ReplicatedStorage/static/declare")
-const namefield = require("@game/ReplicatedStorage/static/namefield")
 const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
 const class: declare.enumobject = object:new({
-	type = namefield.enumobject,
+	type = "enumobject",
 	name = script.Name,
 
 	get_enums_list = function<T>(self: declare.enumobject): { [unknown]: declare.enumitem }
 		const result: { [unknown]: declare.enumitem } = {}
 		for i, v in self :: { [string]: unknown } do
-			if object.is(v, namefield.enumitem) then
+			if object.is(v, "enumitem") then
 				result[i] = v :: declare.enumitem
 			end
 		end
@@ -48,7 +47,7 @@ const class: declare.enumobject = object:new({
 
 	assert_is_my_enumitem = function(self: declare.enumobject, that: unknown): boolean
 		return assert(
-			object.is(that, namefield.enumitem) and self:is_my_enumitem(that :: declare.enumitem),
+			object.is(that, "enumitem") and self:is_my_enumitem(that :: declare.enumitem),
 			"received data isn't expected enumitem"
 		)
 	end,
@@ -58,10 +57,10 @@ class:host(function(new: declare.enumobject)
 	for i, v in new:get_enums_list() do
 		const name = tostring(i);
 
-		(v :: any).enum = new;
+		(v :: any).enum = new
 		v.name = name;
-		(v :: any).hashlink = Cryptography.Hashing.Blake3.Digest(buffer.fromstring(name));
-	
+		(v :: any).hashlink = Cryptography.Hashing.Blake3.Digest(buffer.fromstring(name))
+
 		if project.debug then
 			const collision = private.item_builded[v.hashlink]
 
@@ -81,6 +80,9 @@ class:host(function(new: declare.enumobject)
 		end
 
 		private.item_builded[v.hashlink] = v
+		if project.enumobject_freeze_related_items then
+			table.freeze(v)
+		end
 	end
 end)
 

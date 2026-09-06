@@ -3,8 +3,9 @@
 const EnumObject = require("@game/ReplicatedStorage/class/arch/EnumObject")
 const EnumItem = require("@game/ReplicatedStorage/class/arch/EnumItem")
 const declare = require("@game/ReplicatedStorage/static/declare")
+const dgame = require("@game/ServerStorage/static/dgame")
 
-const class: declare.enum_ammo_variant = EnumObject:new({
+const class: dgame.enum_ammo_variant = EnumObject:new({
 	name = script.Name,
 
 	["5.8x"] = EnumItem:new() :: declare.enumitem<any>,

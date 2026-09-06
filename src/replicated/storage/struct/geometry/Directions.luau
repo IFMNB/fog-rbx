@@ -1,31 +1,26 @@
 --!strict
 const Record = require("@game/ReplicatedStorage/class/arch/Record")
 const declare = require("@game/ReplicatedStorage/static/declare")
-const namefield = require("@game/ReplicatedStorage/static/namefield")
 
 const class : declare.directions = Record:new {
-    type = namefield.directions,
+    type = "directions",
 
-    right = Vector3.zero,
-    up = Vector3.zero,
-    front = Vector3.zero,
+    right = vector.zero,
+    up = vector.zero,
+    front = vector.zero,
 
     to_cframe = function (self: declare.directions) : CFrame
-        return CFrame.fromMatrix(Vector3.zero, self.right, self.up, self.front)
+        return CFrame.fromMatrix(Vector3.zero, Vector3.new(self.right.x, self.right.y, self.right.z), Vector3.new(self.up.x,self.up.y,self.up.z), Vector3.new(self.front.x, self.front.y, self.front.z))
     end,
 
-    to_vector3 = function (self: declare.directions) : Vector3
-        return Vector3.new(self.right.Magnitude, self.up.Magnitude, self.front.Magnitude)
-    end,
-
-    to_vector2 = function (self: declare.directions) : Vector2
-        return Vector2.new(self.right.Magnitude, self.up.Magnitude)
+    to_vector = function (self: declare.directions) : vector
+        return vector.create(vector.magnitude(self.right), vector.magnitude(self.up), vector.magnitude(self.front))
     end,
 
     absolute = function (self: declare.directions) : declare.directions
         const clone = self:clone()
-        clone:each<<Vector3>>("Vector3", function(value: Vector3): Vector3
-            return value:Abs()
+        clone:each<<vector>>(declare.vector, function(value: vector): vector
+            return vector.abs(value)
         end)
 
         return clone
@@ -33,8 +28,8 @@ const class : declare.directions = Record:new {
 
     null = function (self: declare.directions) : declare.directions
         const clone = self:clone()
-        clone:each<<Vector3>>("Vector3", function(value: Vector3): Vector3
-            return Vector3.zero
+        clone:each<<vector>>(declare.vector, function(value: vector): vector
+            return vector.zero
         end)
 
         return clone
@@ -42,8 +37,8 @@ const class : declare.directions = Record:new {
 
     substract = function (self: declare.directions, with: number) : declare.directions
         const clone = self:clone()
-        clone:each<<Vector3>>("Vector3", function(value: Vector3): Vector3
-            return Vector3.new(value.X - with, value.Y - with, value.Z - with)
+        clone:each<<vector>>(declare.vector, function(value: vector): vector
+            return vector.create(value.x - with, value.y - with, value.z - with)
         end)
 
         return clone
@@ -51,8 +46,8 @@ const class : declare.directions = Record:new {
 
     append = function (self: declare.directions, with: number) : declare.directions
         const clone = self:clone()
-        clone:each<<Vector3>>("Vector3", function(value: Vector3): Vector3
-            return Vector3.new(value.X + with, value.Y + with, value.Z + with)
+        clone:each<<vector>>(declare.vector, function(value: vector): vector
+            return vector.create(value.x + with, value.y + with, value.z + with)
         end)
 
         return clone
@@ -60,7 +55,7 @@ const class : declare.directions = Record:new {
 
     multiple = function (self: declare.directions, with: number) : declare.directions
         const clone = self:clone()
-        clone:each<<Vector3>>("Vector3", function(value: Vector3): Vector3
+        clone:each<<vector>>(declare.vector, function(value: vector): vector
             return value * with
         end)
 
@@ -69,7 +64,7 @@ const class : declare.directions = Record:new {
 
     divide = function (self: declare.directions, with: number) : declare.directions
         const clone = self:clone()
-        clone:each<<Vector3>>("Vector3", function(value: Vector3): Vector3
+        clone:each<<vector>>(declare.vector, function(value: vector): vector
             return value / with
         end)
 
@@ -78,7 +73,7 @@ const class : declare.directions = Record:new {
 
     invert = function (self: declare.directions) : declare.directions
         const clone = self:clone()
-        clone:each<<Vector3>>("Vector3", function(value: Vector3): Vector3
+        clone:each<<vector>>(declare.vector, function(value: vector): vector
             return -value
         end)
 
@@ -87,8 +82,8 @@ const class : declare.directions = Record:new {
 
     normalize = function (self: declare.directions) : declare.directions
         const clone = self:clone()
-        clone:each<<Vector3>>("Vector3", function(value: Vector3): Vector3
-            return value.Unit
+        clone:each<<vector>>(declare.vector, function(value: vector): vector
+            return vector.normalize(value)
         end)
 
         return clone
@@ -96,8 +91,8 @@ const class : declare.directions = Record:new {
 
     infinity = function(self: declare.directions) : declare.directions
         const clone = self:clone()
-        clone:each<<Vector3>>("Vector3", function(value: Vector3): Vector3
-            return Vector3.new(math.huge, math.huge, math.huge)
+        clone:each<<vector>>(declare.vector, function(value: vector): vector
+            return vector.create(math.huge, math.huge, math.huge)
         end)
 
         return clone

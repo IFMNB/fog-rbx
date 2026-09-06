@@ -1,25 +1,25 @@
 --!strict
 const Record = require("@game/ReplicatedStorage/class/arch/Record")
 const declare = require("@game/ReplicatedStorage/static/declare")
-const namefield = require("@game/ReplicatedStorage/static/namefield")
+
 const Triangle = require("@game/ReplicatedStorage/struct/geometry/Triangle")
 
 const class: declare.quad = Record:new({
-	type = namefield.quad,
+	type = "quad",
 
 	left = Triangle:new(),
 	right = Triangle:new(),
 
-	get_center = function(self: declare.quad): Vector3
+	get_center = function(self: declare.quad): vector
 		return (self.left:get_center() + self.right:get_center()) / 2
 	end,
 
-	get_normal_interpolated = function(self: declare.quad): Vector3
-		return (self.left:get_normal_interpolated() + self.right:get_normal_interpolated()).Unit
+	get_normal_interpolated = function(self: declare.quad): vector
+		return vector.normalize((self.left:get_normal_interpolated() + self.right:get_normal_interpolated()))
 	end,
 
-	get_normal_geometric = function(self: declare.quad): Vector3
-		return (self.left:get_normal_geometric() + self.right:get_normal_geometric()).Unit
+	get_normal_geometric = function(self: declare.quad): vector
+		return vector.normalize((self.left:get_normal_geometric() + self.right:get_normal_geometric()))
 	end,
 
 	absolute = function(self: declare.quad): declare.quad

@@ -8,7 +8,6 @@ const Face = require("@game/ReplicatedStorage/class/face/Face")
 const Storage = require("@game/ReplicatedStorage/class/storage/Storage")
 const Upload = require("@game/ReplicatedStorage/class/upload/Upload")
 const object = require("@game/ReplicatedStorage/object")
-const namefield = require("@game/ReplicatedStorage/static/namefield")
 
 const private = {}
 const class = {}

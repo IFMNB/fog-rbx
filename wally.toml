@@ -2,7 +2,7 @@
 name = "ifmnb/forgotten-grave"
 version = "0.0.1"
 license = "MIT"
-authors = ["Aftersky"]
+authors = ["Aftersky", "serp2587"]
 description = "Source code of ForgottenGrave game"
 
 repository = "https://github.com/IFMNB/fog-rbx"
@@ -18,6 +18,7 @@ Lori = "kyrorblx/lori@0.1.7" # Debug manager
 Konsole = "kyrorblx/konsole@0.1.11" # Console manager
 Cryptography = "daily3014/cryptography@1.5.0" # Security/Hash
 Squash = "data-oriented-house/squash@5.0.0" # Buffer/Ser
+SAT = "ifmnb/algorithm-sat@2609.7.0"
 
 [server-dependencies]
 ProfileStore = "lm-loleris/profilestore@1.0.3"

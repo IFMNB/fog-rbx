@@ -21,7 +21,7 @@ export type extend<T = {}> = object.class<T, struct>
 	`BoundBox` - конкретный тип `Record`, являющийся геометрическим объемом в пространстве,
 	что позволяет его использовать как дискретное описание какой-либо области или объекта
 ]=]
-struct.type = namefield.boundbox
+struct.type = "boundbox"
 
 --[=[ 
 	Вариант режима работы `BoundBox`, то бишь его `BoundVariant` `enum`

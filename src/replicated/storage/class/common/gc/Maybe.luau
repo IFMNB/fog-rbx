@@ -1,11 +1,10 @@
 --!strict
-const runtimeobject = require("../../runtimeobject")
-const declare = require("../../static/declare")
-const namefield = require("../../static/namefield")
+const declare = require("@game/ReplicatedStorage/static/declare")
+const runtimeobject = require("@game/ReplicatedStorage/runtimeobject")
 
 const private = {}
 const class: declare.maybe = runtimeobject:new({
-	type = namefield.maybe,
+	type = "maybe",
 
 	extract = function(self: declare.maybe, it: unknown, make: () -> any): any
 		const that = private.stored[self][it] or make()

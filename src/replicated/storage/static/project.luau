@@ -36,6 +36,8 @@ do --data
 	project.debug_show_channel_send_actions = false
 	project.debug_show_maids_releasing = false
 	project.debug_show_channel_internal = false
+	project.debug_show_pickup_internal = false
+	project.debug_show_signal_internal = false
 end
 
 do --properties
@@ -43,6 +45,8 @@ do --properties
 
 	project.retry = 5
 	project.retry_time = 1
+
+	project.enumobject_freeze_related_items = true
 end
 
 do --game

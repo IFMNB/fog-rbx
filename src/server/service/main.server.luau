@@ -11,4 +11,5 @@ main:deploy(root .. "game/user_data_service")
 if game.RunService:IsStudio() then
     --main:deploy(root .. "debug/unit")
     --main:deploy(root .. "debug/input")
+    --main:deploy(root .. "debug/pickup")
 end

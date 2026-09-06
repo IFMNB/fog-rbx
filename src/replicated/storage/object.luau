@@ -1,16 +1,15 @@
 --!strict
 
-const namefield = require("@game/ReplicatedStorage/static/namefield")
-const empty = require("./static/empty")
+
 const project = require("./static/project")
 const declare = require("./static/declare")
 
 const private = {}
 const class: declare.object = {
 	identity = "never",
-	type = namefield.object,
+	type = "object",
 
-	new = function <T,U> (self: T, that: U?, ...)
+	new = function <T,U> (self: T, that: U?)
 		const T = (
 			project.proto
 				and setmetatable(table.clone(self), {
@@ -29,8 +28,9 @@ const class: declare.object = {
 		return T :: any
 	end, 
 
-	renew = function <T> (self: declare.object, that: { [unknown]: unknown }?) : any
+	renew = function <T> (self: T, that: { [unknown]: unknown }?)
 		const compared: {[unknown]: unknown} = {}
+		const self_T: declare.object = self :: any
 
 		--[=[ Не позволяем из данной функции билдить новые объекты с новой семантикой ]=]
 
@@ -40,7 +40,7 @@ const class: declare.object = {
 			end
 		end
 
-		return assert(self:base<<declare.object>>(), "base corruption"):new(compared)
+		return assert(self_T:base<<declare.object>>(), "base corruption"):new(compared) :: any
 	end,
 
 	is = function(this, that)
@@ -69,7 +69,7 @@ const class: declare.object = {
 		return state and cached.__type == that or false
 	end,
 
-	base = function <T> (self: T & declare.object, expected: namefield.names|string|nil) : any
+	base = function <T> (self: T & declare.object, expected: string|nil) : any
 		const base = private.ever[self]
 		if expected then 
 			if self.is(base, expected) then
@@ -84,7 +84,7 @@ const class: declare.object = {
 		return nil
 	end,
 
-	host = function <T> (self: T & declare.object, f: (any) -> ())
+	host = function <T> (self: T & declare.object, f: (any) -> (), last: boolean?)
 		const state, cached = private.get_cached<<T,unknown>>(self)
 
 		if state then
@@ -116,17 +116,22 @@ const class: declare.object = {
 		return required
 	end,
 
-	rebuild = function <T> (self: T, that: {[string]: unknown}) : T
+	rebuild = function <T> (self: T, that: {[unknown]: unknown}) : T
 		assert(type(that) == declare.table, "cannot rebuild that object, his type isn't a table type")
 
 		return (self :: declare.object):renew(that)
+	end,
+
+	as = function <T> (self: unknown, as: string) : T
+		assert((self :: declare.object):is(as), "cannot convert this object to required type")
+		return self :: any
 	end
 }
 
 do --private_region
 	type cached <T = declare.object, U = unknown> = {
 		__index: U,
-		__metatable: empty.instance|nil|string,
+		__metatable: nil|string,
 		__type: string,
 
 		self: unknown,
@@ -138,6 +143,7 @@ do --private_region
 	private.ever = setmetatable({} :: { [declare.object | unknown]: unknown }, private.frozen)
 	private.identity = setmetatable({} :: {[unknown]: declare.object|unknown}, private.frozen)
 	private.type_build_location = {} :: {[string]: ModuleScript?}
+	private.counter = 0
 
 	function private.get_cached_by_instance<T,U>(this: unknown): (boolean, cached<T,U>)
 		const ever = private.ever[this]
@@ -168,7 +174,7 @@ do --private_region
 		const meta: cached = private.cached[this]
 			or {
 				__index = parent,
-				__metatable = if not project.proto then nil else if project.debug then "<metatable>" else empty,
+				__metatable = if not project.proto then nil else if project.debug then "<metatable>" else nil,
 				__type = Ttype == "table" and tostring((this :: any).type) or Ttype,
 
 				self = this,
@@ -231,9 +237,15 @@ do --private_region
 		end
 	end
 
+	function private.generator (new: declare.object)
+		private.counter += 1
+
+		const __new = new :: {[string]: any}
+		__new.identity = tostring(private.counter)
+	end
+
 	function private.bootload_new(new: declare.object, parent: unknown)
-		(new :: any).identity = tostring(new)
-	
+		private.generator(new)	
 		private.identity[new.identity] = new
 		private.ever[new] = parent
 		private.lazyget_cached(new, parent)

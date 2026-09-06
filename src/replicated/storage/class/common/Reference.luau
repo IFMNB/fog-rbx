@@ -3,12 +3,12 @@ const Observable = require("@game/ReplicatedStorage/class/arch/Observable")
 const Notification = require("@game/ReplicatedStorage/class/common/notification/Notification")
 const ReferenceNotification = require("@game/ReplicatedStorage/enums/notification/ReferenceNotification")
 const declare = require("@game/ReplicatedStorage/static/declare")
-const namefield = require("@game/ReplicatedStorage/static/namefield")
+
 const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
 const class: declare.reference = Observable:new({
-	type = namefield.reference,
+	type = "reference",
 
 	get_instance = function(self: declare.reference): any?
 		return private.stored[self]
@@ -45,6 +45,16 @@ const class: declare.reference = Observable:new({
 
 	is_instance_exists = function(self: declare.reference): boolean
 		return typeof(self:get_instance()) == "Instance"
+	end,
+
+	clear = function(self: declare.reference): ()
+		const instance = self:get_instance()
+		if instance and type(instance) == declare.roblox.Instance then
+			const rbx_instance = instance :: Instance
+			rbx_instance:Destroy()
+		end
+
+		self:set_instance(nil :: any)
 	end,
 })
 

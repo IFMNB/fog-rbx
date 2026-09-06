@@ -2,11 +2,10 @@
 
 const object = require("@game/ReplicatedStorage/object")
 const declare = require("@game/ReplicatedStorage/static/declare")
-const namefield = require("@game/ReplicatedStorage/static/namefield")
 
 const private = {}
 const class: declare.record = object:new({
-    type = namefield.record,
+    type = "record",
 
     get_dictionary = function (self: declare.record) : {[string]: number|boolean|string}
         const result: {[string]: number|boolean|string} = {}
@@ -34,7 +33,7 @@ const class: declare.record = object:new({
     end,
 
     clone = function (self: declare.record) : any
-        const base = assert(self:base<<declare.record>>(namefield.record), "cannot clone nil")
+        const base = assert(self:base<<declare.record>>("record"), "cannot clone nil")
         return base:new(private.recursive_convertion(self))
     end,
 
@@ -58,9 +57,9 @@ do
         const result: {[unknown]: unknown} = {}
 
         for i, v in self :: {[unknown]: unknown} do
-            result[ class.is(class.base(i), namefield.record) and class.clone(i) or
+            result[ class.is(class.base(i), "record") and class.clone(i) or
                 type(i) == "table" and private.recursive_convertion(i :: {[unknown]: unknown} or
-                i) ] = class.is(class.base(v), namefield.record) and class.clone(v) or
+                i) ] = class.is(class.base(v), "record") and class.clone(v) or
                 type(v) == "table" and private.recursive_convertion(v :: {[unknown]: unknown} or
                 v)
         end

@@ -5,19 +5,19 @@ const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/Conn
 const ActionNotification = require("@game/ReplicatedStorage/enums/notification/ActionNotification")
 const DisposableNotification = require("@game/ReplicatedStorage/enums/notification/DisposableNotification")
 const declare = require("@game/ReplicatedStorage/static/declare")
-const namefield = require("@game/ReplicatedStorage/static/namefield")
+
 const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
 const class: declare.disposable = Observable:new({
-	type = namefield.disposable,
+	type = "disposable",
 
 	free = function(self: declare.disposable): ()
-		self:notificate(Notification:new {on = DisposableNotification.OnRelease})
+		self:notificate(Notification:new({ on = DisposableNotification.OnRelease }))
 
 		task.delay(0, function()
 			private.objects[self.identity] = nil
-			self:notificate(Notification:new {on = DisposableNotification.Released})
+			self:notificate(Notification:new({ on = DisposableNotification.Released }))
 		end)
 	end,
 
@@ -35,7 +35,7 @@ class:host(function(new: declare.disposable)
 end)
 
 do
-	private.objects = {} :: {[declare.object_identity]: declare.disposable}
+	private.objects = {} :: { [declare.object_identity]: declare.disposable }
 end
 
 return class

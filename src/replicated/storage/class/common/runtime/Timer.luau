@@ -6,11 +6,10 @@ const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/Conn
 const ActionNotification = require("@game/ReplicatedStorage/enums/notification/ActionNotification")
 const ControllerState = require("@game/ReplicatedStorage/enums/state/ControllerState")
 const declare = require("@game/ReplicatedStorage/static/declare")
-const namefield = require("@game/ReplicatedStorage/static/namefield")
 
 const private = {}
 const class: declare.timer = Observable:new({
-	type = namefield.timer,
+	type = "timer",
 	seconds = 1,
 	modifier = 1,
 	iterate = 1,
@@ -41,7 +40,7 @@ class:host(function(new: declare.timer)
 	new.previous_stepped = date
 	private.ctrls[new] = control
 
-	control:subscribe(ControllerState.Continue, ConnectionVariant.Ever, function ()
+	control:subscribe(ControllerState.Continue, ConnectionVariant.Ever, function()
 		if not private.tasks[new] then
 			private.tasks[new] = task.spawn(loop)
 		end
@@ -59,7 +58,6 @@ class:host(function(new: declare.timer)
 
 	control:subscribe(ControllerState.Reset, ConnectionVariant.Ever, function()
 		private.holds[new.identity] = new.seconds
-
 	end)
 end)
 

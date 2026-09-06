@@ -1,18 +1,17 @@
 --!strict
 
 const Observable = require("@game/ReplicatedStorage/class/arch/Observable")
-const Maybe = require("@game/ReplicatedStorage/class/common/Maybe")
+const Maybe = require("@game/ReplicatedStorage/class/common/gc/Maybe")
 const Notification = require("@game/ReplicatedStorage/class/common/notification/Notification")
 const Event = require("@game/ReplicatedStorage/class/common/signal/Event")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
 const OperationVariant = require("@game/ReplicatedStorage/enums/descriptor/OperationVariant")
-const declare = require("../../static/declare")
-const namefield = require("../../static/namefield")
-const project = require("../../static/project")
+const declare = require("@game/ReplicatedStorage/static/declare")
+const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
 const class: declare.value = Observable:new({
-	type = namefield.value,
+	type = "value",
 
 	get_value = function(self: declare.value<any> ): any
 		const value: any = private.values[self]
@@ -53,11 +52,11 @@ const class: declare.value = Observable:new({
 		return private.maybe:extract(self, function()
 			const new = Event:new({
 				on = OperationVariant.New
-			})
+			}) :: declare.event<declare.enumitem_operation_variant>
 
-			self:subscribe(OperationVariant, ConnectionVariant.Ever, function (identity: declare.object_identity)
-				const notice = new.require <<declare.notification<declare.enumitem_operation_variant>>>(identity, namefield.notification)
-				new:invoke(notice)
+			self:subscribe(OperationVariant, ConnectionVariant.Ever, function (identity)
+				const notice = new.require <<declare.notification<declare.enumitem_operation_variant>>>(identity, "notification")
+				new:invoke(notice.on)
 			end)
 
 			return new

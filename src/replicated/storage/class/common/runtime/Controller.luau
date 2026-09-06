@@ -4,11 +4,10 @@ const Observable = require("@game/ReplicatedStorage/class/arch/Observable")
 const Notification = require("@game/ReplicatedStorage/class/common/notification/Notification")
 const ControllerState = require("@game/ReplicatedStorage/enums/state/ControllerState")
 const declare = require("@game/ReplicatedStorage/static/declare")
-const namefield = require("@game/ReplicatedStorage/static/namefield")
 const project = require("@game/ReplicatedStorage/static/project")
 
 const class: declare.controller = Observable:new({
-	type = namefield.controller,
+	type = "controller",
 	state = ControllerState.Pause,
 
 	continue = function(self: declare.controller): ()

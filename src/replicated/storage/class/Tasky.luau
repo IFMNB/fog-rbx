@@ -1,15 +1,15 @@
 --!strict
 const Concur = require("@game/ReplicatedStorage/dependency/Concur")
-const object = require("@game/ReplicatedStorage/object")
+const runtimeobject = require("@game/ReplicatedStorage/runtimeobject")
 const declare = require("@game/ReplicatedStorage/static/declare")
-const namefield = require("@game/ReplicatedStorage/static/namefield")
+
 const project = require("@game/ReplicatedStorage/static/project")
 
 type concur_instance = typeof(Concur.spawn(nil :: never))
 
 const private = {}
-const class: declare.tasky<concur_instance> = object:new({
-	type = namefield.tasky,
+const class: declare.tasky<concur_instance> = runtimeobject:new({
+	type = "tasky",
 	attempts = 1,
 	time_to_hold = 0,
 	time_to_response = project.retry_time,
@@ -39,7 +39,7 @@ const class: declare.tasky<concur_instance> = object:new({
 					end
 				end
 
-				project.console_out "tasky couldn't start the task, it was thrown away"
+				project.console_out("tasky couldn't start the task, it was thrown away")
 			end
 		end)
 	end,

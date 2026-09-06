@@ -3,9 +3,9 @@ const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const RunService = game:GetService("RunService")
 const EnumObject = require("@game/ReplicatedStorage/class/arch/EnumObject")
 const Observable = require("@game/ReplicatedStorage/class/arch/Observable")
-const Maid = require("@game/ReplicatedStorage/class/common/Maid")
-const Maybe = require("@game/ReplicatedStorage/class/common/Maybe")
+const Maybe = require("@game/ReplicatedStorage/class/common/gc/Maybe")
 const Reference = require("@game/ReplicatedStorage/class/common/Reference")
+const Maid = require("@game/ReplicatedStorage/class/common/gc/Maid")
 const Notification = require("@game/ReplicatedStorage/class/common/notification/Notification")
 const Event = require("@game/ReplicatedStorage/class/common/signal/Event")
 const User = require("@game/ReplicatedStorage/class/local/User")
@@ -14,12 +14,11 @@ const ChannelNotification = require("@game/ReplicatedStorage/enums/notification/
 const DisposableNotification = require("@game/ReplicatedStorage/enums/notification/DisposableNotification")
 const ReferenceNotification = require("@game/ReplicatedStorage/enums/notification/ReferenceNotification")
 const declare = require("@game/ReplicatedStorage/static/declare")
-const namefield = require("@game/ReplicatedStorage/static/namefield")
 const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
 const class: declare.channel = Observable:new({
-	type = namefield.channel,
+	type = "channel",
 
 	enabled = false,
 	echo = false,

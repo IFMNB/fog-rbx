@@ -1,37 +1,38 @@
 --!strict
+-- TODO rewrite legacy package/notification transport layer to direct one-by-one enumitem pathfinding
+
 const Package = require("@game/ReplicatedStorage/class/common/notification/Package")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
 const Notification = require("@game/ReplicatedStorage/class/common/notification/Notification")
 const runtimeobject = require("@game/ReplicatedStorage/runtimeobject")
 const declare = require("@game/ReplicatedStorage/static/declare")
-const namefield = require("@game/ReplicatedStorage/static/namefield")
 const project = require("@game/ReplicatedStorage/static/project")
 
 type pack = declare.observer_pack
 
 const private = {}
 const class: declare.observer = runtimeobject:new({
-	type = namefield.observer,
+	type = "observer",
 
 	subscribe = function (self: declare.observer, on: declare.enumitem|declare.enumobject|{declare.enumitem}, mode: declare.enumitem_connection_variant, ...: pack): () -> ()
-		return self:notice(Package:new <<declare.package<declare.enumitem_connection_variant, pack>>> {
-			on = assert(self.is(on, namefield.enumitem) and on or self.is(on, namefield.enumobject) and (on :: declare.enumobject):get_enums_list() or type(on) == declare.table and on :: {declare.enumitem}, "fail to create allocations"),
+		return self:notice(Package:new {
+			on = assert(self.is(on, "enumitem") and on or self.is(on, "enumobject") and (on :: declare.enumobject):get_enums_list() or type(on) == declare.table and on :: {declare.enumitem}, "fail to create allocations"),
 			pack = {
 				Package:new <<(() -> ()) | thread | declare.observer | string>> {
 					on = mode,
 					pack = {...}
 				}
 			}
-		})
+		} :: any) -- #12
 	end,
 
 	notice = function (self: declare.observer, notification: declare.package<{declare.enumitem}|declare.enumitem, declare.package<declare.enumitem_connection_variant, pack>>): () -> ()
-		if notification.is(notification.on, namefield.enumitem) then
+		if notification.is(notification.on, "enumitem") then
 			notification.on = {notification.on :: declare.enumitem}
 		end
 
 		if project.debug then
-			if self.is(notification.pack :: unknown?, namefield.package) then
+			if self.is(notification.pack :: unknown?, "package") then
 				project.console_out_error("to the place in the notice() .an object has been passed to pack, but the package array is expected")
 				return function () end
 			end
@@ -64,7 +65,7 @@ const class: declare.observer = runtimeobject:new({
 	end,
 
 	notificate = function (self: declare.observer, notification: declare.enumitem|{declare.enumitem}|declare.notification<declare.enumitem|{declare.enumitem}> ): ()
-		if self.is(notification, namefield.enumitem) then
+		if self.is(notification, "enumitem") then
 			self:notificate(Notification:new {
 				on = notification :: declare.enumitem
 			})
@@ -74,9 +75,9 @@ const class: declare.observer = runtimeobject:new({
 			end
 
 			return
-		elseif self.is(notification, namefield.notification) then
+		elseif self.is(notification, "notification") then
 			const notice = notification :: declare.notification<declare.enumitem|{declare.enumitem}>
-			if self.is(notice.on, namefield.enumitem) then
+			if self.is(notice.on, "enumitem") then
 				if project.debug and project.debug_show_notifications_path then
 					const item = notice.on :: declare.enumitem
 					project.console_out (item.name, item.enum and item.enum.name or "*null*", " \n\n| notification has the correct format and will be processed now")
@@ -166,7 +167,7 @@ const class: declare.observer = runtimeobject:new({
 							continue
 						end
 					elseif T == declare.table then
-						if self.is(v, namefield.observer) then
+						if self.is(v, "observer") then
 							const observer = v :: declare.observer<declare.enumitem<any>>
 
 							if project.debug then

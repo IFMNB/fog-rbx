@@ -6,12 +6,11 @@ const AssetTypeVariant = require("@game/ReplicatedStorage/enums/descriptor/Asset
 const DefaultVariant = require("@game/ReplicatedStorage/enums/descriptor/DefaultVariant")
 const State = require("@game/ReplicatedStorage/enums/state/State")
 const declare = require("@game/ReplicatedStorage/static/declare")
-const namefield = require("@game/ReplicatedStorage/static/namefield")
 const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
 const class: declare.asset = Observable:new({
-	type = namefield.asset,
+	type = "asset",
 	variant = DefaultVariant.Unknown,
 	rid = 0,
 	state = State.Nothing,
@@ -24,7 +23,7 @@ const class: declare.asset = Observable:new({
 
 		if not loader then
 			self.state = State.Failure
-			self:notificate(Notification:new {on = State.Failure})
+			self:notificate(Notification:new({ on = State.Failure }))
 			project.console_out_error("unknown AssetVariant")
 			return nil
 		end

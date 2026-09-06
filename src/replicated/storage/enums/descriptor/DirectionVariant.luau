@@ -7,7 +7,7 @@ const declare = require("@game/ReplicatedStorage/static/declare")
 const class: declare.enum_direction_variant = EnumObject:new({
 	name = script.Name,
 
-	Top = EnumItem:new() :: declare.enumitem<any>,
+	Up = EnumItem:new() :: declare.enumitem<any>,
 	Bottom = EnumItem:new() :: declare.enumitem<any>,
 	Left = EnumItem:new() :: declare.enumitem<any>,
 	Right = EnumItem:new() :: declare.enumitem<any>,

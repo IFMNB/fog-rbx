@@ -4,8 +4,7 @@
     --!strict
 
     const declare = require("@game/ReplicatedStorage/static/declare")
-    const namefield = require("@game/ReplicatedStorage/static/namefield")
-
+    
     const private = {}
     const class: declare.Тип_Класса = Родитель:new({
         type = namefield.Имя_Класса,

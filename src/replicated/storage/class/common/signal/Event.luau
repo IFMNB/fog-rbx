@@ -3,17 +3,16 @@
 const Observable = require("@game/ReplicatedStorage/class/arch/Observable")
 const Notification = require("@game/ReplicatedStorage/class/common/notification/Notification")
 const Package = require("@game/ReplicatedStorage/class/common/notification/Package")
+const Connection = require("@game/ReplicatedStorage/class/common/signal/Connection")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
 const DefaultVariant = require("@game/ReplicatedStorage/enums/descriptor/DefaultVariant")
 const ActionNotification = require("@game/ReplicatedStorage/enums/notification/ActionNotification")
 const SetupNotification = require("@game/ReplicatedStorage/enums/notification/SetupNotification")
-const declare = require("../../../static/declare")
-const namefield = require("../../../static/namefield")
-const Connection = require("./Connection")
+const declare = require("@game/ReplicatedStorage/static/declare")
 
 const private = {}
 const class: declare.event = Observable:new({
-	type = namefield.event,
+	type = "event",
 	on = DefaultVariant.Unknown,
 
 	connect = function(self: declare.event, on: declare.enumitem<any>?, f: declare.observer_pack): declare.connection
@@ -62,9 +61,9 @@ const class: declare.event = Observable:new({
 	): ()
 		local iterate: { declare.enumitem<any> } = {}
 
-		if self.is(call, namefield.enumitem) then
+		if self.is(call, "enumitem") then
 			table.insert(iterate, call :: declare.enumitem<any>)
-		elseif self.is(call, namefield.notification) then
+		elseif self.is(call, "notification") then
 			self:invoke((call :: declare.notification<declare.enumitem<any> | { declare.enumitem<any> }>).on, ...)
 			return
 		elseif type(call) == declare.table then

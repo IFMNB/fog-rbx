@@ -7,11 +7,10 @@ const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/Conn
 const ActionNotification = require("@game/ReplicatedStorage/enums/notification/ActionNotification")
 const ExecutorNotification = require("@game/ReplicatedStorage/enums/notification/ExecutorNotification")
 const declare = require("@game/ReplicatedStorage/static/declare")
-const namefield = require("@game/ReplicatedStorage/static/namefield")
 
 const private = {}
 const class: declare.executor = Disposable:new({
-	type = namefield.executor,
+	type = "executor",
 	last_delta = 0,
 	last_emit = 0,
 
@@ -28,13 +27,12 @@ class:host(function(new: declare.executor)
 	const timer = Timer:new({ seconds = math.huge, modifier = 0.001 })
 	private.schedules[new] = timer
 
-	timer:subscribe(ActionNotification.Step, ConnectionVariant.Ever, function ()
+	timer:subscribe(ActionNotification.Step, ConnectionVariant.Ever, function()
 		new:process(timer:get_delta())
 		new:notificate(Notification:new({ call_on = ExecutorNotification.Process }))
 		new:simulate(timer:get_delta())
 		new:notificate(Notification:new({ call_on = ExecutorNotification.Simulation }))
 	end)
-
 end)
 
 do

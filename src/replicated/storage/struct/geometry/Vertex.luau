@@ -1,31 +1,30 @@
 --!strict
 const Record = require("@game/ReplicatedStorage/class/arch/Record")
 const declare = require("@game/ReplicatedStorage/static/declare")
-const namefield = require("@game/ReplicatedStorage/static/namefield")
 
 const private = {}
 const class : declare.vertex = Record:new {
-    type = namefield.vertex,
-    normal = Vector3.zero,
-    position = Vector3.zero,
+    type = "vertex",
+    normal = vector.zero,
+    position = vector.zero,
     mtv_min = 0,
 
-    from_global_point = function (self: declare.vertex, position: Vector3?) : declare.vertex
-        const normal: Vector3 = (Vector3.zero - (position or Vector3.zero)).Unit
+    from_global_point = function (self: declare.vertex, position: vector?) : declare.vertex
+        const normal: vector = vector.normalize((vector.zero - (position or vector.zero)))
         const new = self:new({normal = normal, position = position})
         return new
     end,
 
-    from_local_point = function (self: declare.vertex, local_position: Vector3?, position: Vector3?) : declare.vertex
-        const normal: Vector3 = ((position or Vector3.zero) - (local_position or Vector3.zero)).Unit
+    from_local_point = function (self: declare.vertex, local_position: vector?, position: vector?) : declare.vertex
+        const normal: vector = vector.normalize(((position or vector.zero) - (local_position or vector.zero)))
         const new = self:new({normal = normal, position = position})
         return new
     end,
 
     absolute = function (self: declare.vertex) : declare.vertex
         const clone = self:clone()
-        clone:each<<Vector3>>("Vector3", function(value: Vector3): Vector3
-            return value:Abs()
+        clone:each<<vector>>(declare.vector, function(value: vector): vector
+            return vector.abs(value)
         end)
 
         clone.normal = self.normal
@@ -35,8 +34,8 @@ const class : declare.vertex = Record:new {
 
     null = function (self: declare.vertex) : declare.vertex
         const clone = self:clone()
-        clone:each<<Vector3>>("Vector3", function(value: Vector3): Vector3
-            return Vector3.zero
+        clone:each<<vector>>(declare.vector, function(value: vector): vector
+            return vector.zero
         end)
 
         clone.normal = self.normal
@@ -46,8 +45,8 @@ const class : declare.vertex = Record:new {
 
     substract = function (self: declare.vertex, with: number) : declare.vertex
         const clone = self:clone()
-        clone:each<<Vector3>>("Vector3", function(value: Vector3): Vector3
-            return Vector3.new(value.X - with, value.Y - with, value.Z - with)
+        clone:each<<vector>>(declare.vector, function(value: vector): vector
+            return vector.create(value.x - with, value.y - with, value.z - with)
         end)
 
         clone.normal = self.normal
@@ -57,8 +56,8 @@ const class : declare.vertex = Record:new {
 
     append = function (self: declare.vertex, with: number) : declare.vertex
         const clone = self:clone()
-        clone:each<<Vector3>>("Vector3", function(value: Vector3): Vector3
-            return Vector3.new(value.X + with, value.Y + with, value.Z + with)
+        clone:each<<vector>>(declare.vector, function(value: vector): vector
+            return vector.create(value.x + with, value.y + with, value.z + with)
         end)
 
         clone.normal = self.normal
@@ -68,7 +67,7 @@ const class : declare.vertex = Record:new {
 
     multiple = function (self: declare.vertex, with: number) : declare.vertex
         const clone = self:clone()
-        clone:each<<Vector3>>("Vector3", function(value: Vector3): Vector3
+        clone:each<<vector>>(declare.vector, function(value: vector): vector
             return value * with
         end)
 
@@ -79,7 +78,7 @@ const class : declare.vertex = Record:new {
 
     divide = function (self: declare.vertex, with: number) : declare.vertex
         const clone = self:clone()
-        clone:each<<Vector3>>("Vector3", function(value: Vector3): Vector3
+        clone:each<<vector>>(declare.vector, function(value: vector): vector
             return value / with
         end)
 
@@ -90,7 +89,7 @@ const class : declare.vertex = Record:new {
 
     invert = function (self: declare.vertex) : declare.vertex
         const clone = self:clone()
-        clone:each<<Vector3>>("Vector3", function(value: Vector3): Vector3
+        clone:each<<vector>>(declare.vector, function(value: vector): vector
             return -value
         end)
 
@@ -99,8 +98,8 @@ const class : declare.vertex = Record:new {
 
     normalize = function (self: declare.vertex) : declare.vertex
         const clone = self:clone()
-        clone:each<<Vector3>>("Vector3", function(value: Vector3): Vector3
-            return value.Unit
+        clone:each<<vector>>(declare.vector, function(value: vector): vector
+            return vector.abs(value)
         end)
 
         return clone
@@ -108,8 +107,8 @@ const class : declare.vertex = Record:new {
 
     infinity = function(self: declare.vertex) : declare.vertex
         const clone = self:clone()
-        clone:each<<Vector3>>("Vector3", function(value: Vector3): Vector3
-            return Vector3.new(math.huge, math.huge, math.huge)
+        clone:each<<vector>>(declare.vector, function(value: vector): vector
+            return vector.create(math.huge, math.huge, math.huge)
         end)
 
         clone.normal = self.normal

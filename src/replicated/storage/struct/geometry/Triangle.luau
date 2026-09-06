@@ -1,17 +1,17 @@
 --!strict
 const Record = require("@game/ReplicatedStorage/class/arch/Record")
 const declare = require("@game/ReplicatedStorage/static/declare")
-const namefield = require("@game/ReplicatedStorage/static/namefield")
+
 const Vertex = require("@game/ReplicatedStorage/struct/geometry/Vertex")
 
 const class: declare.triangle = Record:new({
-	type = namefield.triangle,
+	type = "triangle",
 	right = Vertex:new(),
 	up = Vertex:new(),
 	front = Vertex:new(),
 
-	from_vector3 = function(self: declare.triangle, right: Vector3?, up: Vector3?, front: Vector3?): declare.triangle
-		const center: Vector3 = ((right or Vector3.zero) + (up or Vector3.zero) + (front or Vector3.zero)) / 3
+	from_vector = function(self: declare.triangle, right: vector?, up: vector?, front: vector?): declare.triangle
+		const center: vector = ((right or vector.zero) + (up or vector.zero) + (front or vector.zero)) / 3
 		return self:new({
 			right = right and Vertex:from_local_point(center, right),
 			up = up and Vertex:from_local_point(center, up),
@@ -19,16 +19,16 @@ const class: declare.triangle = Record:new({
 		})
 	end,
 
-	get_center = function(self: declare.triangle): Vector3
+	get_center = function(self: declare.triangle): vector
 		return (self.right.position + self.up.position + self.front.position) / 3
 	end,
 
-	get_normal_interpolated = function(self: declare.triangle): Vector3
-		return (self.right.normal + self.up.normal + self.front.normal).Unit
+	get_normal_interpolated = function(self: declare.triangle): vector
+		return vector.normalize(self.right.normal + self.up.normal + self.front.normal)
 	end,
 
-	get_normal_geometric = function(self: declare.triangle): Vector3
-		return (self.up.position - self.right.position):Cross(self.front.position - self.right.position).Unit
+	get_normal_geometric = function(self: declare.triangle): vector
+		return vector.cross((self.up.position - self.right.position), (self.front.position - self.right.position))
 	end,
 
 	absolute = function(self: declare.triangle): declare.triangle

@@ -7,10 +7,9 @@ const DefaultVariant = require("@game/ReplicatedStorage/enums/descriptor/Default
 const ActionNotification = require("@game/ReplicatedStorage/enums/notification/ActionNotification")
 const SetupNotification = require("@game/ReplicatedStorage/enums/notification/SetupNotification")
 const declare = require("@game/ReplicatedStorage/static/declare")
-const namefield = require("@game/ReplicatedStorage/static/namefield")
 
 const class : declare.connection = Observable:new {
-	type = namefield.connection,
+	type = "connection",
 	state = ConnectionVariant.Never,
 	on = DefaultVariant.Unknown,
 	count = math.huge,
@@ -37,11 +36,11 @@ const class : declare.connection = Observable:new {
 
 class:host(function(new: declare.connection)
 	new:subscribe(SetupNotification.Install, ConnectionVariant.Once, function (identity: declare.object_identity)
-		const package = new.require <<declare.package<declare.enumitem_setup_notification, unknown>>>(identity, namefield.package)
+		const package = new.require <<declare.package<declare.enumitem_setup_notification, unknown>>>(identity, "package")
 		const closure = assert(package.pack[1], "unknown value") :: (...unknown) -> ()
 		
 		new:subscribe(ActionNotification.Emit, ConnectionVariant.Ever, function (identity: declare.object_identity)
-			const package = new.require <<declare.package<declare.enumitem_action_notification, unknown>>>(identity, namefield.package)
+			const package = new.require <<declare.package<declare.enumitem_action_notification, unknown>>>(identity, "package")
 
 			closure(unpack(package.pack))
 			new.count -= 1
