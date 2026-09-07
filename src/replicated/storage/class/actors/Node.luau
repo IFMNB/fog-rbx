@@ -1,8 +1,8 @@
 --!strict
 const Attribute = require("@game/ReplicatedStorage/class/actors/Attribute")
 const Disposable = require("@game/ReplicatedStorage/class/arch/Disposable")
-const Maid = require("@game/ReplicatedStorage/class/common/Maid")
-const Maybe = require("@game/ReplicatedStorage/class/common/Maybe")
+const Maid = require("@game/ReplicatedStorage/class/common/gc/Maid")
+const Maybe = require("@game/ReplicatedStorage/class/common/gc/Maybe")
 const Reference = require("@game/ReplicatedStorage/class/common/Reference")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
 const DisposableNotification = require("@game/ReplicatedStorage/enums/notification/DisposableNotification")

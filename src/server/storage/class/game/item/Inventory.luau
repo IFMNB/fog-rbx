@@ -1,19 +1,20 @@
 --!strict
-const PickUp = require("@game/ReplicatedStorage/class/game/PickUp")
+const PickUp = require("@game/ReplicatedStorage/class/PickUp")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
-const InventoryNotification = require("@game/ReplicatedStorage/enums/notification/InventoryNotification")
 const declare = require("@game/ReplicatedStorage/static/declare")
+const dgame = require("@game/ReplicatedStorage/static/dgame")
 
 const project = require("@game/ReplicatedStorage/static/project")
+const InventoryNotification = require("@game/ServerStorage/enums/notification/InventoryNotification")
 
 const private = {}
-const class : declare.inventory = (PickUp :: declare.pickup<declare.enumitem_inventory_notification>):new {
+const class : dgame.inventory = (PickUp :: declare.pickup<dgame.enumitem_inventory_notification>):new {
     type = "inventory",
     owner = nil :: unknown,
     can_insert_items = true,
     can_remove_items = true,
 
-    get_items_with_type = function <T> (self: declare.inventory, type: string) : {T}
+    get_items_with_type = function <T> (self: dgame.inventory, type: string) : {T}
         const result = {}
 
         for _, v in private.items[self] do
@@ -25,7 +26,7 @@ const class : declare.inventory = (PickUp :: declare.pickup<declare.enumitem_inv
         return result    
     end,
     
-    get_items = function (self: declare.inventory<any>) : {declare.item}
+    get_items = function (self: dgame.inventory<any>) : {dgame.item}
         const result = {}
         
         for _, v in private.items[self] do
@@ -35,7 +36,7 @@ const class : declare.inventory = (PickUp :: declare.pickup<declare.enumitem_inv
         return result
     end,
     
-    insert_item = function (self: declare.inventory, that: declare.item) : ()
+    insert_item = function (self: dgame.inventory, that: dgame.item) : ()
         const is_existed = self:is_in_inventory(that)
         if is_existed then return end
 
@@ -43,7 +44,7 @@ const class : declare.inventory = (PickUp :: declare.pickup<declare.enumitem_inv
     	self:notificate(InventoryNotification.ItemAdded)
     end, 
 
-    remove_item = function (self: declare.inventory, that: declare.item) : ()
+    remove_item = function (self: dgame.inventory, that: dgame.item) : ()
         const is_existed = self:is_in_inventory(that)
 
         private.items[self][that.identity] = nil
@@ -53,21 +54,21 @@ const class : declare.inventory = (PickUp :: declare.pickup<declare.enumitem_inv
         end
     end,
 
-    is_in_inventory = function (self: declare.inventory, that: declare.item) : boolean
+    is_in_inventory = function (self: dgame.inventory, that: dgame.item) : boolean
         return private.items[self][that.identity] ~= nil
     end,
 
-    get_last_added = function (self: declare.inventory) : declare.item?
+    get_last_added = function (self: dgame.inventory) : dgame.item?
         return private.last[self]
     end,
 
-    get_owner = function (self: declare.inventory) : declare.unit|nil
+    get_owner = function (self: dgame.inventory) : dgame.unit|nil
         if not self.owner then return nil end
 
-        const object = self.require <<declare.object?>>(self.owner)
+        const object = self.require <<dgame.object?>>(self.owner)
         if object then
             if self.is(object, "unit") then
-                return object :: declare.unit
+                return object :: dgame.unit
             else
                 project.console_out_error "owner of the item is being used incorrectly because the resulting object is not an authorized object, and the result has been reset"
             end
@@ -77,7 +78,7 @@ const class : declare.inventory = (PickUp :: declare.pickup<declare.enumitem_inv
     end
 }
 
-class:host(function(new: declare.inventory)
+class:host(function(new: dgame.inventory)
     new:subscribe(InventoryNotification.ItemAdded, ConnectionVariant.Ever, function ()
         
     end)
@@ -85,8 +86,8 @@ end)
 
 do
     private.meta = table.freeze {__mode = "ks"}
-    private.items = setmetatable({} :: {[declare.inventory]: {[unknown]: declare.item?}}, private.meta)
-    private.last = setmetatable({} :: {[declare.inventory]: declare.item?}, private.meta)
+    private.items = setmetatable({} :: {[dgame.inventory]: {[unknown]: dgame.item?}}, private.meta)
+    private.last = setmetatable({} :: {[dgame.inventory]: dgame.item?}, private.meta)
 end
 
 return class

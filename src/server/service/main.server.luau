@@ -7,6 +7,8 @@ const main = Tasky:new()
 
 main:deploy(root .. "dependency/konsole_host")
 main:deploy(root .. "game/user_data_service")
+main:deploy(root .. "game/action_map")
+
 
 if game.RunService:IsStudio() then
     --main:deploy(root .. "debug/unit")

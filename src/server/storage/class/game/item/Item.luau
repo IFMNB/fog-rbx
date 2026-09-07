@@ -1,49 +1,49 @@
 --!strict
+const PickUp = require("@game/ReplicatedStorage/class/PickUp")
 const StateMachine = require("@game/ReplicatedStorage/class/StateMachine")
 const Maybe = require("@game/ReplicatedStorage/class/common/gc/Maybe")
-const PickUp = require("@game/ReplicatedStorage/class/game/PickUp")
-const ItemNotification = require("@game/ReplicatedStorage/enums/notification/ItemNotification")
 const declare = require("@game/ReplicatedStorage/static/declare")
-
+const dgame = require("@game/ReplicatedStorage/static/dgame")
 const project = require("@game/ReplicatedStorage/static/project")
+const ItemNotification = require("@game/ServerStorage/enums/notification/ItemNotification")
 
 const private = {}
-const class: declare.item = (PickUp :: declare.pickup<declare.enumitem_item_notification>):new({
+const class: dgame.item = (PickUp :: declare.pickup<dgame.enumitem_item_notification>):new({
 	type = "item",
     owner = nil :: unknown,
 	equipable = false,
 
-    equip = function(self: declare.item) : ()
+    equip = function(self: dgame.item) : ()
         if self.equipable and not self:is_equipped() then
             private.equipped[self] = true
             self:notificate(ItemNotification.Equipped)
         end
     end,
 
-    unequip = function (self: declare.item) : ()
+    unequip = function (self: dgame.item) : ()
         if self.equipable and self:is_equipped() then
             private.equipped[self] = false
             self:notificate(ItemNotification.Unequipped)
         end
     end,
 
-    is_equipped = function (self: declare.item) : boolean
+    is_equipped = function (self: dgame.item) : boolean
         return private.equipped[self] or false
     end,
 	
-    show_item = function(self: declare.item, set: boolean?): ()
+    show_item = function(self: dgame.item, set: boolean?): ()
         project.console_out_error "TODO"
     end,
 
-	get_main_grip = function(self: declare.item): declare.reference<PVInstance?>?
+	get_main_grip = function(self: dgame.item): declare.reference<PVInstance?>?
         return private.grip[self]
     end,
 
-    set_main_grip = function (self: declare.item, to: declare.reference<PVInstance?>?) : ()
+    set_main_grip = function (self: dgame.item, to: declare.reference<PVInstance?>?) : ()
         private.grip[self] = to
     end,
 
-	get_secondary_grip = function(self: declare.item): declare.reference<PVInstance?>?
+	get_secondary_grip = function(self: dgame.item): declare.reference<PVInstance?>?
         const limit = #private.grips[self]
 
         if limit > 0 then
@@ -54,7 +54,7 @@ const class: declare.item = (PickUp :: declare.pickup<declare.enumitem_item_noti
         return nil
     end,
 
-	insert_secondary_grip = function(self: declare.item, of: declare.reference<PVInstance?>): ()
+	insert_secondary_grip = function(self: dgame.item, of: declare.reference<PVInstance?>): ()
         const grips = private.grips[self]
         const pos = table.find(grips, of)
 
@@ -63,7 +63,7 @@ const class: declare.item = (PickUp :: declare.pickup<declare.enumitem_item_noti
         end
     end,
 
-	remove_secondary_grip = function(self: declare.item, of: declare.reference<PVInstance?>): ()
+	remove_secondary_grip = function(self: dgame.item, of: declare.reference<PVInstance?>): ()
         const grips = private.grips[self]
         const pos = table.find(grips, of)
 
@@ -72,19 +72,19 @@ const class: declare.item = (PickUp :: declare.pickup<declare.enumitem_item_noti
         end
     end,
 
-	get_state_machine = function(self: declare.item): declare.statemachine<declare.enumitem>
+	get_state_machine = function(self: dgame.item): declare.statemachine<declare.enumitem>
         return private.sfm:extract(self, function()
             return StateMachine:new() :: declare.statemachine<declare.enumitem>
         end)
     end,
 
-    get_owner = function (self: declare.item) : declare.object|nil
+    get_owner = function (self: dgame.item)
         if not self.owner then return nil end
 
         const object = self.require <<declare.object?>>(self.owner)
         if object then
             if self.is(object, "unit") or self.is(object, "inventory") then
-                return object :: declare.inventory|declare.unit
+                return object
             else
                 project.console_out_error "owner of the item is being used incorrectly because the resulting object is not an authorized object, and the result has been reset"
             end
@@ -94,16 +94,16 @@ const class: declare.item = (PickUp :: declare.pickup<declare.enumitem_item_noti
     end
 })
 
-class:host(function(new: declare.item)
+class:host(function(new: dgame.item)
     private.grips[new] = {}
 end)
 
 do
     private.meta = table.freeze {__mode = "ks"}
     private.sfm = Maybe:new()
-    private.grips = setmetatable({} :: {[declare.item]: {declare.reference<PVInstance?>}}, private.meta)
-    private.grip = setmetatable({} :: {[declare.item]: declare.reference<PVInstance?>?}, private.meta)
-    private.equipped = setmetatable({} :: {[declare.item]: boolean?}, private.meta)
+    private.grips = setmetatable({} :: {[dgame.item]: {declare.reference<PVInstance?>}}, private.meta)
+    private.grip = setmetatable({} :: {[dgame.item]: declare.reference<PVInstance?>?}, private.meta)
+    private.equipped = setmetatable({} :: {[dgame.item]: boolean?}, private.meta)
 end
 
 return class

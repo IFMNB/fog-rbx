@@ -3,13 +3,14 @@
 const Record = require("@game/ReplicatedStorage/class/arch/Record")
 const DirectionVariant = require("@game/ReplicatedStorage/enums/descriptor/DirectionVariant")
 const declare = require("@game/ReplicatedStorage/static/declare")
+const dgeometry = require("@game/ReplicatedStorage/static/dgeometry")
 const project = require("@game/ReplicatedStorage/static/project")
 
 const Quad = require("@game/ReplicatedStorage/struct/geometry/Quad")
 const Triangle = require("@game/ReplicatedStorage/struct/geometry/Triangle")
 const Vertex = require("@game/ReplicatedStorage/struct/geometry/Vertex")
 
-const class : declare.cubevolume = Record:new {
+const class : dgeometry.cubevolume = Record:new {
     type = "cubevolume",
 
     up = vector.zero,
@@ -19,7 +20,7 @@ const class : declare.cubevolume = Record:new {
     front = vector.zero,
     back = vector.zero,
 
-    get_corners = function (self: declare.cubevolume) : {declare.vertex} 
+    get_corners = function (self: dgeometry.cubevolume) : {dgeometry.vertex} 
         const center: vector = self:get_center()
 
         return {
@@ -32,7 +33,7 @@ const class : declare.cubevolume = Record:new {
         }
     end,
 
-    get_direction = function (self: declare.cubevolume, direction: declare.enumitem) : vector
+    get_direction = function (self: dgeometry.cubevolume, direction: declare.enumitem) : vector
         DirectionVariant:assert_is_my_enumitem(direction)
 
         if direction == DirectionVariant.Right then
@@ -52,7 +53,7 @@ const class : declare.cubevolume = Record:new {
         return project.console_out_error("unsupported DirectionVariant item")
     end,
 
-    get_axises = function (self: declare.cubevolume) : {vector}
+    get_axises = function (self: dgeometry.cubevolume) : {vector}
         return {
             self:get_direction(DirectionVariant.Right),
             self:get_direction(DirectionVariant.Up),
@@ -60,7 +61,7 @@ const class : declare.cubevolume = Record:new {
         }
     end,
 
-    get_sat_axises = function (self: declare.cubevolume) : {vector}
+    get_sat_axises = function (self: dgeometry.cubevolume) : {vector}
         const axises = self:get_axises()
         const center = self:get_center()
 
@@ -71,7 +72,7 @@ const class : declare.cubevolume = Record:new {
         return axises
     end,
 
-    get_quad = function (self: declare.cubevolume, direction: declare.enumitem) : declare.quad 
+    get_quad = function (self: dgeometry.cubevolume, direction: declare.enumitem) : dgeometry.quad 
         DirectionVariant:assert_is_my_enumitem(direction)
 
         if direction == DirectionVariant.Right then
@@ -162,11 +163,11 @@ const class : declare.cubevolume = Record:new {
         return project.console_out_error("unsupported DirectionVariant item")
     end,
 
-    to_vector = function (self: declare.cubevolume) : vector
+    to_vector = function (self: dgeometry.cubevolume) : vector
         return vector.create(vector.magnitude(self.right), vector.magnitude(self.up), vector.magnitude(self.front))
     end,
     
-    to_cframe = function (self: declare.cubevolume) : CFrame
+    to_cframe = function (self: dgeometry.cubevolume) : CFrame
         const center = self:get_center()
 
         return CFrame.fromMatrix(Vector3.new(center.x, center.y, center.z),
@@ -175,11 +176,11 @@ const class : declare.cubevolume = Record:new {
             Vector3.new(self.front.x, self.front.y, self.front.z))
     end,
 
-    get_center = function (self: declare.cubevolume) : vector
+    get_center = function (self: dgeometry.cubevolume) : vector
         return (self.up + self.bottom + self.left + self.right + self.front + self.back) / 6
     end,
 
-    absolute = function (self: declare.cubevolume) : declare.cubevolume
+    absolute = function (self: dgeometry.cubevolume) : dgeometry.cubevolume
         const clone = self:clone()
         clone:each<<vector>>(declare.vector, function(value: vector): vector
             return vector.abs(value)
@@ -188,7 +189,7 @@ const class : declare.cubevolume = Record:new {
         return clone
     end,
 
-    null = function (self: declare.cubevolume) : declare.cubevolume
+    null = function (self: dgeometry.cubevolume) : dgeometry.cubevolume
         const clone = self:clone()
         clone:each<<vector>>(declare.vector, function(value: vector): vector
             return vector.zero
@@ -197,7 +198,7 @@ const class : declare.cubevolume = Record:new {
         return clone
     end,
 
-    substract = function (self: declare.cubevolume, with: number) : declare.cubevolume
+    substract = function (self: dgeometry.cubevolume, with: number) : dgeometry.cubevolume
         const clone = self:clone()
         clone:each<<vector>>(declare.vector, function(value: vector): vector
             return vector.create(value.x - with, value.y - with, value.z - with)
@@ -206,7 +207,7 @@ const class : declare.cubevolume = Record:new {
         return clone
     end,
 
-    append = function (self: declare.cubevolume, with: number) : declare.cubevolume
+    append = function (self: dgeometry.cubevolume, with: number) : dgeometry.cubevolume
         const clone = self:clone()
         clone:each<<vector>>(declare.vector, function(value: vector): vector
             return vector.create(value.x + with, value.y + with, value.z + with)
@@ -215,7 +216,7 @@ const class : declare.cubevolume = Record:new {
         return clone
     end,
 
-    multiple = function (self: declare.cubevolume, with: number) : declare.cubevolume
+    multiple = function (self: dgeometry.cubevolume, with: number) : dgeometry.cubevolume
         const clone = self:clone()
         clone:each<<vector>>(declare.vector, function(value: vector): vector
             return value * with
@@ -224,7 +225,7 @@ const class : declare.cubevolume = Record:new {
         return clone
     end,
 
-    divide = function (self: declare.cubevolume, with: number) : declare.cubevolume
+    divide = function (self: dgeometry.cubevolume, with: number) : dgeometry.cubevolume
         const clone = self:clone()
         clone:each<<vector>>(declare.vector, function(value: vector): vector
             return value / with
@@ -233,7 +234,7 @@ const class : declare.cubevolume = Record:new {
         return clone
     end,
 
-    invert = function (self: declare.cubevolume) : declare.cubevolume
+    invert = function (self: dgeometry.cubevolume) : dgeometry.cubevolume
         const clone = self:clone()
         clone:each<<vector>>(declare.vector, function(value: vector): vector
             return -value
@@ -242,7 +243,7 @@ const class : declare.cubevolume = Record:new {
         return clone
     end,
 
-    normalize = function (self: declare.cubevolume) : declare.cubevolume
+    normalize = function (self: dgeometry.cubevolume) : dgeometry.cubevolume
         const clone = self:clone()
         clone:each<<vector>>(declare.vector, function(value: vector): vector
             return vector.normalize(value)
@@ -251,7 +252,7 @@ const class : declare.cubevolume = Record:new {
         return clone
     end,
 
-    infinity = function(self: declare.cubevolume) : declare.cubevolume
+    infinity = function(self: dgeometry.cubevolume) : dgeometry.cubevolume
         const clone = self:clone()
         clone:each<<vector>>(declare.vector, function(value: vector): vector
             return vector.create(math.huge, math.huge, math.huge)

@@ -45,6 +45,7 @@ do --properties
 
 	project.retry = 5
 	project.retry_time = 1
+	project.timeout = 30
 
 	project.enumobject_freeze_related_items = true
 end

@@ -25,14 +25,6 @@ const class: declare.user = object:new({
 		return userdata
 	end,
 
-	get_unit = function(self: declare.user): declare.unit?
-		return private.units[self.uid]
-	end,
-
-	set_unit = function(self: declare.user, to: declare.unit?): ()
-		private.units[self.uid] = to
-	end,
-
 	get_local_user = function(): declare.user
 		return private.local_user
 	end,
@@ -57,7 +49,6 @@ do
 	type channel_signletone = declare.channel<declare.enumitem_user_data_require>
 
 	private.meta = table.freeze({ __mode = "ks" })
-	private.units = setmetatable({} :: { [user_uid]: declare.unit? }, table.freeze({ __mode = "vs" }))
 	private.configs = Maybe:new() -- userconfig
 	private.local_user = class:new({ { uid = Players.LocalPlayer and Players.LocalPlayer.User.Id or 0 } })
 	private.channel = nil :: channel_signletone?

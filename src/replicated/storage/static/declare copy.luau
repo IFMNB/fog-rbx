@@ -105,6 +105,14 @@ export type enumitem<T = enumobject?> = construct<{
     read enum: T,
 } & nameable, object>
 
+export type variant = construct<{
+    read tvalue: string,
+    read value: unknown
+}, object>
+
+
+
+
 export type runtimeobject = construct<{
     read get_creation_time: (self: runtimeobject) -> DateTime,
     read get_dependencies: (self: runtimeobject) -> {unknown},
@@ -112,37 +120,40 @@ export type runtimeobject = construct<{
     read rem_dependency: (self: runtimeobject, obj: unknown) -> ()
 }, object>
 
-export type notification<T = enumitem<any>> = construct<{} & expected_calltype<T>, runtimeobject>
+export type notification<T = enumitem<any>> = construct<{
+    read stored: {unknown}
+} & expected_calltype<T>, runtimeobject>
 
-export type package<T = enumitem<any>, U = unknown> = construct<{
-    read pack: {U}, -- #11
-}, notification<T>>
-
-
-
+export type pointer = construct<{
+    read point: (to: unknown) -> pointer,
+    read drop: (self: pointer) -> (),
+    read use: (self: pointer) -> (),
+}, runtimeobject>
 
 export type observer<T = enumitem<any>> = construct<{
-    read subscribe: (self: observer<T>, on: T|{T}|enumobject, mode: enumitem_connection_variant, ...observer_pack<T>) -> () -> (),
-    read notice: (self: observer<T>, on: package<{T}|T, package<enumitem_connection_variant, observer_pack<T>>>) -> () -> (),
+    read subscribe: (self: observer<T>, on: T|{T}|enumobject, mode: enumitem_connection_variant, ...observer_pack<T>) -> (() -> ()),
     read notificate: (self: observer<T>, notification: T|{T}|notification<T|{T}>) -> (),
 }, runtimeobject>
 
 export type user<T = enumitem> = construct<{
     read uid: number,
-    
-    read request_data: <T...> (self: user<T>, of: enumitem_user_data_require|T) -> userdata<T...>,
-    read get_local_user: () -> user<T>,
-    read get_player: (self: user<T>) -> reference<Player?>,
-    read get_config: (self: user<T>) -> userconfig
-}, observer>
 
-export type userconfig = construct<{
-    read get_map: (self: userconfig) -> {[enumitem_action_map_variant]: {Enum.KeyCode}},
-    read get_last_changed: (self: userconfig) -> (enumitem_operation_variant, enumitem_action_map_variant|enumitem_default_variant, Enum.KeyCode),
-    read insert_item: (self: userconfig, item: enumitem_action_map_variant, to: Enum.KeyCode) -> (),
-    read remove_item: (self: userconfig, item: enumitem_action_map_variant, to: Enum.KeyCode) -> (),
-    read is_exists: (self: userconfig, item: enumitem_action_map_variant, to: Enum.KeyCode) -> boolean,
-}, observer<enumitem_operation_variant>>
+    read get_player: (self: user<T>) -> Player?,
+    read get_reference: (self: user<T>) -> reference<Player>,
+    read get_configurated: (self: user<T>, of: enumitem) -> variant,
+    read set_configurated: (self: user<T>, of: enumitem, to: boolean) -> variant,
+
+    read is_banned: (self: user<T>) -> boolean,
+    read is_kicked: (self: user<T>) -> boolean,
+    read is_playing: (self: user<T>) -> boolean,
+    read is_here: (self: user<T>) -> boolean,
+}, observer<enumitem_user_notification>>
+
+export type localuser = construct<{
+    read get_player: (self: localuser) -> Player,
+
+
+}, observer<enumitem_user_notification>>
 
 export type event<T = enumitem<any>, U... = ...unknown> = construct<{
     read connect: <T0> (self: event<T,U...>, on: T|enumitem_default_variant, f: ((U...) -> ())|thread|observer<T>) -> connection<T,U...>,
@@ -203,9 +214,9 @@ export type channel <T = enumitem_network_replication, U... = ...unknown, E... =
     read is_peer: (self: channel<T,U...,E...>, of: user) -> boolean,
     read request_from: (self: channel<T,U...,E...>) -> user?,
 
-    read get_variant: (self: channel<T,U...,E...>) -> enumitem_network_replication?,
-    read set_variant: (self: channel<T,U...,E...>, to: enumitem_network_replication?) -> (),
-    read is_variant: (self: channel<T,U..., E...>, of: enumitem_network_replication) -> boolean
+    read get_transport: (self: channel<T,U...,E...>) -> enumitem_network_replication?,
+    read set_transport: (self: channel<T,U...,E...>, to: enumitem_network_replication?) -> (),
+    read is_transport: (self: channel<T,U..., E...>, of: enumitem_network_replication) -> boolean
 } & asyncable & switchable<channel<T,U...,E...>>, observer<enumitem_channel_notification>>
 
 export type signal<T... = ...unknown> = construct<{
@@ -308,7 +319,7 @@ export type pickup <T = enumitem<any>> = construct<{
     read get_last_interacted: (self: pickup<T>) -> object? -- unit
 }, node<PVInstance, T|enumitem_pickup_notification>>
 
-export type config<T = unknown, U = enumitem_config_require> = construct<{
+export type config<T = unknown, U = enumitem> = construct<{
 
     related: U,
     auto_updateable: boolean,
@@ -341,14 +352,6 @@ export type result<T = unknown, U... = ...unknown> = construct<{
 
     read unpack: (self: result<T,U...>) -> U...
 }, record>
-
-export type userdata<U... = ...unknown> = construct<{
-
-    read of: enumitem_user_data_require
-
-}, result<{unknown}, U...>>
-
-
 
 export type enumitem_default_variant = enumitem<enum_default_variant>
 export type enum_default_variant = construct<{
@@ -473,14 +476,24 @@ export type enum_asset_type_variant = construct<{
 
 export type enumitem_user_data_require = enumitem<enum_user_data_require>
 export type enum_user_data_require = construct<{
-    read Stats: enumitem_user_data_require,
-    read Profile: enumitem_user_data_require,
+    read UserProfile: enumitem_user_data_require,
+
+    read UserLastDataSave: enumitem_user_data_require,
+    read UserLastDataRequest: enumitem_user_data_require,
+    read UserPlayedTime: enumitem_user_data_require,
+    read UserLastEnter: enumitem_user_data_require,
+    read UserPreviousKick: enumitem_user_data_require,
+    read UserPreviousBan: enumitem_user_data_require
 }, enumobject>
 
 
-export type enumitem_config_require = enumitem<enum_config_require>
-export type enum_config_require = construct<{
-    
+export type enumitem_user_notification = enumitem<enum_user_notification>
+export type enum_user_notification = construct<{
+    read ServerJoin: enumitem_user_notification,
+    read ServerExit: enumitem_user_notification,
+    read ServerBan: enumitem_user_notification,
+    read ServerKick: enumitem_user_notification,
+    read ServerDataRequest: enumitem_user_notification, 
 }, enumobject>
 
 export type enumitem_channel_notification = enumitem<enum_channel_notification>

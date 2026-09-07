@@ -18,14 +18,29 @@ version = "5.0.0"
 dependencies = []
 
 [[package]]
+name = "ifmnb/algorithm-ecsb"
+version = "2609.7.0"
+dependencies = [["ArrayBuffer", "ifmnb/array-buffer@2609.7.1"]]
+
+[[package]]
 name = "ifmnb/algorithm-sat"
 version = "2609.7.0"
 dependencies = []
 
 [[package]]
+name = "ifmnb/array-buffer"
+version = "2609.7.1"
+dependencies = [["BitMap", "ifmnb/bitmap@2609.3.0"]]
+
+[[package]]
+name = "ifmnb/bitmap"
+version = "2609.3.0"
+dependencies = []
+
+[[package]]
 name = "ifmnb/forgotten-grave"
 version = "0.0.1"
-dependencies = [["Concur", "sleitnick/concur@0.1.2"], ["Cryptography", "daily3014/cryptography@1.11.0"], ["Konsole", "kyrorblx/konsole@0.1.11"], ["Lori", "kyrorblx/lori@0.1.7"], ["Quaternion", "sleitnick/quaternion@0.2.3"], ["SAT", "ifmnb/algorithm-sat@2609.7.0"], ["Squash", "data-oriented-house/squash@5.0.0"], ["Videlib", "centau/vide@0.4.1"], ["ProfileStore", "lm-loleris/profilestore@1.0.3"]]
+dependencies = [["ArrayBuffer", "ifmnb/array-buffer@2609.7.1"], ["Concur", "sleitnick/concur@0.1.2"], ["Cryptography", "daily3014/cryptography@1.11.0"], ["ECSB", "ifmnb/algorithm-ecsb@2609.7.0"], ["Konsole", "kyrorblx/konsole@0.1.11"], ["Lori", "kyrorblx/lori@0.1.7"], ["Quaternion", "sleitnick/quaternion@0.2.3"], ["SAT", "ifmnb/algorithm-sat@2609.7.0"], ["Squash", "data-oriented-house/squash@5.0.0"], ["Videlib", "centau/vide@0.4.1"], ["ProfileStore", "lm-loleris/profilestore@1.0.3"]]
 
 [[package]]
 name = "kyrorblx/konsole"

@@ -1,16 +1,16 @@
 --!strict
 const Record = require("@game/ReplicatedStorage/class/arch/Record")
-const declare = require("@game/ReplicatedStorage/static/declare")
+const dgeometry = require("@game/ReplicatedStorage/static/dgeometry")
 
 const Vertex = require("@game/ReplicatedStorage/struct/geometry/Vertex")
 
-const class: declare.triangle = Record:new({
+const class: dgeometry.triangle = Record:new({
 	type = "triangle",
 	right = Vertex:new(),
 	up = Vertex:new(),
 	front = Vertex:new(),
 
-	from_vector = function(self: declare.triangle, right: vector?, up: vector?, front: vector?): declare.triangle
+	from_vector = function(self: dgeometry.triangle, right: vector?, up: vector?, front: vector?): dgeometry.triangle
 		const center: vector = ((right or vector.zero) + (up or vector.zero) + (front or vector.zero)) / 3
 		return self:new({
 			right = right and Vertex:from_local_point(center, right),
@@ -19,19 +19,19 @@ const class: declare.triangle = Record:new({
 		})
 	end,
 
-	get_center = function(self: declare.triangle): vector
+	get_center = function(self: dgeometry.triangle): vector
 		return (self.right.position + self.up.position + self.front.position) / 3
 	end,
 
-	get_normal_interpolated = function(self: declare.triangle): vector
+	get_normal_interpolated = function(self: dgeometry.triangle): vector
 		return vector.normalize(self.right.normal + self.up.normal + self.front.normal)
 	end,
 
-	get_normal_geometric = function(self: declare.triangle): vector
+	get_normal_geometric = function(self: dgeometry.triangle): vector
 		return vector.cross((self.up.position - self.right.position), (self.front.position - self.right.position))
 	end,
 
-	absolute = function(self: declare.triangle): declare.triangle
+	absolute = function(self: dgeometry.triangle): dgeometry.triangle
 		const clone = self:clone()
 
 		clone.right = clone.right:absolute()
@@ -41,7 +41,7 @@ const class: declare.triangle = Record:new({
 		return clone
 	end,
 
-	null = function(self: declare.triangle): declare.triangle
+	null = function(self: dgeometry.triangle): dgeometry.triangle
 		const clone = self:clone()
 
 		clone.right = clone.right:null()
@@ -51,7 +51,7 @@ const class: declare.triangle = Record:new({
 		return clone
 	end,
 
-	substract = function(self: declare.triangle, with: number): declare.triangle
+	substract = function(self: dgeometry.triangle, with: number): dgeometry.triangle
 		const clone = self:clone()
 
 		clone.right = clone.right:substract(with)
@@ -61,7 +61,7 @@ const class: declare.triangle = Record:new({
 		return clone
 	end,
 
-	append = function(self: declare.triangle, with: number): declare.triangle
+	append = function(self: dgeometry.triangle, with: number): dgeometry.triangle
 		const clone = self:clone()
 
 		clone.right = clone.right:append(with)
@@ -71,7 +71,7 @@ const class: declare.triangle = Record:new({
 		return clone
 	end,
 
-	multiple = function(self: declare.triangle, with: number): declare.triangle
+	multiple = function(self: dgeometry.triangle, with: number): dgeometry.triangle
 		const clone = self:clone()
 
 		clone.right = clone.right:multiple(with)
@@ -81,7 +81,7 @@ const class: declare.triangle = Record:new({
 		return clone
 	end,
 
-	divide = function(self: declare.triangle, with: number): declare.triangle
+	divide = function(self: dgeometry.triangle, with: number): dgeometry.triangle
 		const clone = self:clone()
 
 		clone.right = clone.right:divide(with)
@@ -91,7 +91,7 @@ const class: declare.triangle = Record:new({
 		return clone
 	end,
 
-	invert = function(self: declare.triangle): declare.triangle
+	invert = function(self: dgeometry.triangle): dgeometry.triangle
 		const clone = self:clone()
 
 		clone.right = clone.right:invert()
@@ -101,7 +101,7 @@ const class: declare.triangle = Record:new({
 		return clone
 	end,
 
-	normalize = function(self: declare.triangle): declare.triangle
+	normalize = function(self: dgeometry.triangle): dgeometry.triangle
 		const clone = self:clone()
 
 		clone.right = clone.right:normalize()
@@ -111,7 +111,7 @@ const class: declare.triangle = Record:new({
 		return clone
 	end,
 
-	infinity = function(self: declare.triangle): declare.triangle
+	infinity = function(self: dgeometry.triangle): dgeometry.triangle
 		const clone = self:clone()
 
 		clone.right = clone.right:infinity()

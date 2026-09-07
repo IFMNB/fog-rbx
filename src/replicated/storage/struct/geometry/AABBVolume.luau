@@ -1,18 +1,19 @@
 --!strict
 const declare = require("@game/ReplicatedStorage/static/declare")
+const dgeometry = require("@game/ReplicatedStorage/static/dgeometry")
 const project = require("@game/ReplicatedStorage/static/project")
 const CubeVolume = require("@game/ReplicatedStorage/struct/geometry/CubeVolume")
 
-const class: declare.aabbvolume = CubeVolume:new({
+const class: dgeometry.aabbvolume = CubeVolume:new({
 	type = "aabbvolume",
 
 	half = vector.zero,
 	min = vector.zero,
 	max = vector.zero,
 
-	is_inside = function(self: declare.aabbvolume, ...: declare.geometry_supported): boolean
+	is_inside = function(self: dgeometry.aabbvolume, ...: dgeometry.geometry_supported): boolean
 		for _, v in table.freeze { ... } :: { any } do
-			if typeof(v) == declare.roblox.Instance then
+			if typeof(v) == dgeometry.roblox.Instance then
 				const rbx_instance = v :: Instance
 
 				if rbx_instance:IsA("Model") or rbx_instance:IsA("BasePart") then
@@ -21,7 +22,7 @@ const class: declare.aabbvolume = CubeVolume:new({
 					end
 				end
 			elseif self:equals(v) then
-				const aabbvolume = v :: declare.aabbvolume
+				const aabbvolume = v :: dgeometry.aabbvolume
 
 				if not (
 						self.min.x <= aabbvolume.min.x
@@ -35,19 +36,19 @@ const class: declare.aabbvolume = CubeVolume:new({
 					return false
 				end
 			elseif self.is(v, "cubevolume") then
-				const cubevolume = v :: declare.cubevolume
+				const cubevolume = v :: dgeometry.cubevolume
 
 
 			elseif self.is(v, "capsulevolume") then
-				const capsulevolume = v :: declare.capsulevolume
+				const capsulevolume = v :: dgeometry.capsulevolume
 
 
 			elseif self.is(v, "trianglevolume") then
-				const trianglevolume = v :: declare.trianglevolume
+				const trianglevolume = v :: dgeometry.trianglevolume
 
 
 			elseif self.is(v, "spherevolume") then
-				const spherevolume = v :: declare.spherevolume
+				const spherevolume = v :: dgeometry.spherevolume
 
 
 			else
@@ -61,7 +62,7 @@ const class: declare.aabbvolume = CubeVolume:new({
 		return true
 	end,
     
-	is_interacts = function(self: declare.aabbvolume, ...: declare.geometry_supported): boolean
+	is_interacts = function(self: dgeometry.aabbvolume, ...: dgeometry.geometry_supported): boolean
         for _, v in table.freeze({ ... }) :: { any } do
 			if not self:is_inside(v) and not self:is_intersection(v) then
                 return false
@@ -71,13 +72,13 @@ const class: declare.aabbvolume = CubeVolume:new({
         return true
     end,
 
-	is_intersection = function(self: declare.aabbvolume, ...: declare.geometry_supported): boolean end,
+	is_intersection = function(self: dgeometry.aabbvolume, ...: dgeometry.geometry_supported): boolean end,
 
-	from = function(self: declare.aabbvolume, ...: declare.geometry_supported): declare.aabbvolume end,
+	from = function(self: dgeometry.aabbvolume, ...: dgeometry.geometry_supported): dgeometry.aabbvolume end,
 
-	middle = function(self: declare.aabbvolume, ...: declare.geometry_supported): declare.aabbvolume end,
+	middle = function(self: dgeometry.aabbvolume, ...: dgeometry.geometry_supported): dgeometry.aabbvolume end,
 
-	cover = function(self: declare.aabbvolume, ...: declare.geometry_supported): declare.aabbvolume end,
+	cover = function(self: dgeometry.aabbvolume, ...: dgeometry.geometry_supported): dgeometry.aabbvolume end,
 })
 
 return class

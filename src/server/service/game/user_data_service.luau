@@ -6,7 +6,7 @@ const UserDataRequire = require("@game/ReplicatedStorage/enums/require/UserDataR
 const declare = require("@game/ReplicatedStorage/static/declare")
 const project = require("@game/ReplicatedStorage/static/project")
 const SoulRequire = require("@game/ServerStorage/enums/require/SoulRequire")
-const dgame = require("@game/ServerStorage/static/dgame")
+const dgame = require("@game/ReplicatedStorage/static/dgame")
 
 const private = {}
 const class = Service:new({

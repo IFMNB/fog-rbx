@@ -1,5 +1,6 @@
 --!strict
 const declare = require("@game/ReplicatedStorage/static/declare")
+const dgeometry = require("@game/ReplicatedStorage/static/dgeometry")
 
 export type soul = declare.construct<{
     read get_unit: (self: soul) -> unit?,
@@ -9,14 +10,11 @@ export type soul = declare.construct<{
 }, declare.user<>>
 
 export type unit = declare.construct<{
-
-
-    can_equip_items: boolean,
-
+    equip_items: boolean,
     speed: number,
     health: number,
 
-    read get_volume: (self: unit) -> declare.cubevolume,
+    read get_volume: (self: unit) -> dgeometry.cubevolume,
 
     read get_description: (self: unit) -> unitdescription,
     read set_description: (self: unit, to: unitdescription) -> (),
@@ -28,6 +26,13 @@ export type unit = declare.construct<{
     read get_inventory: (self: unit) -> inventory,
     read set_inventory: (self: unit, to: inventory?) -> ()
 } & declare.stateable<unit, enumitem_unit_state>, declare.node<PVInstance>>
+
+export type robloxian = declare.construct<{
+
+    read get_bodypart: (self: robloxian, of: enumitem_bodypart_variant) -> declare.reference<Model?>,
+    
+
+}, unit>
 
 export type unitdescription = declare.construct<{
 
@@ -126,6 +131,16 @@ export type enum_item_notification = declare.construct<{
     read Unequipped: enumitem_item_notification, -- -> inventory
 }, declare.enumobject>
 
+export type enumitem_bodypart_variant = declare.enumitem<enum_bodypart_variant>
+export type enum_bodypart_variant = declare.construct<{
+    read Head: enumitem_bodypart_variant,
+    read ArmL: enumitem_bodypart_variant,
+    read ArmR: enumitem_bodypart_variant,
+    read LegL: enumitem_bodypart_variant,
+    read LegR: enumitem_bodypart_variant,
+    read Torso: enumitem_bodypart_variant
+}, declare.enumobject>
+
 export type enumitem_weapon_notification = declare.enumitem<enum_weapon_notification>
 export type enum_weapon_notification = declare.construct<{
     read Shoot: enumitem_item_notification,
@@ -159,6 +174,12 @@ export type enum_weapon_variant = declare.construct<{
     read Ray: enumitem_weapon_variant,
     read Shell: enumitem_weapon_variant,
     read Zone: enumitem_weapon_variant,
+}, declare.enumobject>
+
+export type enumitem_channel_variant = declare.enumitem<enum_channel_variant>
+export type enum_channel_variant = declare.construct<{
+    read Inputs: enumitem_channel_variant,
+    read Menu: enumitem_channel_variant,
 }, declare.enumobject>
 
 export type enumitem_subaction_variant = declare.enumitem<enum_subaction_variant>

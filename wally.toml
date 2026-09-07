@@ -19,6 +19,8 @@ Konsole = "kyrorblx/konsole@0.1.11" # Console manager
 Cryptography = "daily3014/cryptography@1.5.0" # Security/Hash
 Squash = "data-oriented-house/squash@5.0.0" # Buffer/Ser
 SAT = "ifmnb/algorithm-sat@2609.7.0"
+ArrayBuffer = "ifmnb/array-buffer@2609.7.1"
+ECSB = "ifmnb/algorithm-ecsb@2609.7.0"
 
 [server-dependencies]
 ProfileStore = "lm-loleris/profilestore@1.0.3"

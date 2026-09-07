@@ -326,8 +326,7 @@ const class: declare.channel = Observable:new({
 
 class:host(function(new: declare.channel)
 	do
-		(new :: any).reference = Reference:new();
-		(new :: any).event = Event:new()
+		(new :: any).reference = Reference:new();		(new :: any).event = Event:new()
 	end
 
 	private.peers[new] = {}
@@ -428,9 +427,17 @@ do
 				return new_folder :: any
 			end
 		else
-			const unknown_that: any = ReplicatedStorage.shared:WaitForChild(variant.hashlink, 3)
-			if not unknown_that then
+			if project.debug and project.debug_show_channel_internal then
+				project.console_out(`trying fetch the channel base on client of \n{variant.name}\n{variant.hashlink}`)
+			end
+
+			const unknown_that: any = ReplicatedStorage.shared:FindFirstChild(variant.hashlink) or ReplicatedStorage.shared:WaitForChild(variant.hashlink, project.timeout)
+			if unknown_that == nil then
 				project.console_out_error("cannot find base on the client", variant.hashlink)
+			else
+				if project.debug and project.debug_show_channel_internal then
+					project.console_out(`found base for {variant.name}`)
+				end
 			end
 
 			return unknown_that :: rbx_type
@@ -487,9 +494,7 @@ do
 				channel.event:invoke(enumitem, ...)
 			end)
 
-			print("B")
 			maid:add_object(send_event_rbx)
-			print("A")
 
 			of.async.OnServerInvoke = function(player: Player, to: enumitem_hashlink, ...)
 				assert(type(to) == declare.string, tostring(to))

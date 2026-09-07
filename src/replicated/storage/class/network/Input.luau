@@ -100,20 +100,23 @@ class:host(function(new: declare.input)
 	table.insert(private.inputs, new)
 
 	new:subscribe(InputNotification.RelatedChanged, ConnectionVariant.Ever, function()
+		channel:set_variant(new:get_related() :: declare.enumitem_action_map_variant)
+		
 		if not new:is_network_active() then
 			return
 		end
 
-		channel:set_variant(new:get_related() :: declare.enumitem_action_map_variant)
 		channel.enabled = true
 	end)
 	new:subscribe(InputNotification.RelatedNullified, ConnectionVariant.Ever, function()
+		channel:set_variant(new:get_related())
+
+		
 		if not new:is_network_active() then
 			return
 		end
 
 		channel.enabled = false
-		channel:set_variant(new:get_related())
 	end)
 
 	new:subscribe(InputNotification.NetworkEnabled, ConnectionVariant.Ever, function()

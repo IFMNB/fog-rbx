@@ -1,28 +1,28 @@
 --!strict
 const Record = require("@game/ReplicatedStorage/class/arch/Record")
-const declare = require("@game/ReplicatedStorage/static/declare")
+const dgeometry = require("@game/ReplicatedStorage/static/dgeometry")
 
 const Triangle = require("@game/ReplicatedStorage/struct/geometry/Triangle")
 
-const class: declare.quad = Record:new({
+const class: dgeometry.quad = Record:new({
 	type = "quad",
 
 	left = Triangle:new(),
 	right = Triangle:new(),
 
-	get_center = function(self: declare.quad): vector
+	get_center = function(self: dgeometry.quad): vector
 		return (self.left:get_center() + self.right:get_center()) / 2
 	end,
 
-	get_normal_interpolated = function(self: declare.quad): vector
+	get_normal_interpolated = function(self: dgeometry.quad): vector
 		return vector.normalize((self.left:get_normal_interpolated() + self.right:get_normal_interpolated()))
 	end,
 
-	get_normal_geometric = function(self: declare.quad): vector
+	get_normal_geometric = function(self: dgeometry.quad): vector
 		return vector.normalize((self.left:get_normal_geometric() + self.right:get_normal_geometric()))
 	end,
 
-	absolute = function(self: declare.quad): declare.quad
+	absolute = function(self: dgeometry.quad): dgeometry.quad
 		const clone = self:clone()
 
 		clone.right = clone.right:absolute()
@@ -31,7 +31,7 @@ const class: declare.quad = Record:new({
 		return clone
 	end,
 
-	null = function(self: declare.quad): declare.quad
+	null = function(self: dgeometry.quad): dgeometry.quad
 		const clone = self:clone()
 
 		clone.right = clone.right:null()
@@ -40,7 +40,7 @@ const class: declare.quad = Record:new({
 		return clone
 	end,
 
-	substract = function(self: declare.quad, with: number): declare.quad
+	substract = function(self: dgeometry.quad, with: number): dgeometry.quad
 		const clone = self:clone()
 
 		clone.right = clone.right:substract(with)
@@ -49,7 +49,7 @@ const class: declare.quad = Record:new({
 		return clone
 	end,
 
-	append = function(self: declare.quad, with: number): declare.quad
+	append = function(self: dgeometry.quad, with: number): dgeometry.quad
 		const clone = self:clone()
 
 		clone.right = clone.right:append(with)
@@ -58,7 +58,7 @@ const class: declare.quad = Record:new({
 		return clone
 	end,
 
-	multiple = function(self: declare.quad, with: number): declare.quad
+	multiple = function(self: dgeometry.quad, with: number): dgeometry.quad
 		const clone = self:clone()
 
 		clone.right = clone.right:multiple(with)
@@ -67,7 +67,7 @@ const class: declare.quad = Record:new({
 		return clone
 	end,
 
-	divide = function(self: declare.quad, with: number): declare.quad
+	divide = function(self: dgeometry.quad, with: number): dgeometry.quad
 		const clone = self:clone()
 
 		clone.right = clone.right:divide(with)
@@ -76,7 +76,7 @@ const class: declare.quad = Record:new({
 		return clone
 	end,
 
-	invert = function(self: declare.quad): declare.quad
+	invert = function(self: dgeometry.quad): dgeometry.quad
 		const clone = self:clone()
 
 		clone.right = clone.right:invert()
@@ -85,7 +85,7 @@ const class: declare.quad = Record:new({
 		return clone
 	end,
 
-	normalize = function(self: declare.quad): declare.quad
+	normalize = function(self: dgeometry.quad): dgeometry.quad
 		const clone = self:clone()
 
 		clone.right = clone.right:normalize()
@@ -94,7 +94,7 @@ const class: declare.quad = Record:new({
 		return clone
 	end,
 
-	infinity = function(self: declare.quad): declare.quad
+	infinity = function(self: dgeometry.quad): dgeometry.quad
 		const clone = self:clone()
 
 		clone.right = clone.right:infinity()

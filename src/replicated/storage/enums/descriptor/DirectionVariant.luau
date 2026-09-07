@@ -3,8 +3,9 @@
 const EnumObject = require("@game/ReplicatedStorage/class/arch/EnumObject")
 const EnumItem = require("@game/ReplicatedStorage/class/arch/EnumItem")
 const declare = require("@game/ReplicatedStorage/static/declare")
+const dgeometry = require("@game/ReplicatedStorage/static/dgeometry")
 
-const class: declare.enum_direction_variant = EnumObject:new({
+const class: dgeometry.enum_direction_variant = EnumObject:new({
 	name = script.Name,
 
 	Up = EnumItem:new() :: declare.enumitem<any>,
