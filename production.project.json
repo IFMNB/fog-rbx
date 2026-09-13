@@ -15,14 +15,7 @@
         },
 
         "shared": {
-          "$path": "src/replicated/shared",
-          
-          "dev_dependency": {
-            "$path": "DevPackages"
-          },
-          "CI": {
-            "$path": "CI"
-          }
+          "$path": "src/replicated/shared"
         }
     },
 
@@ -31,10 +24,7 @@
     },
 
     "ServerScriptService": {
-        "$path": "src/server/service",
-        "$properties": {
-          "LoadStringEnabled": true
-        }
+        "$path": "src/server/service"
 
     },
 

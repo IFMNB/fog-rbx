@@ -1,0 +1,16 @@
+{
+  "rojoProject": "./default.project.json",
+  "test": {
+    "projects": [
+      {
+        "test": {
+          "displayName": "CI",
+          "include": [
+            "CI/**/*.spec.luau",
+            "CI/**/*.test.luau"
+          ]
+        }
+      }
+    ]
+  }
+}
