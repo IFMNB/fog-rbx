@@ -10,10 +10,6 @@
           "$path": "Packages"
         },
 
-        "git_dependency": {
-          "$path": "GitPackages"
-        },
-
         "shared": {
           "$path": "src/replicated/shared",
           
