@@ -1,0 +1,65 @@
+name: Change Request
+description: Propose a change to existing behavior or API
+title: "[Change]: "
+labels:
+  - change
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form when an existing behavior, API, architecture, or design
+        should be changed.
+
+  - type: textarea
+    id: current
+    attributes:
+      label: Current behavior
+      description: What does the project do today?
+      placeholder: Describe the current behavior or API.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Proposed change
+      description: What should change?
+      placeholder: Describe the desired behavior or API.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reason
+    attributes:
+      label: Motivation
+      description: Why should this change be made?
+      placeholder: Explain the technical or practical reason.
+    validations:
+      required: true
+
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility
+      description: Describe potential breaking changes or migration requirements.
+      placeholder: |
+        None, or describe what would break and how users could migrate.
+
+  - type: textarea
+    id: api
+    attributes:
+      label: API changes
+      description: If this changes a public API, show the current and proposed API.
+      render: lua
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: What alternative solutions were considered?
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Add benchmarks, references, examples, or other relevant information.

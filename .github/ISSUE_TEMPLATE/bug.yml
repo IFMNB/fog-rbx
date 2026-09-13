@@ -1,0 +1,76 @@
+name: Bug Report
+description: Report a reproducible problem
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please provide enough information to reproduce the problem.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened?
+      placeholder: Describe the problem clearly.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Provide the minimal steps or code required to reproduce the problem.
+      placeholder: |
+        1. Create ...
+        2. Call ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Errors and logs
+      description: Include relevant errors, stack traces, output, or screenshots.
+      render: text
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Which project or package version are you using?
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: input
+    id: roblox
+    attributes:
+      label: Roblox version
+      description: Roblox Studio/client version, if relevant.
+      placeholder: "Roblox Studio 0.XXX.XXX"
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Add anything else that may help diagnose the problem.

@@ -1,0 +1,47 @@
+name: Feature Request
+description: Propose new functionality
+title: "[Request]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the functionality you would like to see added.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem would this feature solve?
+      placeholder: Describe the use case or limitation.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What would you like to add?
+      placeholder: Describe the expected behavior or API.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: What alternatives or workarounds have you considered?
+
+  - type: textarea
+    id: api
+    attributes:
+      label: API proposal
+      description: If applicable, show what the API could look like.
+      render: lua
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add examples, references, or other relevant information.
