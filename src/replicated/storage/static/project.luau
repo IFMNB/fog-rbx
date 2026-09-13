@@ -64,36 +64,29 @@ type console_out_type = never
 function project.console_out_error(...: unknown): console_out_type
 	if project.debug then
 		warn("error ", debug.traceback(), ...)
-		const run = coroutine.running()
 
-		coroutine.close(run)
+		if not coroutine.isyieldable() then
+			error "cannot close current coroutine, so we just trying to KILL IT"
+		else
+			coroutine.yield()
+		end
 	else
 		warn("error ", debug.traceback())
 	end
 end
 
-function project.run (f: ((...any) -> any)|thread|unknown, ...)
-	const T = type(f)
-
-	if T == "function" then
-		(f :: (...any) -> ())(...)
-		return 3
-	elseif T == "thread" then
-		if project.use_immediately_notifications_emitter then
-			coroutine.resume(f :: thread, ...)
-			return 2
-		elseif project.use_scheduler then
-			if project.use_deffered_emitter then
-				task.defer(f :: thread, ...)
-			else
-				task.spawn(f :: thread, ...)
-			end
-
-			return 1
+function project.assert <T> (var: T, out: string?, error: boolean?) : T
+	if error then
+		if not var then
+			project.console_out_error(out or "project assert failure")
+		end
+	else
+		if not var then
+			project.console_out(out or "project soft-assert failure")
 		end
 	end
-	
-	return 0
+
+	return var
 end
 
 

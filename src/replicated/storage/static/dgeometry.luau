@@ -160,4 +160,12 @@ export type enum_direction_variant = declare.construct<{
 }, declare.enumobject>
 
 
+export type enumitem_collision_variant = declare.enumitem<enum_collision_variant>
+export type enum_collision_variant = declare.construct<{
+    read DefaultGroup: enumitem_collision_variant,
+    read ItemGroup: enumitem_collision_variant,
+    read CharacterGroup: enumitem_collision_variant,
+    read DebrisGroup: enumitem_collision_variant,
+}, declare.enumobject>
+
 return declare

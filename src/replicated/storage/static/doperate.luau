@@ -25,13 +25,4 @@ export type maybe = declare.construct<{
 	read exist: (self: maybe, it: unknown) -> boolean,
 }, declare.runtimeobject>
 
-export type randentity = declare.construct<{
-	input: unknown,
-	output: randentity?,
-
-	read get_now: (self: randentity, prebake: boolean?) -> randentity,
-	read to_sha256: (self: randentity) -> (),
-	read to_blake3: (self: randentity) -> (),
-}, declare.runtimeobject>
-
 return declare

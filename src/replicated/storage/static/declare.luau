@@ -9,7 +9,7 @@ export type construct<T = {}, U = object> = T & U
     _luau_print<T> where T : any - крашит ТС + выводит json rpc
     _luau_ice - крашит ТС
     _luau_blocked_type - сводит тип к never magic subtype *blocked-type* и игнорирует
-    _luau_force_constraint_solving_incomplete - 
+    _luau_force_constraint_solving_incomplete - солвер перестает работать
 ]]
 
 export type instanceable<T = {},U = Instance> = {
@@ -47,7 +47,7 @@ export type reloadable<T = unknown, U... = ()> = {
     read reload: (self: T, U...) -> ()
 }
 
-export type switchable<T = unknown> = {
+export type switchable = {
     enabled: boolean
 }
 
@@ -62,16 +62,12 @@ export type asyncable = {
 export type stateable <T = unknown, U = unknown> = {
     read get_state_machine: (self: T) -> statemachine<U>
 }
-export type channel_internal_reference = Folder & {
-    read send: RemoteEvent,
-    read await: RemoteFunction,
-    read async: RemoteFunction,
-    read build: RemoteFunction
-}
 
-export type observer_pack <T = unknown> = ((identity: object_identity)->())|thread|observer<T>|string
+export type observer_pack <T = unknown> = ((...any)->())|thread|observer<T>
+export type observer_notification_var <T = enumitem<any>> = T|{T|enumobject}|{enumobject}|enumobject|{T}
 
 export type remote_identity = string
+export type object_type = string
 export type parallel_identity = unknown
 export type unit_identity = unknown
 export type user_identity = unknown
@@ -82,19 +78,18 @@ export type object = {
 	read identity: object_identity,
     
     read new: <T,U> (self: T, that: U?) -> construct<T,U>,
-    read renew: <T> (self: T, that: --[=[*based-on-base-object*]=] {[unknown]: unknown}?) -> construct<T, {}>,
-    read equals: (this: unknown, that: any) -> boolean,
-    read is: (self: unknown, that: string) -> boolean,
+    read equals: (this: unknown, otype: object_type ) -> boolean,
+    read is: (self: unknown, otype: object_type) -> boolean,
     read base: <T> (self: unknown, expected: string|nil) -> T?,
     read host: <T> (self: unknown, f: (new: T) -> ()) -> (),
-    read rebuild: <T> (self: T, that: {[unknown]: unknown}) -> T,
-    read require: <T> (identity: object_identity, assert: string?) -> T
+    read require: <T> (identity: object_identity, assert: string?) -> T,
+    read as: <T> (self: unknown, otype: object_type) -> T
 }
 
 export type enumobject = construct<{
     read get_enums_list: (self: enumobject) -> {[unknown]: enumitem},                        
     read get_enums_count: (self: enumobject) -> number,
-    read get_enums_name: (...enumitem) -> ...string,
+    read get_enums_name: (self: enumobject, ...enumitem) -> ...string?,
     read get_enumitem_by_hashlink: (hashlink: string) -> enumitem<>,
     read assert_is_my_enumitem: (self: enumobject, that: unknown) -> boolean,
     read is_my_enumitem: (self: enumobject, that: enumitem) -> boolean,
@@ -105,61 +100,102 @@ export type enumitem<T = enumobject?> = construct<{
     read enum: T,
 } & nameable, object>
 
-export type runtimeobject = construct<{
-    read get_creation_time: (self: runtimeobject) -> DateTime,
-    read get_dependencies: (self: runtimeobject) -> {unknown},
-    read add_dependency: (self: runtimeobject, obj: unknown) -> (),
-    read rem_dependency: (self: runtimeobject, obj: unknown) -> ()
+export type variant<T = unknown> = construct<{
+    read tvalue: string,
+    read value: unknown,
+
+    read is_tval: (self: variant<T>, tval_type: string) -> boolean
 }, object>
 
-export type notification<T = enumitem<any>> = construct<{} & expected_calltype<T>, runtimeobject>
+export type runtimeobject = construct<{
+    read get_creation_time: (self: runtimeobject) -> DateTime,
 
-export type package<T = enumitem<any>, U = unknown> = construct<{
-    read pack: {U}, -- #11
-}, notification<T>>
+    read get_dependencies: (self: runtimeobject) -> {[number|unknown]: unknown},
+    read get_dependency: (self: runtimeobject, label: unknown) -> unknown,
+    read add_dependency: (self: runtimeobject, obj: unknown, label: unknown?) -> (),
+    read rem_dependency: (self: runtimeobject, obj: unknown, label: unknown?) -> ()
+}, object>
 
-
-
-
-export type observer<T = enumitem<any>> = construct<{
-    read subscribe: (self: observer<T>, on: T|{T}|enumobject, mode: enumitem_connection_variant, ...observer_pack<T>) -> () -> (),
-    read notice: (self: observer<T>, on: package<{T}|T, package<enumitem_connection_variant, observer_pack<T>>>) -> () -> (),
-    read notificate: (self: observer<T>, notification: T|{T}|notification<T|{T}>) -> (),
+export type pointer<T = unknown> = construct<{
+    read get_pointed: (self: pointer<T>) -> T,
+    read set_point: (self: pointer<T>, to: T, hard: boolean?) -> (),
+    read is_pointed_hard: (self: pointer<T>) -> boolean,
+    read is_pointed_exists: (self: pointer<T>) -> boolean,
 }, runtimeobject>
 
-export type user<T = enumitem> = construct<{
-    read uid: number,
-    
-    read request_data: <T...> (self: user<T>, of: enumitem_user_data_require|T) -> userdata<T...>,
-    read get_local_user: () -> user<T>,
-    read get_player: (self: user<T>) -> reference<Player?>,
-    read get_config: (self: user<T>) -> userconfig
-}, observer>
+export type path<T = Instance> = construct<{
+    read set_path: (self: path<T>, to: T) -> (),
+    read get_path: (self: path<T>) -> string,
+    read get_object: (self: path<T>) -> T
+}, runtimeobject>
 
-export type userconfig = construct<{
-    read get_map: (self: userconfig) -> {[enumitem_action_map_variant]: {Enum.KeyCode}},
-    read get_last_changed: (self: userconfig) -> (enumitem_operation_variant, enumitem_action_map_variant|enumitem_default_variant, Enum.KeyCode),
-    read insert_item: (self: userconfig, item: enumitem_action_map_variant, to: Enum.KeyCode) -> (),
-    read remove_item: (self: userconfig, item: enumitem_action_map_variant, to: Enum.KeyCode) -> (),
-    read is_exists: (self: userconfig, item: enumitem_action_map_variant, to: Enum.KeyCode) -> boolean,
-}, observer<enumitem_operation_variant>>
+export type observer<T = enumitem<any>|enumobject> = construct<{
+    deffered_call: boolean,
+    deffered_mode: boolean,
+    allow_new_connections: boolean,
+
+    read subscribe: (self: observer<T>, on: observer_notification_var<T>, mode: enumitem_connection_variant, ...observer_pack<T>) -> ...pointer,
+    read unsubscribe: (self: observer<T>, ...pointer) -> (),
+    read subscription: (self: observer<T>, operation: enumitem_observer_setting_variant, ...pointer) -> (),
+    read get_mode_of: (self: observer<T>, ...pointer) -> ...enumitem_connection_variant,
+
+    read notificate: (self: observer<T>, notification: observer_notification_var<T>, ...unknown) -> (),
+}, runtimeobject>
+
+export type user<T = enumitem<any>> = construct<{
+    read uid: number,
+
+    read get_inlined: (self: user<T>, uid: number) -> user<T>, 
+    read get_player: (self: user<T>) -> Player?,
+    read get_reference: (self: user<T>) -> reference<Player>,
+    read get_configurated: <Y> (self: user<T>, of: enumitem<any>) -> variant<Y>,
+    read get_joined_at: (self: user<T>) -> DateTime,
+    read get_last_seen_at: (self: user<T>) -> DateTime?,
+    read get_last_server_id: (self: user<T>) -> string?,
+    read get_permissions: (self: user<T>) -> {enumitem<any>},
+    read get_restrictions: (self: user<T>) -> {enumitem<any>},
+
+    read set_configurated: <Y> (self: user<T>, of: enumitem<any>, ...unknown) -> (),
+    read set_permissions: (self: user<T>, to: boolean, ...enumitem<any>) -> (),
+    read set_restrictions: (self: user<T>, to: boolean, ...enumitem<any>) -> (),
+    read set_platform: (self: user<T>, to: boolean, ...enumitem_user_machine_variant) -> (),
+
+    read has_platform: (self: user<T>, ...enumitem_user_machine_variant) -> boolean,
+    read has_restricitions: (self: user<T>, ...enumitem<any>) -> ...boolean,
+    read has_permissions: (self: user<T>, ...enumitem<any>) -> ...boolean,
+
+    read is_banned: (self: user<T>) -> boolean,
+    read is_kicked: (self: user<T>) -> boolean,
+    read is_out: (self: user<T>) -> boolean,
+    read is_in_place: (self: user<T>) -> boolean,
+    read is_in_server: (self: user<T>) -> boolean,
+}, observer<enumitem_user_notification>>
+
+export type localuser = construct<{
+    read uid: number,
+    read get_player: (self: localuser) -> Player,
+
+    read require_get_configuration: (self: localuser, of: enumitem<any>) -> result,
+    read require_save_configuration: (self: localuser, of: enumitem<any>, ...unknown) -> (),
+
+    read get_user: (self: localuser) -> user,
+}, runtimeobject>
 
 export type event<T = enumitem<any>, U... = ...unknown> = construct<{
-    read connect: <T0> (self: event<T,U...>, on: T|enumitem_default_variant, f: ((U...) -> ())|thread|observer<T>) -> connection<T,U...>,
-    read once: <T0> (self: event<T,U...>, on: T|enumitem_default_variant, f: ((U...) -> ())|thread|observer<T>) -> connection<T,U...>,
-    read wait: (self: event<T,U...>, on: T|enumitem_default_variant) -> U...,
-    read invoke: (self: event<T,U...>, on: T|{T}|notification<T|{T}>, U...) -> (),
-    read link: (self: event<T,U...>, that: connection<T,U...>) -> (),
-    read unlink: (self: event<T,U...>, that: connection<T, U...>) -> ()
+    read connect: <T0> (self: event<T,U...>, on: observer_notification_var<T>, f: ((U...) -> ())|thread|observer<T>) -> connection<T,U...>,
+    read once: <T0> (self: event<T,U...>, on: observer_notification_var<T>, f: ((U...) -> ())|thread|observer<T>) -> connection<T,U...>,
+    read wait: (self: event<T,U...>, on: observer_notification_var<T>) -> U...,
+    read invoke: (self: event<T,U...>, on: observer_notification_var<T>, U...) -> (),
 } & expected_calltype<T?>, observer<T>> 
 
 export type connection<T = enumitem<any>, U... = ()> = construct<{
-    state: enumitem_connection_variant,
     count: number,
 
+    read get_mode: (self: connection<T, U...>) -> enumitem_connection_variant,
+    read set_mode: (self: connection<T, U...>, mode: enumitem_connection_variant) -> (),
+    
+    read is_connected: (self: connection<T,U...>) -> boolean,
     read disconnect: (self: connection<T,U...>) -> (),
-    read link: (self: connection<T,U...>, that: event<T,U...>) -> (),
-    read unlink: (self: connection<T,U...>, that: event<T, U...>) -> ()
 } & invokeable<connection<T,U...>,U...> & expected_calltype<T>,
 observer<T|enumitem_connection_variant|enumitem_setup_notification|enumitem_action_notification>>
 
@@ -182,9 +218,6 @@ export type reference<T = Instance> = construct<{
 } & instanceable<reference<T>, T>, observer<enumitem_reference_notification>>
 
 export type channel <T = enumitem_network_replication, U... = ...unknown, E... = ...unknown> = construct<{
-    read reference: reference<channel_internal_reference?>,
-    read event: event<T,E...>,
-
     everyone: boolean,
     echo: boolean,
 
@@ -192,25 +225,29 @@ export type channel <T = enumitem_network_replication, U... = ...unknown, E... =
     read sync: (self: channel<T,U...,E...>, to: T, U...) -> {[user]: (() -> E...)?},
     read async: (self: channel<T,U...,E...>, to: T, U...) -> {[user]: (() -> E...)?},
 
-    read set_sync_response: (self: channel<T,U...,E...>, to: T, f: ((U...) -> E...)? ) -> (),
+    read get_transport: (self: channel<T,U...,E...>) -> enumitem_network_replication?,
+    read get_current_interrogator: (self: channel<T,U...,E...>) -> user?,
+    read get_send_response: (self: channel<T,U..., E...>) -> event<T,E...>,
     read get_sync_response: (self: channel<T,U...,E...>, to: T) -> ((U...) -> E...)?,
-
-    read set_async_response: (self: channel<T,U...,E...>, to: T, f: ((U...) -> object)?) -> (),
     read get_async_response: (self: channel<T,U...,E...>, to: T) -> ((U...) -> object)?,
-
     read get_peer: (self: channel<T,U...,E...>) -> {user},
-    read set_peer: (self: channel<T,U...,E...>, of: user, to: boolean?) -> (),
-    read is_peer: (self: channel<T,U...,E...>, of: user) -> boolean,
-    read request_from: (self: channel<T,U...,E...>) -> user?,
 
-    read get_variant: (self: channel<T,U...,E...>) -> enumitem_network_replication?,
-    read set_variant: (self: channel<T,U...,E...>, to: enumitem_network_replication?) -> (),
-    read is_variant: (self: channel<T,U..., E...>, of: enumitem_network_replication) -> boolean
-} & asyncable & switchable<channel<T,U...,E...>>, observer<enumitem_channel_notification>>
+    read set_transport: (self: channel<T,U...,E...>, to: enumitem_network_replication?) -> (),
+    read set_sync_response: (self: channel<T,U...,E...>, to: T, f: ((U...) -> E...)? ) -> (),
+    read set_async_response: (self: channel<T,U...,E...>, to: T, f: ((U...) -> object)?) -> (),
+    read set_peer: (self: channel<T,U...,E...>, of: user, to: boolean?) -> (),
+
+    read is_peer: (self: channel<T,U...,E...>, of: user) -> boolean,
+    read is_transport: (self: channel<T,U..., E...>, of: enumitem_network_replication) -> boolean
+} & asyncable & switchable, observer<>>
+
+export type answer <T = enumitem<any>, U... = ...unknown> = construct<{
+    read get_answer_of: (self: answer<T>, peer: user|localuser) -> result<unknown, U...>,
+    read set_answer_of: (self: answer<T>, peer: user|localuser, to: {unknown}) -> ()
+} & expected_calltype<T|enumitem_default_variant>, runtimeobject>
+
 
 export type signal<T... = ...unknown> = construct<{
-
-
     read get_signal_event: (self: signal<T...>) -> event<enumitem_action_notification, T...>
 }, reference<RBXScriptSignal<T...>>>
 
@@ -262,7 +299,10 @@ export type node<T = Instance, U = enumitem<any>> = construct<{
     read get_dependents: (self: node<T,U>, like: object) -> {object}
 } & referenceable<node<T,U>,T?> , disposable<U>>
 
-
+export type graphnode = construct<{
+    read get_parent: (self: graphnode) -> Instance?,
+    read set_parent: (self: graphnode, parent: Instance|reference|node|graphnode) -> ()
+} & nameable, node<Folder>>
 
 export type executor<T = enumitem<any>> = construct<{
     last_delta: number,
@@ -291,37 +331,19 @@ export type input<T = enumitem<any>> = construct<{
     read set_related: (self: input<T>, new: enumitem_action_map_variant|T?) -> (),
     read set_network: (self: input<T>, to: boolean) -> (),
     read is_network_active: (self: input<T>) -> boolean
-} & switchable<input<T>> & invokeable<input<T>>, disposable<enumitem_input_notification>>
+} & switchable & invokeable<input<T>>, disposable<enumitem_input_notification>>
 
-
-
-
-export type pickup <T = enumitem<any>> = construct<{
-
-    dropable: boolean,
-    pickable: boolean,
-    read time: value<number>,
-    read distance: value<number>,
-
-    read show_pickup: (self: pickup<T>, set: boolean?) -> (),
-    
-    read get_last_interacted: (self: pickup<T>) -> object? -- unit
-}, node<PVInstance, T|enumitem_pickup_notification>>
-
-export type config<T = unknown, U = enumitem_config_require> = construct<{
-
+export type config<T = unknown, U = enumitem> = construct<{
     related: U,
     auto_updateable: boolean,
 
     read update_to_newest: (self: config<T>) -> ()
 }, value<T>>
 
-export type service<T = enumitem<any>> = construct<{
-
-    read code: T,
-
+export type service = construct<{
+    read code: enumitem<>,
     read log: (self: service, ...any) -> (),
-} & switchable<service<T>> & nameable, runtimeobject>
+} & switchable & nameable, runtimeobject>
 
 export type record = construct<{
 
@@ -341,14 +363,6 @@ export type result<T = unknown, U... = ...unknown> = construct<{
 
     read unpack: (self: result<T,U...>) -> U...
 }, record>
-
-export type userdata<U... = ...unknown> = construct<{
-
-    read of: enumitem_user_data_require
-
-}, result<{unknown}, U...>>
-
-
 
 export type enumitem_default_variant = enumitem<enum_default_variant>
 export type enum_default_variant = construct<{
@@ -382,6 +396,14 @@ export type enum_state = construct<{
     read Loading: enumitem_state,
     read Successful: enumitem_state,
     read Nothing: enumitem_state,
+}, enumobject>
+
+export type enumitem_user_machine_variant = enumitem<enum_user_machine_variant>
+export type enum_user_machine_variant = construct<{
+    read Computer: enumitem_user_machine_variant,
+    read Mobile: enumitem_user_machine_variant,
+    read Console: enumitem_user_machine_variant,
+    read AnotherDevice: enumitem_user_machine_variant,
 }, enumobject>
 
 export type enumitem_controller_state = enumitem<enum_controller_state>
@@ -422,37 +444,9 @@ export type enum_attribute_notification = construct<{
 export type enumitem_setup_notification = enumitem<enum_setup_notification>
 export type enum_setup_notification = construct<{
     read Install: enumitem_setup_notification,
-    read Installed: enumitem_setup_notification
-}, enumobject>
-
-export type enumitem_pickup_notification = enumitem<enum_pickup_notification>
-export type enum_pickup_notification = construct<{
-    read PickedUp: enumitem_pickup_notification,
-    read Dropped: enumitem_pickup_notification,
-    read Shown: enumitem_pickup_notification,
-    read Hidden: enumitem_pickup_notification,
-    read Touch: enumitem_pickup_notification,
-}, enumobject>
-
-export type enumitem_collision_variant = enumitem<enum_collision_variant>
-export type enum_collision_variant = construct<{
-    read DefaultGroup: enumitem_collision_variant,
-    read ItemGroup: enumitem_collision_variant,
-    read CharacterGroup: enumitem_collision_variant,
-    read DebrisGroup: enumitem_collision_variant,
-}, enumobject>
-
-export type enumitem_type_element_variant = enumitem<enum_type_element_variant>
-export type enum_type_element_variant  = construct<{
-    read Getter: enumitem_type_element_variant,
-    read Setter: enumitem_type_element_variant,
-    read Toggler: enumitem_type_element_variant,
-    read Switcher: enumitem_type_element_variant,
-
-    read LazyEvent: enumitem_type_element_variant,
-    read LazyValue: enumitem_type_element_variant,
-    read LazyObject: enumitem_type_element_variant,
-    read NonElement: enumitem_type_element_variant,
+    read Installed: enumitem_setup_notification,
+    read Require: enumitem_setup_notification,
+    read Disconnected: enumitem_setup_notification
 }, enumobject>
 
 export type enumitem_action_notification = enumitem<enum_action_notification>
@@ -461,7 +455,7 @@ export type enum_action_notification = construct<{
     read Step: enumitem_action_notification,
     read Emit: enumitem_action_notification,
     read Unobservable: enumitem_action_notification,
-    read Observable: enumitem_action_notification,
+    read Observer: enumitem_action_notification,
 }, enumobject>
 
 export type enumitem_asset_type_variant = enumitem<enum_asset_type_variant>
@@ -471,27 +465,35 @@ export type enum_asset_type_variant = construct<{
 	read Image: enumitem_asset_type_variant,
 }, enumobject>
 
+
+export type enumitem_observer_setting_variant = enumitem<enum_observer_setting_variant>
+export type enum_observer_setting_variant = construct<{
+    read ChangeModeToOnce: enumitem_observer_setting_variant,
+    read ChangeModeToEver: enumitem_observer_setting_variant,
+    read ChangeModeToSkip: enumitem_observer_setting_variant,
+    read ChangeModeToNext: enumitem_observer_setting_variant
+}, enumobject>
+
 export type enumitem_user_data_require = enumitem<enum_user_data_require>
 export type enum_user_data_require = construct<{
-    read Stats: enumitem_user_data_require,
-    read Profile: enumitem_user_data_require,
+    read UserProfile: enumitem_user_data_require,
+
+    read UserLastDataSave: enumitem_user_data_require,
+    read UserLastDataRequest: enumitem_user_data_require,
+    read UserPlayedTime: enumitem_user_data_require,
+    read UserLastEnter: enumitem_user_data_require,
+    read UserPreviousKick: enumitem_user_data_require,
+    read UserPreviousBan: enumitem_user_data_require
 }, enumobject>
 
 
-export type enumitem_config_require = enumitem<enum_config_require>
-export type enum_config_require = construct<{
-    
-}, enumobject>
-
-export type enumitem_channel_notification = enumitem<enum_channel_notification>
-export type enum_channel_notification = construct<{
-    read AsyncChanged: enumitem_channel_notification,
-    read AsyncRemoved: enumitem_channel_notification,
-    read AwaitChanged: enumitem_channel_notification,
-    read AwaitRemoved: enumitem_channel_notification,
-    read PeerAdded: enumitem_channel_notification,
-    read PeerRemoved: enumitem_channel_notification,
-    read VariantChanged: enumitem_channel_notification
+export type enumitem_user_notification = enumitem<enum_user_notification>
+export type enum_user_notification = construct<{
+    read ServerJoin: enumitem_user_notification,
+    read ServerExit: enumitem_user_notification,
+    read ServerBan: enumitem_user_notification,
+    read ServerKick: enumitem_user_notification,
+    read ServerDataRequest: enumitem_user_notification, 
 }, enumobject>
 
 export type enumitem_action_map_variant = enumitem<enum_action_map_variant>
@@ -550,6 +552,21 @@ return table.freeze {
     ["thread"] = "thread" :: "thread",
     ["userdata"] = "userdata" :: "userdata",
     ["buffer"] = "buffer" :: "buffer",
+    ["anyt"] = "anyt" :: "anyt",
+
+    is_primetive = function (t: unknown)
+        const T = type(t)
+
+        if t == "number" or t == "string" or t == "boolean" or t == "anyt" then
+            return true
+        end
+
+        if T == "number" or T == "string" or T == "boolean" or T == "anyt" then
+            return true
+        end
+
+        return false
+    end,
 
     ["roblox"] = table.freeze {
         ["AdReward"] = "AdReward" :: "AdReward",

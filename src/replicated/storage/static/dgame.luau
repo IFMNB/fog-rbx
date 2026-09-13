@@ -27,6 +27,10 @@ export type unit = declare.construct<{
     read set_inventory: (self: unit, to: inventory?) -> ()
 } & declare.stateable<unit, enumitem_unit_state>, declare.node<PVInstance>>
 
+export type ikfoot = declare.construct<{
+    
+}, declare.node<IKControl>>
+
 export type robloxian = declare.construct<{
 
     read get_bodypart: (self: robloxian, of: enumitem_bodypart_variant) -> declare.reference<Model?>,
@@ -50,6 +54,16 @@ export type unitdescription = declare.construct<{
     
 }, declare.object>
 
+export type pickup <T = declare.enumitem<any>> = declare.construct<{
+    read time: declare.value<number>,
+    read distance: declare.value<number>,
+    dropable: boolean,
+    pickable: boolean,
+
+    read show_pickup: (self: pickup<T>, set: boolean?) -> (),
+    read get_last_interacted: (self: pickup<T>) -> declare.object? -- unit
+}, declare.node<PVInstance, T|enumitem_pickup_notification>>
+
 export type inventory <T = item<declare.enumitem<any>, declare.enumitem<any>>> = declare.construct<{
 
     owner: declare.object_identity?,
@@ -65,7 +79,7 @@ export type inventory <T = item<declare.enumitem<any>, declare.enumitem<any>>> =
     read is_in_inventory: (self: inventory<T>, that: T) -> boolean,
     
     read get_owner: (self: inventory<T>) -> unit|nil
-}, declare.pickup<enumitem_inventory_notification>>
+}, pickup<enumitem_inventory_notification>>
 
 export type item <T = declare.enumitem<any>, U = declare.enumitem<any>> = declare.construct<{
 
@@ -85,7 +99,7 @@ export type item <T = declare.enumitem<any>, U = declare.enumitem<any>> = declar
     read remove_secondary_grip: (self: item<T,U>, of: declare.reference<PVInstance?>) -> (),
 
     read get_owner: (self: item<T,U>) -> inventory<any>|unit|nil
-} & declare.stateable<item<T,U>, U>, declare.pickup<enumitem_item_notification>>
+} & declare.stateable<item<T,U>, U>, pickup<enumitem_item_notification>>
 
 export type weapon = declare.construct<{
 
@@ -201,6 +215,16 @@ export type enum_subaction_variant = declare.construct<{
 
     read Say: enumitem_subaction_variant,
 }, declare.enumobject>
+
+export type enumitem_pickup_notification = declare.enumitem<enum_pickup_notification>
+export type enum_pickup_notification = declare.construct<{
+    read PickedUp: enumitem_pickup_notification,
+    read Dropped: enumitem_pickup_notification,
+    read Shown: enumitem_pickup_notification,
+    read Hidden: enumitem_pickup_notification,
+    read Touch: enumitem_pickup_notification,
+}, declare.enumobject>
+
 
 export type weaponstat = declare.construct<{
 
