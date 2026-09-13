@@ -6,18 +6,18 @@ const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/Conn
 const ActionNotification = require("@game/ReplicatedStorage/enums/notification/ActionNotification")
 const ReferenceNotification = require("@game/ReplicatedStorage/enums/notification/ReferenceNotification")
 const declare = require("@game/ReplicatedStorage/static/declare")
-
+const ftype = require("@game/ReplicatedStorage/static/ftype")
 const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
 const class : declare.signal = Reference:new <<declare.reference<RBXScriptSignal>>> {
     type = "signal",
 
-    get_signal_event = function (self: declare.signal) : declare.event<declare.enumitem_action_notification, ...unknown>
+    get_signal_event = ftype:write(function (self: declare.signal) : declare.event<declare.enumitem_action_notification, ...unknown>
         return private.maybe:extract(self, function()
             return Event:new()
         end)
-    end
+    end, "event", "signal")
 }
 
 class:host(function(new: declare.signal)

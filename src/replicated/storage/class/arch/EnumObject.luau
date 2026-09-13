@@ -4,53 +4,64 @@ const Cryptography = require("@game/ReplicatedStorage/dependency/Cryptography")
 const object = require("@game/ReplicatedStorage/object")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const project = require("@game/ReplicatedStorage/static/project")
+const EnumItem = require("@game/ReplicatedStorage/class/arch/EnumItem")
+const ftype = require("@game/ReplicatedStorage/static/ftype")
 
 const private = {}
 const class: declare.enumobject = object:new({
 	type = "enumobject",
 	name = script.Name,
 
-	get_enums_list = function<T>(self: declare.enumobject): { [unknown]: declare.enumitem }
+	get_enums_list = ftype:write(function<T>(self: declare.enumobject): { [unknown]: declare.enumitem }
 		const result: { [unknown]: declare.enumitem } = {}
 		for i, v in self :: { [string]: unknown } do
-			if object.is(v, "enumitem") then
+			if object.is(v, EnumItem.type) then
 				result[i] = v :: declare.enumitem
 			end
 		end
 
 		return result
-	end,
+	end, declare.table, "enumobject"),
 
-	get_enums_count = function(self: declare.enumobject): number
-		return #self:get_enums_list()
-	end,
+	get_enums_count = ftype:write(function(self: declare.enumobject): number
+		local count = 0
 
-	get_enums_name = function(...: declare.enumitem): ...string
+		for _, _ in self:get_enums_list() do
+			count += 1
+		end
+
+		return count
+	end, declare.number, "enumobject"),
+
+	get_enums_name = ftype:write(function(self: declare.enumobject, ...: declare.enumitem): ...string
 		const result: { string } = {}
+
 		for i, v in { ... } do
-			table.insert(result, v.name)
+			if self:is_my_enumitem(v) then
+				table.insert(result, v.name)
+			end
 		end
 
 		return unpack(result)
-	end,
+	end, ftype:var(declare.string), "enumobject", ftype:var("enumitem")),
 
-	get_enumitem_by_hashlink = function(hashlink: string): declare.enumitem
+	get_enumitem_by_hashlink = ftype:write(function(hashlink: string): declare.enumitem
 		return assert(
 			private.item_builded[hashlink],
 			"enumitem with received hashlink does not exists or loaded right now"
 		)
-	end,
+	end, "enumitem", declare.string),
 
-	is_my_enumitem = function(self: declare.enumobject, that: declare.enumitem): boolean
-		return self[that.name] ~= nil
-	end,
+	is_my_enumitem = ftype:write(function(self: declare.enumobject, that: declare.enumitem): boolean
+		return object.is(that, EnumItem.type) and self[that.name] ~= nil and that.enum == self
+	end, declare.boolean, "enumobject", "enumitem"),
 
-	assert_is_my_enumitem = function(self: declare.enumobject, that: unknown): boolean
+	assert_is_my_enumitem = ftype:write(function(self: declare.enumobject, that: unknown): boolean
 		return assert(
 			object.is(that, "enumitem") and self:is_my_enumitem(that :: declare.enumitem),
 			"received data isn't expected enumitem"
 		)
-	end,
+	end, declare.boolean, "enumobject", "enumitem"),
 })
 
 class:host(function(new: declare.enumobject)
@@ -58,8 +69,7 @@ class:host(function(new: declare.enumobject)
 		const name = tostring(i);
 
 		(v :: any).enum = new
-		v.name = name;
-		(v :: any).hashlink = Cryptography.Hashing.Blake3.Digest(buffer.fromstring(name))
+		v.name = name;		(v :: any).hashlink = Cryptography.Hashing.Blake3.Digest(buffer.fromstring(name))
 
 		if project.debug then
 			const collision = private.item_builded[v.hashlink]

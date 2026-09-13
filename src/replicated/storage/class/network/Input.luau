@@ -1,6 +1,6 @@
 --!strict
 const UserInputService = game:GetService("UserInputService")
-const Observable = require("@game/ReplicatedStorage/class/arch/Observable")
+const Observer = require("@game/ReplicatedStorage/class/arch/Observer")
 const Channel = require("@game/ReplicatedStorage/class/network/Channel")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
 const DisposableNotification = require("@game/ReplicatedStorage/enums/notification/DisposableNotification")
@@ -10,7 +10,7 @@ const declare = require("@game/ReplicatedStorage/static/declare")
 const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
-const class: declare.input = Observable:new({
+const class: declare.input = Observer:new({
 	type = "input",
 	clamped = false,
 	pressed = false,
@@ -100,8 +100,8 @@ class:host(function(new: declare.input)
 	table.insert(private.inputs, new)
 
 	new:subscribe(InputNotification.RelatedChanged, ConnectionVariant.Ever, function()
-		channel:set_variant(new:get_related() :: declare.enumitem_action_map_variant)
-		
+		channel:set_transport(new:get_related() :: declare.enumitem_action_map_variant)
+
 		if not new:is_network_active() then
 			return
 		end
@@ -109,9 +109,8 @@ class:host(function(new: declare.input)
 		channel.enabled = true
 	end)
 	new:subscribe(InputNotification.RelatedNullified, ConnectionVariant.Ever, function()
-		channel:set_variant(new:get_related())
+		channel:set_transport(new:get_related())
 
-		
 		if not new:is_network_active() then
 			return
 		end

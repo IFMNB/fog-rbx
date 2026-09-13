@@ -1,121 +1,75 @@
 --!strict
 
-const Observable = require("@game/ReplicatedStorage/class/arch/Observable")
-const Notification = require("@game/ReplicatedStorage/class/common/notification/Notification")
-const Package = require("@game/ReplicatedStorage/class/common/notification/Package")
+const Observer = require("@game/ReplicatedStorage/class/arch/Observer")
 const Connection = require("@game/ReplicatedStorage/class/common/signal/Connection")
+const SecurityRNG = require("@game/ReplicatedStorage/class/service/SecurityRNG")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
 const DefaultVariant = require("@game/ReplicatedStorage/enums/descriptor/DefaultVariant")
-const ActionNotification = require("@game/ReplicatedStorage/enums/notification/ActionNotification")
 const SetupNotification = require("@game/ReplicatedStorage/enums/notification/SetupNotification")
 const declare = require("@game/ReplicatedStorage/static/declare")
+const ftype = require("@game/ReplicatedStorage/static/ftype")
 
 const private = {}
-const class: declare.event = Observable:new({
+const class: declare.event = Observer:new({
 	type = "event",
 	on = DefaultVariant.Unknown,
 
-	connect = function(self: declare.event, on: declare.enumitem<any>?, f: declare.observer_pack): declare.connection
-		const new = Connection:new({ on = on or self.on, state = ConnectionVariant.Ever })
-		new:notificate(Package:new({ on = SetupNotification.Install, pack = { f } }))
-		self:link(new :: declare.connection<any, any>)
-		return new
-	end,
-
-	once = function(self: declare.event, on: declare.enumitem<any>?, f: declare.observer_pack): declare.connection
-		const new = Connection:new({ on = on or self.on, state = ConnectionVariant.Once })
-		new:notificate(Package:new({ on = SetupNotification.Install, pack = { f } }))
-		self:link(new :: declare.connection<any, any>)
-		return new
-	end,
-
-	wait = function(self: declare.event, on: declare.enumitem?): ...any
-		self:once((on or self.on) :: declare.enumitem, coroutine.running())
-
-		return coroutine.yield()
-	end,
-
-	link = function(self: declare.event, that: declare.connection): ()
-		const connections = private.connections[self][that.on or self.on] or {}
-		table.insert(connections, that)
-		self:notificate(Package:new({ on = ActionNotification.Observable, pack = { that } }))
-		private.connections[self][that.on] = connections
-	end,
-
-	unlink = function(self: declare.event, that: declare.connection): ()
-		const connections = private.connections[self][that.on or self.on] or {}
-		const pos = table.find(connections, that)
-
-		if pos then
-			table.remove(connections, pos)
-			self:notificate(Package:new({ on = ActionNotification.Unobservable, pack = { that } }))
-		end
-
-		private.connections[self][that.on] = connections
-	end,
-
-	invoke = function(
-		self: declare.event,
-		call: declare.enumitem<any> | { declare.enumitem<any> } | declare.notification<declare.enumitem<any> | { declare.enumitem<any> }>,
-		...
-	): ()
-		local iterate: { declare.enumitem<any> } = {}
-
-		if self.is(call, "enumitem") then
-			table.insert(iterate, call :: declare.enumitem<any>)
-		elseif self.is(call, "notification") then
-			self:invoke((call :: declare.notification<declare.enumitem<any> | { declare.enumitem<any> }>).on, ...)
-			return
-		elseif type(call) == declare.table then
-			const list = call :: { declare.enumitem<any> }
-			iterate = list
-		end
-
-		for _, v in iterate do
-			const connections = private.connections[self][v]
-			if connections then
-				for i = #connections, 1, -1 do
-					const b = connections[i] :: declare.connection<declare.enumitem, ...unknown>
-
-					if b.state == ConnectionVariant.Never then
-						continue
-					elseif b.state == ConnectionVariant.Once then
-						table.remove(connections, i)
-					elseif b.state == ConnectionVariant.Hold then
-						continue
-					elseif b.state == ConnectionVariant.Next then
-						b.state = ConnectionVariant.Ever
-						continue
-					elseif b.state == ConnectionVariant.Skip then
-						b.state = ConnectionVariant.Once
-						continue
-					end
-
-					b:invoke(...)
-				end
+	connect = ftype:write(function(self: declare.event, on: declare.enumitem<any>?, f: declare.observer_pack): declare.connection
+		const list = private.get_store(self)
+		const con = Connection:new({ on = on or self.on})
+		con:notificate(SetupNotification.Install, ConnectionVariant.Ever, f)
+		con:subscribe(SetupNotification.Disconnected, ConnectionVariant.Once, function ()
+			const pos = table.find(list, con)
+			if pos then
+				table.remove(list, pos)
 			end
-		end
+		end)
 
-		self:notificate(Notification:new({
-			on = ActionNotification.Emit,
-		}))
-	end,
+		table.insert(list, con)
+		return con
+	end, "connection", "event", ftype:opt("enumitem"), ftype:uor("observer", declare["function"], declare.thread)),
+
+	once = ftype:write(function(self: declare.event, on: declare.enumitem<any>?, f: declare.observer_pack): declare.connection
+		const list = private.get_store(self)
+		const con = Connection:new({ on = on or self.on})
+		con:notificate(SetupNotification.Install, ConnectionVariant.Once, f)
+		con:subscribe(SetupNotification.Disconnected, ConnectionVariant.Once, function ()
+			const pos = table.find(list, con)
+			if pos then
+				table.remove(list, pos)
+			end
+		end)
+
+		table.insert(list, con)
+		return con
+	end, "connection", "event", ftype:opt("enumitem"), ftype:uor("observer", declare["function"], declare.thread)),
+
+	wait = ftype:write(function(self: declare.event, on: declare.enumitem?): ...any
+		self:once((on or self.on) :: declare.enumitem, coroutine.running())
+		return coroutine.yield()
+	end, ftype:var(declare.anyt), "event", ftype:opt("enumitem")),
+
+	invoke = ftype:write(function(self: declare.event, call: declare.enumitem, ...: any): ()
+		const list = private.get_store(self)
+
+		for _, v in list do
+			v:notificate(SetupNotification.Require, call, ...)
+		end 
+	end, declare["nil"], "event", "enumitem", ftype:var_opt(declare.anyt)),
 })
 
 class:host(function(new: declare.event)
-	private.connections[new] = setmetatable({}, private.meta)
+	new:add_dependency(setmetatable({}, private.meta), private.key)
 end)
 
 do
-	type meta = { __mode: "ks" }
-	private.meta = table.freeze({ __mode = "ks" }) :: meta
+	type store = {declare.connection}
 
-	private.connections = setmetatable(
-		{} :: { [declare.event]: setmetatable<{
-			[declare.enumitem]: { declare.connection },
-		}, meta> },
-		private.meta :: meta
-	)
+	private.meta = table.freeze {__mode = "vs"}
+	private.key =  SecurityRNG:get_hash_sha256("event_store_code")
+	private.get_store = function (of: declare.event)
+		return of:get_dependency(private.key) :: store
+	end
 end
 
 return class

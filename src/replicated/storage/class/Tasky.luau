@@ -1,20 +1,20 @@
 --!strict
 const Concur = require("@game/ReplicatedStorage/dependency/Concur")
 const runtimeobject = require("@game/ReplicatedStorage/runtimeobject")
-const declare = require("@game/ReplicatedStorage/static/declare")
+const doperate = require("@game/ReplicatedStorage/static/doperate")
 
 const project = require("@game/ReplicatedStorage/static/project")
 
 type concur_instance = typeof(Concur.spawn(nil :: never))
 
 const private = {}
-const class: declare.tasky<concur_instance> = runtimeobject:new({
+const class: doperate.tasky<concur_instance> = runtimeobject:new({
 	type = "tasky",
 	attempts = 1,
 	time_to_hold = 0,
 	time_to_response = project.retry_time,
 
-	deploy = function(self: declare.tasky<concur_instance>, path: string)
+	deploy = function(self: doperate.tasky<concur_instance>, path: string)
 		assert(not private.space[self][path], "already deployed")
 
 		const thread = Concur.spawn(require, path)
@@ -44,15 +44,15 @@ const class: declare.tasky<concur_instance> = runtimeobject:new({
 		end)
 	end,
 
-	is_exists = function(self: declare.tasky<concur_instance>, path: string)
+	is_exists = function(self: doperate.tasky<concur_instance>, path: string)
 		return private.space[self][path] ~= nil
 	end,
 
-	get_existed = function(self: declare.tasky<concur_instance>, path)
+	get_existed = function(self: doperate.tasky<concur_instance>, path)
 		return private.space[self][path]
 	end,
 
-	get_online = function(self: declare.tasky<concur_instance>)
+	get_online = function(self: doperate.tasky<concur_instance>)
 		const r = {}
 
 		for i, v in private.space[self] do
@@ -64,7 +64,7 @@ const class: declare.tasky<concur_instance> = runtimeobject:new({
 		return r
 	end,
 
-	get_offline = function(self: declare.tasky<concur_instance>)
+	get_offline = function(self: doperate.tasky<concur_instance>)
 		const r = {}
 
 		for i, v in private.space[self] do
@@ -76,7 +76,7 @@ const class: declare.tasky<concur_instance> = runtimeobject:new({
 		return r
 	end,
 
-	clear = function(self: declare.tasky<concur_instance>)
+	clear = function(self: doperate.tasky<concur_instance>)
 		for _, v: any in private.space[self] do
 			if not v:IsCompleted() then
 				v:Stop()

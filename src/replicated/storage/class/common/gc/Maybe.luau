@@ -1,12 +1,14 @@
 --!strict
-const declare = require("@game/ReplicatedStorage/static/declare")
+const doperate = require("@game/ReplicatedStorage/static/doperate")
 const runtimeobject = require("@game/ReplicatedStorage/runtimeobject")
+const declare = require("@game/ReplicatedStorage/static/declare")
+const ftype = require("@game/ReplicatedStorage/static/ftype")
 
 const private = {}
-const class: declare.maybe = runtimeobject:new({
+const class: doperate.maybe = runtimeobject:new({
 	type = "maybe",
 
-	extract = function(self: declare.maybe, it: unknown, make: () -> any): any
+	extract = ftype:write(function(self: doperate.maybe, it: unknown, make: () -> any): any
 		const that = private.stored[self][it] or make()
 
 		if private.stored[self][it] == nil then
@@ -14,25 +16,25 @@ const class: declare.maybe = runtimeobject:new({
 		end
 
 		return that
-	end,
+	end, declare.anyt, "maybe", declare.anyt, declare["function"]),
 
-	exist = function(self: declare.maybe, it: unknown): boolean
+	exist = ftype:write(function(self: doperate.maybe, it: unknown): boolean
 		return private.stored[self][it] ~= nil
-	end,
+	end, declare.boolean, "maybe", declare.anyt),
 
-	erase = function(self: declare.maybe, it: unknown): ()
+	erase = ftype:write(function(self: doperate.maybe, it: unknown): ()
 		private.stored[self][it] = nil
-	end,
+	end, declare["nil"], "maybe", declare.anyt),
 })
 
-class:host(function(new: declare.maybe)
+class:host(function(new: doperate.maybe)
 	private.stored[new] = setmetatable({}, private.frozen)
 end)
 
 do
 	private.frozen = table.freeze({ __mode = "ks" })
 	private.stored = setmetatable(
-		{} :: { [declare.maybe]: setmetatable<{ [unknown]: any }, typeof(private.frozen)> },
+		{} :: { [doperate.maybe]: setmetatable<{ [unknown]: any }, typeof(private.frozen)> },
 		private.frozen
 	)
 end

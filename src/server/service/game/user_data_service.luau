@@ -17,11 +17,11 @@ const class = Service:new({
 
 do
 	private.internal = Channel:new() :: declare.channel<declare.enumitem_user_data_require|dgame.enumitem_soul_require>
-	private.internal:set_variant(InternalChannelVariant.UserData)
+	private.internal:set_transport(InternalChannelVariant.UserData)
 	private.internal.everyone = true
 
 	private.map = table.freeze({
-		[UserDataRequire.Profile] = function()
+		[UserDataRequire.UserProfile] = function()
 			project.console_out("profile request")
 
 			if not class.enabled then
@@ -33,7 +33,7 @@ do
 			return {}
 		end,
 
-		[UserDataRequire.Stats] = function()
+		[UserDataRequire.UserPreviousKick] = function()
 			if not class.enabled then
 				return {}
 			end

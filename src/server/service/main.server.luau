@@ -15,3 +15,4 @@ if game.RunService:IsStudio() then
     --main:deploy(root .. "debug/input")
     --main:deploy(root .. "debug/pickup")
 end
+

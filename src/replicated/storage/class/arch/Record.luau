@@ -2,12 +2,13 @@
 
 const object = require("@game/ReplicatedStorage/object")
 const declare = require("@game/ReplicatedStorage/static/declare")
+const ftype = require("@game/ReplicatedStorage/static/ftype")
 
 const private = {}
 const class: declare.record = object:new({
     type = "record",
 
-    get_dictionary = function (self: declare.record) : {[string]: number|boolean|string}
+    get_dictionary = ftype:write(function (self: declare.record) : {[string]: number|boolean|string}
         const result: {[string]: number|boolean|string} = {}
 
         for i,v in self :: {[unknown]: unknown} do 
@@ -22,24 +23,24 @@ const class: declare.record = object:new({
         end
 
         return result
-    end,
+    end, declare.table, "record"),
 
-    immutable = function (self: declare.record) : declare.record
+    immutable = ftype:write(function (self: declare.record) : declare.record
         return table.freeze(self:clone())
-    end,
+    end, "record", "record"),
 
-    is_immutable = function (self: declare.record) : boolean
+    is_immutable = ftype:write(function (self: declare.record) : boolean
         return table.isfrozen(self)
-    end,
+    end, declare.boolean, "record"),
 
-    clone = function (self: declare.record) : any
+    clone = ftype:write(function (self: declare.record) : any
         const base = assert(self:base<<declare.record>>("record"), "cannot clone nil")
         return base:new(private.recursive_convertion(self))
-    end,
+    end, "record", "record"),
 
-    each = function (self: declare.record, type: string, f: (value: any) -> any) : ()
+    each = ftype:write(function (self: declare.record, type: string, f: (value: any) -> any) : ()
         return private.for_each_element_with_type_do(self, type, f) :: any
-    end
+    end, declare["nil"], "record", declare.string, declare["function"])
 })
 
 do

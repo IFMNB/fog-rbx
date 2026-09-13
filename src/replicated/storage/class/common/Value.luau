@@ -1,22 +1,21 @@
 --!strict
 
-const Observable = require("@game/ReplicatedStorage/class/arch/Observable")
+const Observer = require("@game/ReplicatedStorage/class/arch/Observer")
 const Maybe = require("@game/ReplicatedStorage/class/common/gc/Maybe")
-const Notification = require("@game/ReplicatedStorage/class/common/notification/Notification")
 const Event = require("@game/ReplicatedStorage/class/common/signal/Event")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
 const OperationVariant = require("@game/ReplicatedStorage/enums/descriptor/OperationVariant")
 const declare = require("@game/ReplicatedStorage/static/declare")
+const ftype = require("@game/ReplicatedStorage/static/ftype")
 const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
-const class: declare.value = Observable:new({
+const class: declare.value = Observer:new({
 	type = "value",
 
-	get_value = function(self: declare.value<any> ): any
+	get_value = ftype:write(function(self: declare.value<any> ): any
 		const value: any = private.values[self]
 		if value ~= nil then
-			self:notificate(Notification)
 			return value
 		else
 			const default = private.defaults[self]
@@ -26,9 +25,9 @@ const class: declare.value = Observable:new({
 		end
 
 		return nil
-	end,
+	end, declare.anyt, "value"),
 
-	set_value = function(self: declare.value, value: any, default: boolean?): ()
+	set_value = ftype:write(function(self: declare.value, value: any, default: boolean?): ()
 		const stored: any = private.values[self]
 
 		if default then
@@ -38,17 +37,17 @@ const class: declare.value = Observable:new({
 		end
 
 		if stored == nil then
-			self:notificate(Notification:new({ on = OperationVariant.New }))
+			self:notificate(OperationVariant.New )
 		elseif stored ~= value then
-			self:notificate(Notification:new({ on = OperationVariant.Change }))
+			self:notificate(OperationVariant.Change )
 		elseif value == nil then
-			self:notificate(Notification:new({ on = OperationVariant.Remove }))
+			self:notificate(OperationVariant.Remove )
 		else
 			project.console_out_error("unexpected value behaviour")
 		end
-	end,
+	end, declare["nil"], "value", declare.anyt, ftype:opt(declare.boolean)),
 
-	on_operation_event = function (self: declare.value) : declare.event<declare.enumitem_operation_variant>
+	on_operation_event = ftype:write(function (self: declare.value) : declare.event<declare.enumitem_operation_variant>
 		return private.maybe:extract(self, function()
 			const new = Event:new({
 				on = OperationVariant.New
@@ -61,7 +60,7 @@ const class: declare.value = Observable:new({
 
 			return new
 		end)
-	end
+	end, "event", "value")
 })
 
 do

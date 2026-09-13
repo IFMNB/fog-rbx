@@ -1,0 +1,343 @@
+--!strict
+const EnumItem = require("@game/ReplicatedStorage/class/arch/EnumItem")
+const EnumObject = require("@game/ReplicatedStorage/class/arch/EnumObject")
+const Pointer = require("@game/ReplicatedStorage/class/common/variable/Pointer")
+const SecurityRNG = require("@game/ReplicatedStorage/class/service/SecurityRNG")
+const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
+const ObserverSettingVariant = require("@game/ReplicatedStorage/enums/descriptor/ObserverSettingVariant")
+const runtimeobject = require("@game/ReplicatedStorage/runtimeobject")
+const declare = require("@game/ReplicatedStorage/static/declare")
+const project = require("@game/ReplicatedStorage/static/project")
+const ftype = require("@game/ReplicatedStorage/static/ftype")
+
+const private = {}
+const class : declare.observer = runtimeobject:new {
+    type = "observer",
+    deffered_call = true,
+    deffered_mode = false,
+    allow_new_connections = true,
+
+    subscribe = ftype:write(function (self: declare.observer, on: declare.observer_notification_var<any>, mode: declare.enumitem_connection_variant, ...: declare.observer_pack<any>) : ...declare.pointer
+        if not self.allow_new_connections then return end
+        if not project.assert(private.relevant_actions[mode], `subscription option of {mode.name} does not exists`) then return end
+        
+        const flat = private.create_flatted_on(on)
+        const items = private.get_items(self)
+        const result: {declare.pointer} = {}
+        const pointers = private.get_pointers(self)
+
+        for _, v in flat do
+            const internal_mode_layer = private.get_work_of(items, v)
+            const target_mode = private.get_mode(internal_mode_layer, mode)
+
+            for _, v in {...} do
+                table.insert(target_mode, v)
+
+                const new_pointer = Pointer:new()
+                new_pointer:set_point(v, true)
+
+                pointers[new_pointer] = {work_list = target_mode, mode_list = internal_mode_layer}
+                table.insert(result, new_pointer)
+            end
+        end
+
+        return unpack(result)
+    end, ftype:var("pointer"), "observer", ftype:uor("enumitem", "enumobject", declare.table), "enumitem", ftype:var_or("observer", declare["function"], declare.thread)),
+
+    unsubscribe = ftype:write(function (self: declare.observer, ...: declare.pointer) : ()
+        const pointers = private.get_pointers(self)
+        
+        for _, v in {...} do
+            const pointer = pointers[v]
+            
+            if pointer and v:is_pointed_exists() then
+                const pos = table.find(pointer.work_list :: any, v:get_pointed())
+                if pos then
+                    table.remove(pointer.work_list, pos)
+                end
+            end
+
+            pointers[v] = nil
+        end
+    end, declare["nil"], "observer", ftype:var("pointer")),
+
+    notificate = ftype:write(function (self: declare.observer, on: declare.observer_notification_var<any>, ...: unknown) : ()
+        const items = private.get_items(self)
+
+        if self.deffered_mode and coroutine.isyieldable() then
+            task.defer(coroutine.running())
+            coroutine.yield()
+        end
+
+        for _, enumitem in private.create_flatted_on(on) do
+            const dispatch_layer = items[enumitem]
+
+            if dispatch_layer then
+                for i, observer_connections_list in table.clone(dispatch_layer) do
+                    const delta_list = observer_connections_list
+                    const result = private.relevant_actions[i](private.generate_related(self, enumitem, delta_list), ...)
+                    const count = #result
+
+                    if count == #delta_list then
+                        table.clear(delta_list)
+                    else
+                        for _, v in result do
+                            const pos = table.find(delta_list, v)
+                            if pos then
+                                table.remove(delta_list, pos)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end, declare["nil"], "observer", ftype:uor("enumitem", "enumobject", declare.table), ftype:var(declare.anyt)),
+
+    subscription = ftype:write(function (self: declare.observer, operation: declare.enumitem_observer_setting_variant, ...: declare.pointer) : ()
+       const pointers = private.get_pointers(self)
+        
+        for _, v in {...} do
+            const pointer = pointers[v]
+
+            if pointer then
+                private.relevant_pointer_setting[operation](pointer, v)
+            end
+        end
+    end, declare["nil"], "observer", "enumitem", ftype:var("pointer")),
+
+    get_mode_of = ftype:write(function (self: declare.observer, ...: declare.pointer) : ...declare.enumitem_connection_variant
+        const pointers = private.get_pointers(self)
+        const packed:{ declare.enumitem_connection_variant } = {}
+
+        for _, v in {...} do
+            const pointer = pointers[v]
+
+            if pointer then
+                for i, j in pointer.mode_list do
+                    if j == pointer.work_list then
+                        table.insert(packed, i)
+                    end
+                end
+            end
+        end
+
+        return unpack(packed)
+    end, ftype:var("enumitem"), "observer", ftype:var("pointer"))
+}
+
+class:host(function(new: declare.observer)
+    new:add_dependency(setmetatable({}, private.meta), private.pointers)
+    new:add_dependency({}, private.items)
+end)
+
+do
+    type flatted = {[declare.enumitem] : flatted_dependency}
+    type work_list = {declare.observer_pack|unknown}
+    type flatted_dependency = { [declare.enumitem_connection_variant]: work_list}
+    type pointer_internal = {
+        work_list: work_list,
+        read mode_list: flatted_dependency
+    }
+    type pointers = {[declare.pointer]: pointer_internal?}
+    type related = {
+        read notification_of: declare.enumitem<any>,
+        read work_list: work_list,
+        read of: declare.observer
+    }
+
+    private.dummy = table.freeze {}
+    private.meta = table.freeze {__mode = "ks"}
+    private.pointers = SecurityRNG:get_hash_sha256("observer_pointers")
+    private.items = SecurityRNG:get_hash_sha256("observer_items")
+    
+    private.create_flatted_on = function ( on: declare.observer_notification_var<any>): {declare.enumitem}
+        const output_for_cycle = {}
+
+        if class.is(on, EnumItem.type) then
+            const on_enumitem = on :: declare.enumitem
+            table.insert(output_for_cycle, on_enumitem)
+        elseif class.is(on, EnumObject.type) then
+            const on_enumobject = on :: declare.enumobject
+            const list_of_items = on_enumobject:get_enums_list()
+            const list_of_related = private.create_flatted_on(list_of_items)
+
+            table.move(list_of_related, 1, #list_of_related, #output_for_cycle + 1, output_for_cycle)
+        elseif type(on) == declare.table then
+            const on_list = on :: {declare.enumitem|declare.enumobject}
+
+            for _, v in on_list do
+                const flat = private.create_flatted_on(v)
+                table.move(flat, 1, #flat, #output_for_cycle + 1, output_for_cycle)
+            end
+        else
+            project.console_out_error("unknown CallType")
+        end
+
+        return output_for_cycle
+    end
+
+    private.get_pointers = function (of: declare.observer) : pointers
+        return (of:get_dependency(private.pointers) or private.dummy) :: any
+    end
+
+    private.get_items = function (of: declare.observer) : flatted
+        return (of:get_dependency(private.items) or private.dummy) :: any
+    end
+
+    private.get_mode = function (of: flatted_dependency, mode: declare.enumitem_connection_variant)
+        if not of[mode] then
+            of[mode] = {}
+        end
+
+        return of[mode]
+    end
+
+    private.get_work_of = function (of: flatted, item: declare.enumitem) : flatted_dependency
+        if not of[item] then
+            of[item] = {}
+        end
+
+        return of[item]
+    end
+
+    private.generate_related = function (of: declare.observer, item: declare.enumitem<any>, list: work_list) : related
+        return table.freeze {
+            notification_of = item,
+            of = of,
+            work_list = list
+        }
+    end
+
+    private.call = function (v, related: related, ...) : boolean
+		const T = type(v)
+
+        if related.of.deffered_call and coroutine.isyieldable() then
+            task.defer(coroutine.resume, coroutine.running())
+            coroutine.yield()
+        end
+
+		if T == declare["function"] then
+			const var_func = v :: (...any) -> any
+			const out, msg = pcall(var_func, ...)
+            return project.assert(out, `{tostring(msg)}`)
+		elseif T == declare.thread then
+			const var_thread = v :: thread
+            const out, msg = coroutine.resume(var_thread, ...)
+            return project.assert(out, `{tostring(msg)}`)
+		elseif class.is(v, class.type) then
+			const var_observer = v :: declare.observer
+			var_observer:notificate(related.notification_of, ...)
+		else
+			project.console_out_error("unexpected connection, skip")
+            return false
+		end
+
+        return true
+    end
+
+    private.move_actions_to_mode = function (target: declare.enumitem_connection_variant, related: related, ...)
+		const dispatch_layer = private.get_work_of(private.get_items(related.of), related.notification_of)
+		const target_layer = private.get_mode(dispatch_layer, target)
+        const pointers = private.get_pointers(related.of)
+
+        for _,v in pointers do
+            if v.work_list == related.work_list then
+                v.work_list = target_layer
+            end
+        end
+
+        
+        table.move(related.work_list, 1, #related.work_list, #target_layer + 1, target_layer)
+		table.clear(related.work_list)
+		dispatch_layer[target] = target_layer
+
+
+
+		return private.dummy
+    end
+
+    private.relevant_actions = table.freeze {
+        [ConnectionVariant.Ever] = function (related: related, ...)
+            const result = {}
+            
+            for i, v in table.clone (related.work_list) do
+                if not private.call(v, related, ...) then
+                    table.insert(result, v)
+                end
+            end
+
+            return result
+        end,
+
+        [ConnectionVariant.Once] = function (related: related, ...)
+            const result = {}
+
+            for i, v in table.clone (related.work_list) do
+                private.call(v, related, ...)
+                table.insert(result, v)
+            end
+
+            return result
+        end,
+
+
+        [ConnectionVariant.Next] = function (related: related, ...)
+            return private.move_actions_to_mode(ConnectionVariant.Ever, related, ...)
+        end,
+
+        [ConnectionVariant.Skip] = function (related: related, ...)
+            return private.move_actions_to_mode(ConnectionVariant.Once, related, ...)
+        end,
+
+        [ConnectionVariant.Hold] = function (related: related, ...)
+            return private.dummy
+        end,
+        [ConnectionVariant.Never] = function (related: related, ...)
+            return private.dummy
+        end
+    } :: {[declare.enumitem_connection_variant]: (work: related, ...unknown) -> {declare.observer_pack<any>}}
+
+    private.move_pointed = function (work: pointer_internal, pointer: declare.pointer, mode: declare.enumitem_connection_variant)
+        const target_list = work.mode_list[mode] or {}
+        
+        if work.work_list ~= target_list then
+			if not pointer:is_pointed_exists() then
+				if project.debug then
+					project.console_out_error("pointer does not exists?")
+				end
+			end
+
+			const pointed = pointer:get_pointed()
+			const pos = table.find(work.work_list, pointed)
+			if pos then
+				table.remove(work.work_list, pos)
+			end
+
+			table.insert(target_list, pointed)
+			work.work_list = target_list
+		end
+
+        work.mode_list[mode] = target_list
+    end
+
+    private.relevant_pointer_setting = table.freeze {
+        [ObserverSettingVariant.ChangeModeToEver] = function (work: pointer_internal, pointer: declare.pointer)
+            private.move_pointed(work, pointer, ConnectionVariant.Ever)
+        end,
+
+        [ObserverSettingVariant.ChangeModeToNext] = function (work: pointer_internal, pointer: declare.pointer)
+            private.move_pointed(work, pointer, ConnectionVariant.Next)
+        end,
+
+        [ObserverSettingVariant.ChangeModeToOnce] = function (work: pointer_internal, pointer: declare.pointer)
+            private.move_pointed(work, pointer, ConnectionVariant.Once)
+        end, 
+
+        [ObserverSettingVariant.ChangeModeToSkip] = function (work: pointer_internal, pointer: declare.pointer)
+            private.move_pointed(work, pointer, ConnectionVariant.Skip)
+        end, 
+    
+    } :: {[declare.enumitem_observer_setting_variant]: (work: pointer_internal, pointer: declare.pointer) -> ()}
+end
+
+return class

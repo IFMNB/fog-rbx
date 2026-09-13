@@ -1,7 +1,6 @@
 --!strict
 
 const Disposable = require("@game/ReplicatedStorage/class/arch/Disposable")
-const Notification = require("@game/ReplicatedStorage/class/common/notification/Notification")
 const Timer = require("@game/ReplicatedStorage/class/common/runtime/Timer")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
 const ActionNotification = require("@game/ReplicatedStorage/enums/notification/ActionNotification")
@@ -29,9 +28,9 @@ class:host(function(new: declare.executor)
 
 	timer:subscribe(ActionNotification.Step, ConnectionVariant.Ever, function()
 		new:process(timer:get_delta())
-		new:notificate(Notification:new({ call_on = ExecutorNotification.Process }))
+		new:notificate(ExecutorNotification.Process)
 		new:simulate(timer:get_delta())
-		new:notificate(Notification:new({ call_on = ExecutorNotification.Simulation }))
+		new:notificate(ExecutorNotification.Simulation )
 	end)
 end)
 

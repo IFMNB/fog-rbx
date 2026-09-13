@@ -1,35 +1,33 @@
 --!strict
-const Observable = require("@game/ReplicatedStorage/class/arch/Observable")
-const Notification = require("@game/ReplicatedStorage/class/common/notification/Notification")
+const Observer = require("@game/ReplicatedStorage/class/arch/Observer")
 const Controller = require("@game/ReplicatedStorage/class/common/runtime/Controller")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
 const ActionNotification = require("@game/ReplicatedStorage/enums/notification/ActionNotification")
 const ControllerState = require("@game/ReplicatedStorage/enums/state/ControllerState")
 const declare = require("@game/ReplicatedStorage/static/declare")
+const ftype = require("@game/ReplicatedStorage/static/ftype")
 
 const private = {}
-const class: declare.timer = Observable:new({
+const class: declare.timer = Observer:new({
 	type = "timer",
 	seconds = 1,
 	modifier = 1,
 	iterate = 1,
 	previous_stepped = DateTime.now(),
 
-	schedule = function(self: declare.timer): ()
+	schedule = ftype:write(function(self: declare.timer): ()
 		task.delay(self.seconds, function()
-			self:notificate(Notification:new({
-				on = ActionNotification.Step,
-			}))
+			self:notificate(ActionNotification.Step)
 		end)
-	end,
+	end, declare["nil"], "timer"),
 
-	get_delta = function(self: declare.timer): number
+	get_delta = ftype:write(function(self: declare.timer): number
 		return DateTime.now().UnixTimestampMillis - self.previous_stepped.UnixTimestampMillis
-	end,
+	end, declare.number, "timer"),
 
-	get_control = function(self: declare.timer): declare.controller
+	get_control = ftype:write(function(self: declare.timer): declare.controller
 		return private.ctrls[self]
-	end,
+	end, "controller", "timer"),
 })
 
 class:host(function(new: declare.timer)
@@ -85,7 +83,7 @@ do
 					const me = that :: declare.timer
 
 					for i = 1, iterate do
-						me:notificate(Notification:new({ on = ActionNotification.Step }))
+						me:notificate(ActionNotification.Step )
 					end
 				end
 

@@ -1,10 +1,10 @@
 --!strict
-const Observable = require("@game/ReplicatedStorage/class/arch/Observable")
+const Observer = require("@game/ReplicatedStorage/class/arch/Observer")
 const OperationVariant = require("@game/ReplicatedStorage/enums/descriptor/OperationVariant")
 const declare = require("@game/ReplicatedStorage/static/declare")
 
 const private = {}
-const class: declare.statemachine = Observable:new({
+const class: declare.statemachine = Observer:new({
 	type = "statemachine",
 	can_only_allowed = false,
 

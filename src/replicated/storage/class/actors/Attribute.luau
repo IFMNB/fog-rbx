@@ -3,8 +3,8 @@ const Disposable = require("@game/ReplicatedStorage/class/arch/Disposable")
 const Reference = require("@game/ReplicatedStorage/class/common/Reference")
 const Value = require("@game/ReplicatedStorage/class/common/Value")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
-const OperationVariant = require("@game/ReplicatedStorage/enums/descriptor/OperationVariant")
 const DisposableNotification = require("@game/ReplicatedStorage/enums/notification/DisposableNotification")
+const ReferenceNotification = require("@game/ReplicatedStorage/enums/notification/ReferenceNotification")
 const declare = require("@game/ReplicatedStorage/static/declare")
 
 const project = require("@game/ReplicatedStorage/static/project")
@@ -40,12 +40,12 @@ const class: declare.attribute = Disposable:new({
 
 class:host(function(new: declare.attribute)
 	const param: declare.value<any> = Value:new()
-	const refer: declare.reference<any> = Reference:new()
+	const refer: declare.reference = Reference:new()
 
 	private.references[new] = refer
 	private.params[new] = param
 
-	const update_value_attribute = function()
+	const update_value_attribute = function(...)
 		const that = refer:get_instance() :: Instance
 
 		if that then
@@ -61,8 +61,10 @@ class:host(function(new: declare.attribute)
 		end
 	end
 
-	const resource: (...any) -> () = refer:subscribe(OperationVariant, ConnectionVariant.Ever, update_value_attribute)
-	new:subscribe(DisposableNotification.OnRelease, ConnectionVariant.Once, resource)
+	const resource = refer:subscribe(ReferenceNotification, ConnectionVariant.Ever, update_value_attribute)
+	new:subscribe(DisposableNotification.OnRelease, ConnectionVariant.Once, function ()
+		refer:unsubscribe(resource)
+	end)
 end)
 
 do

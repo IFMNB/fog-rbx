@@ -29,7 +29,7 @@ do
 		private.inputs[v :: declare.enumitem<any>] = Channel:new() :: input
 	end
     for i, v in private.inputs do
-        v:set_variant(ChannelVariant.Inputs)
+        v:set_transport(ChannelVariant.Inputs)
         v.everyone = true
         v.enabled = true
     end

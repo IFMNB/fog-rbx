@@ -8,8 +8,8 @@ const class: declare.enum_action_notification = EnumObject:new({
 	Step = EnumItem:new() :: declare.enumitem<any>,
 	Signal = EnumItem:new() :: declare.enumitem<any>,
 	Emit = EnumItem:new() :: declare.enumitem<any>,
-    Unobservable = EnumItem:new() :: declare.enumitem<any>,
-	Observable = EnumItem:new() :: declare.enumitem<any>,
+	Unobservable = EnumItem:new() :: declare.enumitem<any>,
+	Observer = EnumItem:new() :: declare.enumitem<any>,
 })
 
 return class

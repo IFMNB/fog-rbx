@@ -1,20 +1,20 @@
 --!strict
-const Observable = require("@game/ReplicatedStorage/class/arch/Observable")
-const Notification = require("@game/ReplicatedStorage/class/common/notification/Notification")
+const Observer = require("@game/ReplicatedStorage/class/arch/Observer")
 const ReferenceNotification = require("@game/ReplicatedStorage/enums/notification/ReferenceNotification")
 const declare = require("@game/ReplicatedStorage/static/declare")
+const ftype = require("@game/ReplicatedStorage/static/ftype")
 
 const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
-const class: declare.reference = Observable:new({
+const class: declare.reference = Observer:new({
 	type = "reference",
 
-	get_instance = function(self: declare.reference): any?
+	get_instance = ftype:write(function(self: declare.reference): any?
 		return private.stored[self]
-	end,
+	end, ftype:opt(declare.anyt), "reference"),
 
-	set_instance = function(self: declare.reference, to: any): ()
+	set_instance = ftype:write(function(self: declare.reference, to: any): ()
 		const stored = private.stored[self]
 		const connection = private.connections[self]
 		private.stored[self] = to
@@ -28,26 +28,26 @@ const class: declare.reference = Observable:new({
 			const that = to :: Instance
 
 			private.connections[self] = that.Destroying:Once(function()
-				self:notificate(Notification:new({ on = ReferenceNotification.DestroyedInstance }))
+				self:notificate(ReferenceNotification.DestroyedInstance )
 			end)
 		end
 
 		if stored == nil and to == nil then
-			self:notificate(Notification:new({ on = ReferenceNotification.NullifiedInstance }))
+			self:notificate(ReferenceNotification.NullifiedInstance )
 		elseif stored == nil and to ~= nil then
-			self:notificate(Notification:new({ on = ReferenceNotification.NewInstance }))
+			self:notificate(ReferenceNotification.NewInstance )
 		elseif stored ~= to then
-			self:notificate(Notification:new({ on = ReferenceNotification.ChangedInstance }))
+			self:notificate(ReferenceNotification.ChangedInstance )
 		else
 			project.console_out("missmatch reference")
 		end
-	end,
+	end, declare["nil"], "reference", ftype:uor(declare.roblox.Instance, declare.anyt)),
 
-	is_instance_exists = function(self: declare.reference): boolean
+	is_instance_exists = ftype:write(function(self: declare.reference): boolean
 		return typeof(self:get_instance()) == "Instance"
-	end,
+	end, declare.boolean, "reference"),
 
-	clear = function(self: declare.reference): ()
+	clear = ftype:write(function(self: declare.reference): ()
 		const instance = self:get_instance()
 		if instance and type(instance) == declare.roblox.Instance then
 			const rbx_instance = instance :: Instance
@@ -55,7 +55,7 @@ const class: declare.reference = Observable:new({
 		end
 
 		self:set_instance(nil :: any)
-	end,
+	end, declare["nil"], "reference"),
 })
 
 do

@@ -6,8 +6,9 @@ const declare = require("@game/ReplicatedStorage/static/declare")
 const class: declare.enum_setup_notification = EnumObject:new({
 	name = script.Name,
 	Install = EnumItem:new() :: declare.enumitem<any>,
-	Installer = EnumItem:new() :: declare.enumitem<any>,
+	Require = EnumItem:new() :: declare.enumitem<any>,
     Installed = EnumItem:new() :: declare.enumitem<any>,
+	Disconnected = EnumItem:new() :: declare.enumitem<any>,
 })
 
 return class

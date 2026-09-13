@@ -3,20 +3,19 @@
 
 const project = require("./static/project")
 const declare = require("./static/declare")
+const ftype = require("./static/ftype")
+const fspec = require("./static/fspec")
 
 const private = {}
 const class: declare.object = {
 	identity = "never",
 	type = "object",
 
-	new = function <T,U> (self: T, that: U?)
+	new = ftype:write(function <T,U> (self: T, that: U?)
 		const T = (
 			project.proto
 				and setmetatable(table.clone(self), {
-					__index = function(t, i)
-						const var = rawget(t, i)
-						return var
-					end,
+					__index = private.spec__index,
 				})
 			or table.clone(self)
 		) :: declare.object
@@ -26,29 +25,14 @@ const class: declare.object = {
 		private.wake(T)
 
 		return T :: any
-	end, 
+	end, "object", ftype:uor(declare.table, "object"), ftype:opt(declare.table)),
 
-	renew = function <T> (self: T, that: { [unknown]: unknown }?)
-		const compared: {[unknown]: unknown} = {}
-		const self_T: declare.object = self :: any
-
-		--[=[ Не позволяем из данной функции билдить новые объекты с новой семантикой ]=]
-
-		if that then
-			for i,v in self :: {[unknown]: unknown} do
-				compared[i] = that[i]
-			end
-		end
-
-		return assert(self_T:base<<declare.object>>(), "base corruption"):new(compared) :: any
-	end,
-
-	is = function(this, that)
+	is = ftype:write(function(this: unknown, that: string): boolean
 		if that == "anyt" then
 			return true
 		end
 
-		local base = private.ever[this]
+		local base = this
 
 		while base do
 			const state, cached = private.get_cached_direct(base)
@@ -62,29 +46,28 @@ const class: declare.object = {
 		end
 
 		return false
-	end,
+	end, declare.boolean, "object", declare.string),
 
-	equals = function(this, that)
+	equals = ftype:write(function(this: unknown, that: string): boolean
 		const state, cached = private.get_cached(this)
 		return state and cached.__type == that or false
-	end,
+	end, declare.boolean, "object", declare.string),
 
-	base = function <T> (self: T & declare.object, expected: string|nil) : any
+	base = ftype:write(function <T> (self: T & declare.object, expected: string|nil) : any
 		const base = private.ever[self]
+
 		if expected then 
 			if self.is(base, expected) then
 				return base
-			else
-				project.console_out_error "base has unexpected type, return nil"
 			end
 		else
 			return base
 		end
 
 		return nil
-	end,
+	end, ftype:opt("object"), "object", ftype:opt(declare.string)),
 
-	host = function <T> (self: T & declare.object, f: (any) -> (), last: boolean?)
+	host = ftype:write(function <T> (self: T & declare.object, f: (any) -> (), last: boolean?)
 		const state, cached = private.get_cached<<T,unknown>>(self)
 
 		if state then
@@ -99,9 +82,9 @@ const class: declare.object = {
 			project.console_out_error "cached isn't exists" 
 			return
 		end
-	end,
+	end, declare["nil"], "object", declare["function"], ftype:opt(declare.boolean)),
 
-	require = function (identity: unknown, assertion) : any
+	require = ftype:write(function (identity: unknown, assertion: string?) : any
 		const required = private.identity[identity]
 		
 		if assertion then
@@ -111,21 +94,13 @@ const class: declare.object = {
 			assert(cached.__type == assertion, "retrieved object isn't an assertion")
 		end
 		
-		assert(required ~= nil, "necessary object is never exists")
-
 		return required
-	end,
+	end, ftype:opt("object"), declare.string, ftype:opt(declare.string)),
 
-	rebuild = function <T> (self: T, that: {[unknown]: unknown}) : T
-		assert(type(that) == declare.table, "cannot rebuild that object, his type isn't a table type")
-
-		return (self :: declare.object):renew(that)
-	end,
-
-	as = function <T> (self: unknown, as: string) : T
+	as = ftype:write(function <T> (self: unknown, as: string) : T
 		assert((self :: declare.object):is(as), "cannot convert this object to required type")
 		return self :: any
-	end
+	end, "object", declare.string)
 }
 
 do --private_region
@@ -142,7 +117,6 @@ do --private_region
 	private.cached = setmetatable({} :: { [unknown]: cached }, private.frozen)
 	private.ever = setmetatable({} :: { [declare.object | unknown]: unknown }, private.frozen)
 	private.identity = setmetatable({} :: {[unknown]: declare.object|unknown}, private.frozen)
-	private.type_build_location = {} :: {[string]: ModuleScript?}
 	private.counter = 0
 
 	function private.get_cached_by_instance<T,U>(this: unknown): (boolean, cached<T,U>)
@@ -202,6 +176,15 @@ do --private_region
 			for i, v in load :: {[unknown]: unknown} do
 				(new :: {[unknown]: unknown})[i] = v
 			end
+
+			for i, v in load :: {[unknown]: unknown} do
+				if type(v) == "string" and fspec.is_controller(v) then
+					(new :: {[unknown]: unknown})[i] = fspec.resolve(v, {
+						self = new,
+						args = { new, load },
+					})
+				end
+			end
 		end
 	end
 
@@ -242,6 +225,10 @@ do --private_region
 
 		const __new = new :: {[string]: any}
 		__new.identity = tostring(private.counter)
+	end
+
+	function private.spec__index (t, i)
+		return rawget(t, i)
 	end
 
 	function private.bootload_new(new: declare.object, parent: unknown)

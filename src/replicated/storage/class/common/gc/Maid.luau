@@ -3,30 +3,30 @@ const Disposable = require("@game/ReplicatedStorage/class/arch/Disposable")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
 const DisposableNotification = require("@game/ReplicatedStorage/enums/notification/DisposableNotification")
 const declare = require("@game/ReplicatedStorage/static/declare")
-
+const ftype = require("@game/ReplicatedStorage/static/ftype")
 const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
 const class: declare.maid = Disposable:new({
 	type = "maid",
 
-	add_object = function(self: declare.maid, that: any, strong: boolean?): () -- #12
+	add_object = ftype:write(function(self: declare.maid, that: any, strong: boolean?): () -- #12
 		if strong then
 			table.insert(private.s_objects[self], that)
 		else
 			table.insert(private.objects[self], that)
 		end
-	end,
+	end, declare["nil"], "maid", declare.anyt, ftype:opt(declare.boolean)),
 
-	add_key = function<T>(self: declare.maid, of: { [T]: unknown }, key: T): ()
+	add_key = ftype:write(function<T>(self: declare.maid, of: { [T]: unknown }, key: T): ()
 		if not private.pairs[self][of] then
 			private.pairs[self][of] = {}
 		end
 
 		table.insert(private.pairs[self][of], key)
-	end,
+	end, declare["nil"], "maid", declare.table, declare.anyt),
 
-	remove_object = function(self: declare.maid, that: any): () -- #12
+	remove_object = ftype:write(function(self: declare.maid, that: any): () -- #12
 		do
 			const pos: number? = table.find(private.objects[self], that)
 
@@ -42,9 +42,9 @@ const class: declare.maid = Disposable:new({
 				table.remove(private.s_objects[self], pos)
 			end
 		end
-	end,
+	end, declare["nil"], "maid", declare.anyt),
 
-	remove_key = function<T>(self: declare.maid, of: { [T]: unknown }, key: T): ()
+	remove_key = ftype:write(function<T>(self: declare.maid, of: { [T]: unknown }, key: T): ()
 		if not private.pairs[self][of] then
 			return
 		end
@@ -53,9 +53,9 @@ const class: declare.maid = Disposable:new({
 		if pos then
 			table.remove(private.pairs[self][of], pos)
 		end
-	end,
+	end, declare["nil"], "maid", declare.table, declare.anyt),
 
-	is_supported = function(self: declare.maid, that: unknown): boolean
+	is_supported = ftype:write(function(self: declare.maid, that: unknown): boolean
 		for _, v in private.supported do
 			if self.is(that, v) then
 				return true
@@ -67,7 +67,7 @@ const class: declare.maid = Disposable:new({
 		end
 
 		return false
-	end,
+	end, declare.boolean, "maid", declare.anyt),
 })
 
 class:host(function(new: declare.maid)

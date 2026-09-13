@@ -1,33 +1,24 @@
 --!strict
-const Observable = require("@game/ReplicatedStorage/class/arch/Observable")
-const Notification = require("@game/ReplicatedStorage/class/common/notification/Notification")
-const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
-const ActionNotification = require("@game/ReplicatedStorage/enums/notification/ActionNotification")
+const Observer = require("@game/ReplicatedStorage/class/arch/Observer")
 const DisposableNotification = require("@game/ReplicatedStorage/enums/notification/DisposableNotification")
 const declare = require("@game/ReplicatedStorage/static/declare")
-
-const project = require("@game/ReplicatedStorage/static/project")
+const ftype = require("@game/ReplicatedStorage/static/ftype")
 
 const private = {}
-const class: declare.disposable = Observable:new({
+const class: declare.disposable = (Observer :: declare.observer<declare.enumitem_disposable_notification>):new ({
 	type = "disposable",
 
-	free = function(self: declare.disposable): ()
-		self:notificate(Notification:new({ on = DisposableNotification.OnRelease }))
+	free = ftype:write(function(self: declare.disposable): ()
+		self:notificate(DisposableNotification.OnRelease )
+		private.objects[self.identity] = nil
+		self:notificate(DisposableNotification.Released )
+	end, declare["nil"], "disposable"),
 
-		task.delay(0, function()
-			private.objects[self.identity] = nil
-			self:notificate(Notification:new({ on = DisposableNotification.Released }))
+	queue_free = ftype:write(function(self: declare.disposable): ()
+		task.defer(function ()
+			self:free()
 		end)
-	end,
-
-	queue_free = function(self: declare.disposable): ()
-		const code = project.run(self.free, self)
-
-		if code == 4 then
-			self:subscribe(ActionNotification.Signal, ConnectionVariant.Once, "free")
-		end
-	end,
+	end, declare["nil"], "disposable"),
 })
 
 class:host(function(new: declare.disposable)

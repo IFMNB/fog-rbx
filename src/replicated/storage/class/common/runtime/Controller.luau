@@ -1,44 +1,44 @@
 --!strict
 
-const Observable = require("@game/ReplicatedStorage/class/arch/Observable")
-const Notification = require("@game/ReplicatedStorage/class/common/notification/Notification")
+const Observer = require("@game/ReplicatedStorage/class/arch/Observer")
 const ControllerState = require("@game/ReplicatedStorage/enums/state/ControllerState")
 const declare = require("@game/ReplicatedStorage/static/declare")
+const ftype = require("@game/ReplicatedStorage/static/ftype")
 const project = require("@game/ReplicatedStorage/static/project")
 
-const class: declare.controller = Observable:new({
+const class: declare.controller = Observer:new({
 	type = "controller",
 	state = ControllerState.Pause,
 
-	continue = function(self: declare.controller): ()
+	continue = ftype:write(function(self: declare.controller): ()
 		if self.state == ControllerState.Continue then
 			project.console_out("contoller already running")
 			return
 		end
 
 		self.state = ControllerState.Continue
-		self:notificate(Notification:new({ on = ControllerState.Continue }))
-	end,
+		self:notificate(ControllerState.Continue )
+	end, declare["nil"], "controller"),
 
-	pause = function(self: declare.controller): ()
+	pause = ftype:write(function(self: declare.controller): ()
 		if self.state == ControllerState.Pause then
 			project.console_out("contoller already paused")
 			return
 		end
 
 		self.state = ControllerState.Pause
-		self:notificate(Notification:new({ on = ControllerState.Pause }))
-	end,
+		self:notificate(ControllerState.Pause )
+	end, declare["nil"], "controller"),
 
-	reset = function(self: declare.controller): ()
+	reset = ftype:write(function(self: declare.controller): ()
 		if self.state == ControllerState.Reset then
 			project.console_out("contoller already dropped(reset)")
 			return
 		end
 
 		self.state = ControllerState.Reset
-		self.notificate(self, Notification:new({ on = ControllerState.Reset }))
-	end,
+		self:notificate(ControllerState.Reset )
+	end, declare["nil"], "controller"),
 })
 
 return class
