@@ -1,16 +1,16 @@
 --!strict
 
-const Observer = require("@game/ReplicatedStorage/class/arch/Observer")
+const Observer = require("@game/ReplicatedStorage/class/core/Observer")
 const ControllerState = require("@game/ReplicatedStorage/enums/state/ControllerState")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const ftype = require("@game/ReplicatedStorage/static/ftype")
 const project = require("@game/ReplicatedStorage/static/project")
 
-const class: declare.controller = Observer:new({
+const class: controller = Observer:new({
 	type = "controller",
 	state = ControllerState.Pause,
 
-	continue = ftype:write(function(self: declare.controller): ()
+	continue = ftype:write(function(self: controller): ()
 		if self.state == ControllerState.Continue then
 			project.console_out("contoller already running")
 			return
@@ -20,7 +20,7 @@ const class: declare.controller = Observer:new({
 		self:notificate(ControllerState.Continue )
 	end, declare["nil"], "controller"),
 
-	pause = ftype:write(function(self: declare.controller): ()
+	pause = ftype:write(function(self: controller): ()
 		if self.state == ControllerState.Pause then
 			project.console_out("contoller already paused")
 			return
@@ -30,7 +30,7 @@ const class: declare.controller = Observer:new({
 		self:notificate(ControllerState.Pause )
 	end, declare["nil"], "controller"),
 
-	reset = ftype:write(function(self: declare.controller): ()
+	reset = ftype:write(function(self: controller): ()
 		if self.state == ControllerState.Reset then
 			project.console_out("contoller already dropped(reset)")
 			return

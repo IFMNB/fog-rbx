@@ -1,5 +1,5 @@
 --!strict
-const Observer = require("@game/ReplicatedStorage/class/arch/Observer")
+const Observer = require("@game/ReplicatedStorage/class/core/Observer")
 const ReferenceNotification = require("@game/ReplicatedStorage/enums/notification/ReferenceNotification")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const ftype = require("@game/ReplicatedStorage/static/ftype")
@@ -7,14 +7,14 @@ const ftype = require("@game/ReplicatedStorage/static/ftype")
 const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
-const class: declare.reference = Observer:new({
+const class: reference = Observer:new({
 	type = "reference",
 
-	get_instance = ftype:write(function(self: declare.reference): any?
+	get_instance = ftype:write(function(self: reference): any?
 		return private.stored[self]
 	end, ftype:opt(declare.anyt), "reference"),
 
-	set_instance = ftype:write(function(self: declare.reference, to: any): ()
+	set_instance = ftype:write(function(self: reference, to: any): ()
 		const stored = private.stored[self]
 		const connection = private.connections[self]
 		private.stored[self] = to
@@ -43,11 +43,11 @@ const class: declare.reference = Observer:new({
 		end
 	end, declare["nil"], "reference", ftype:uor(declare.roblox.Instance, declare.anyt)),
 
-	is_instance_exists = ftype:write(function(self: declare.reference): boolean
+	is_instance_exists = ftype:write(function(self: reference): boolean
 		return typeof(self:get_instance()) == "Instance"
 	end, declare.boolean, "reference"),
 
-	clear = ftype:write(function(self: declare.reference): ()
+	clear = ftype:write(function(self: reference): ()
 		const instance = self:get_instance()
 		if instance and type(instance) == declare.roblox.Instance then
 			const rbx_instance = instance :: Instance
@@ -60,8 +60,8 @@ const class: declare.reference = Observer:new({
 
 do
 	private.frozen = table.freeze({ __mode = "ks" })
-	private.stored = setmetatable({} :: { [declare.reference]: Instance }, private.frozen)
-	private.connections = setmetatable({} :: { [declare.reference]: RBXScriptConnection }, private.frozen)
+	private.stored = setmetatable({} :: { [reference]: Instance }, private.frozen)
+	private.connections = setmetatable({} :: { [reference]: RBXScriptConnection }, private.frozen)
 end
 
 return class

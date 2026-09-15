@@ -5,35 +5,34 @@ const Event = require("@game/ReplicatedStorage/class/common/signal/Event")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
 const ActionNotification = require("@game/ReplicatedStorage/enums/notification/ActionNotification")
 const ReferenceNotification = require("@game/ReplicatedStorage/enums/notification/ReferenceNotification")
-const declare = require("@game/ReplicatedStorage/static/declare")
 const ftype = require("@game/ReplicatedStorage/static/ftype")
 const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
-const class : declare.signal = Reference:new <<declare.reference<RBXScriptSignal>>> {
+const class : signal = Reference:new <<reference<RBXScriptSignal>>> {
     type = "signal",
 
-    get_signal_event = ftype:write(function (self: declare.signal) : declare.event<declare.enumitem_action_notification, ...unknown>
+    get_signal_event = ftype:write(function (self: signal) : event<enumitem_action_notification, ...unknown>
         return private.maybe:extract(self, function()
             return Event:new()
         end)
     end, "event", "signal")
 }
 
-class:host(function(new: declare.signal)
+class:host(function(new: signal)
     new:subscribe({ReferenceNotification.ChangedInstance, ReferenceNotification.NewInstance}, ConnectionVariant.Ever, function ()
         const con = private.con[new]
         if con then
             con:Disconnect()
         end
 
-        if project.debug_show_signal_internal then
+        if project.debug.show_signal_internal then
             project.console_out "changed signal instance"
         end
 
         private.con[new] = new:get_instance():Connect(function(...: unknown)
             if private.maybe:exist(new) then
-                if project.debug_show_signal_internal then
+                if project.debug.show_signal_internal then
                     project.console_out "signal emitted"
                 end
 
@@ -48,7 +47,7 @@ class:host(function(new: declare.signal)
             con:Disconnect()
         end
 
-        if project.debug_show_signal_internal then
+        if project.debug.show_signal_internal then
             project.console_out "signal nullified"
         end
     end)
@@ -56,7 +55,7 @@ end)
 
 do
     private.maybe = Maybe:new()
-    private.con = setmetatable({} :: {[declare.signal]: RBXScriptConnection?}, table.freeze {__mode = "ks"})
+    private.con = setmetatable({} :: {[signal]: RBXScriptConnection?}, table.freeze {__mode = "ks"})
 end
 
 return class

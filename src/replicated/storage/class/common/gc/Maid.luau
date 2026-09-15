@@ -1,16 +1,14 @@
 --!strict
-const Disposable = require("@game/ReplicatedStorage/class/arch/Disposable")
-const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
-const DisposableNotification = require("@game/ReplicatedStorage/enums/notification/DisposableNotification")
+const Disposable = require("@game/ReplicatedStorage/class/core/Disposable")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const ftype = require("@game/ReplicatedStorage/static/ftype")
 const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
-const class: declare.maid = Disposable:new({
+const class: maid = Disposable:new({
 	type = "maid",
 
-	add_object = ftype:write(function(self: declare.maid, that: any, strong: boolean?): () -- #12
+	add_object = ftype:write(function(self: maid, that: any, strong: boolean?): () -- #12
 		if strong then
 			table.insert(private.s_objects[self], that)
 		else
@@ -18,7 +16,7 @@ const class: declare.maid = Disposable:new({
 		end
 	end, declare["nil"], "maid", declare.anyt, ftype:opt(declare.boolean)),
 
-	add_key = ftype:write(function<T>(self: declare.maid, of: { [T]: unknown }, key: T): ()
+	add_key = ftype:write(function<T>(self: maid, of: { [T]: unknown }, key: T): ()
 		if not private.pairs[self][of] then
 			private.pairs[self][of] = {}
 		end
@@ -26,7 +24,7 @@ const class: declare.maid = Disposable:new({
 		table.insert(private.pairs[self][of], key)
 	end, declare["nil"], "maid", declare.table, declare.anyt),
 
-	remove_object = ftype:write(function(self: declare.maid, that: any): () -- #12
+	remove_object = ftype:write(function(self: maid, that: any): () -- #12
 		do
 			const pos: number? = table.find(private.objects[self], that)
 
@@ -44,7 +42,7 @@ const class: declare.maid = Disposable:new({
 		end
 	end, declare["nil"], "maid", declare.anyt),
 
-	remove_key = ftype:write(function<T>(self: declare.maid, of: { [T]: unknown }, key: T): ()
+	remove_key = ftype:write(function<T>(self: maid, of: { [T]: unknown }, key: T): ()
 		if not private.pairs[self][of] then
 			return
 		end
@@ -55,9 +53,9 @@ const class: declare.maid = Disposable:new({
 		end
 	end, declare["nil"], "maid", declare.table, declare.anyt),
 
-	is_supported = ftype:write(function(self: declare.maid, that: unknown): boolean
+	is_supported = ftype:write(function(self: maid, that: unknown): boolean
 		for _, v in private.supported do
-			if self.is(that, v) then
+			if self:that(that, v) then
 				return true
 			else
 				if typeof(that) == v then
@@ -70,14 +68,12 @@ const class: declare.maid = Disposable:new({
 	end, declare.boolean, "maid", declare.anyt),
 })
 
-class:host(function(new: declare.maid)
+class:host(function(new: maid)
 	private.objects[new] = setmetatable({}, private.meta)
 	private.s_objects[new] = {}
 	private.pairs[new] = setmetatable({}, private.meta)
 
-	new:subscribe(
-		DisposableNotification.OnRelease,
-		ConnectionVariant.Once,
+	new:watch(
 		function()
 			private.cycle(private.objects[new], private.s_objects[new])
 		end,
@@ -90,9 +86,9 @@ class:host(function(new: declare.maid)
 
 			table.clear(private.pairs[new])
 		end,
-		if project.debug and project.debug_show_maids_releasing
+		if project.debug and project.debug.show_maids_releasing
 			then function()
-				project.console_out("maid ", new.identity, " is released")
+				project.console_out("maid ", new:iden(), " is released")
 			end
 			else nil :: never
 	)
@@ -100,9 +96,9 @@ end)
 
 do
 	private.meta = table.freeze({ __mode = "ks" })
-	private.objects = setmetatable({} :: { [declare.maid]: { unknown } }, private.meta)
-	private.s_objects = setmetatable({} :: { [declare.maid]: { unknown } }, private.meta)
-	private.pairs = setmetatable({} :: { [declare.maid]: { [{ [unknown]: unknown }]: { unknown } } }, private.meta)
+	private.objects = setmetatable({} :: { [maid]: { unknown } }, private.meta)
+	private.s_objects = setmetatable({} :: { [maid]: { unknown } }, private.meta)
+	private.pairs = setmetatable({} :: { [maid]: { [{ [unknown]: unknown }]: { unknown } } }, private.meta)
 
 	private.supported = table.freeze({
 		"connection",
@@ -113,14 +109,14 @@ do
 
 	private.cycle = function(t: { unknown })
 		for _, v in t do
-			if class.is(v, "connection") then
-				const connection = v :: declare.connection
+			if class:that(v, "connection") then
+				const connection = v :: connection
 				connection:disconnect()
-			elseif class.is(v, "disposable") then
-				const disposable = v :: declare.disposable
+			elseif class:that(v, "disposable") then
+				const disposable = v :: disposable
 				disposable:free()
-			elseif class.is(v, "reference") then
-				const reference = v :: declare.reference
+			elseif class:that(v, "reference") then
+				const reference = v :: reference
 				reference:clear()
 			elseif typeof(v) == declare.roblox.RBXScriptConnection then
 				const connection = v :: RBXScriptConnection

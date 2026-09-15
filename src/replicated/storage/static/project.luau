@@ -41,14 +41,21 @@ end
 do -- debug
 	project.debug = {}
 
+	--[==[
+		Включить специальный debug mode в рантайм
+
+		Это позволяет некоторым частям кода выполнять более сложные и дорогие операции
+		для поиска ошибок, более строгих проверок и для работы тяжелых циклов
+	]==]
 	project.debug.state = true
-	project.debug.show_created_objects = false
-	project.debug.show_notifications_path = false
-	project.debug.show_channel_send_actions = false
-	project.debug.show_maids_releasing = false
-	project.debug.show_channel_internal = false
-	project.debug.show_pickup_internal = false
-	project.debug.show_signal_internal = false
+
+	project.debug.show_created_objects = if project.debug.state then false else false
+	project.debug.show_notifications_path = if project.debug.state then false else false
+	project.debug.show_channel_send_actions = if project.debug.state then false else false
+	project.debug.show_maids_releasing = if project.debug.state then false else false
+	project.debug.show_channel_internal = if project.debug.state then false else false
+	project.debug.show_pickup_internal = if project.debug.state then false else false
+	project.debug.show_signal_internal = if project.debug.state then false else false
 end
 
 do -- object
@@ -99,7 +106,7 @@ type console_out_type = never
 	В разработке появление таких сообщений недопустимо
 ]=]
 function project.console_out_error(...: unknown): console_out_type
-	if project.debug then
+	if project.debug.state then
 		warn("error ", debug.traceback(), ...)
 
 		if not coroutine.isyieldable() then

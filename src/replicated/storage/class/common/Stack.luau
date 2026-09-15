@@ -1,15 +1,14 @@
 --!strict
-const runtimeobject = require("@game/ReplicatedStorage/runtimeobject")
+const object = require("@game/ReplicatedStorage/object")
 const declare = require("@game/ReplicatedStorage/static/declare")
-const doperate = require("@game/ReplicatedStorage/static/doperate")
 const ftype = require("@game/ReplicatedStorage/static/ftype")
 
 const private = {}
-const class : doperate.stack = runtimeobject:new {
+const class : stack = object:new {
     type = "stack",
     max = 10000,
     
-    pick = ftype:write(function <T> (self: doperate.stack) : T?
+    pick = ftype:write(function <T> (self: stack) : T?
         const stack = private.stacks[self]
         const index = #stack
         const value = stack[index]
@@ -17,25 +16,25 @@ const class : doperate.stack = runtimeobject:new {
         return value
     end, ftype:opt(declare.anyt), "stack"),
 
-    put = ftype:write(function <T> (self: doperate.stack, item: T) : ()
+    put = ftype:write(function <T> (self: stack, item: T) : ()
         const stack = private.stacks[self]
         stack[#stack + 1] = item
 
         assert(#stack <= self.max, "stack limit capacity reached")
     end, declare["nil"], "stack", declare.anyt),
 
-    count = ftype:write(function (self: doperate.stack) : number
+    count = ftype:write(function (self: stack) : number
         return #private.stacks[self]
     end, declare.number, "stack")
 }
 
-class:host(function(new: doperate.stack)
+class:host(function(new: stack)
     private.stacks[new] = {}
 end)
 
 do
     private.meta = table.freeze {__mode = "ks"}
-    private.stacks = setmetatable({} :: {[doperate.stack]: {any}}, private.meta)
+    private.stacks = setmetatable({} :: {[stack]: {any}}, private.meta)
 end
 
 return class

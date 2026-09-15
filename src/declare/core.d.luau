@@ -195,6 +195,16 @@ export type disposable = construct<{
     ```
     ]==]
     read free: (self: disposable, deffered: boolean?) -> (),
+
+    --[==[
+        Returns the state of the object at the current time of the request
+    ]==]
+    read released: (self: disposable) -> boolean,
+
+    --[==[
+        Connects an outside observer to the moment of release
+    ]==]
+    read watch: <T> (self: disposable, ...(self: disposable) -> ()) -> ()
 }, object>
 
 
@@ -221,10 +231,10 @@ export type disposable = construct<{
 -- Common
 
 export type event<T = enumitem<any>, U... = ...unknown> = construct<{
-    read connect: <T0> (self: event<T,U...>, on: ((...any)->())|thread|observer<T>, f: ((U...) -> ())|thread|observer<T>) -> connection<T,U...>,
-    read once: <T0> (self: event<T,U...>, on: ((...any)->())|thread|observer<T>, f: ((U...) -> ())|thread|observer<T>) -> connection<T,U...>,
-    read wait: (self: event<T,U...>, on: ((...any)->())|thread|observer<T>) -> U...,
-    read invoke: (self: event<T,U...>, on: ((...any)->())|thread|observer<T>, U...) -> (),
+    read connect: <T0> (self: event<T,U...>, on: T, f: ((U...) -> ())|thread|observer<T>) -> connection<T,U...>,
+    read once: <T0> (self: event<T,U...>, on: T, f: ((U...) -> ())|thread|observer<T>) -> connection<T,U...>,
+    read wait: (self: event<T,U...>, on: T) -> U...,
+    read invoke: (self: event<T,U...>, on: T, U...) -> (),
 } & expected_calltype<T?>, observer<T>> 
 
 export type connection<T = enumitem<any>, U... = ()> = construct<{
@@ -241,7 +251,6 @@ observer<T|enumitem_connection_variant|enumitem_setup_notification|enumitem_acti
 export type value<T = unknown> = construct<{
     read get_value: (self: value<T>) -> T?,                    
     read set_value: (self: value<T>, new: T?, default: boolean?) -> (),
-    read on_operation_event: (self: value<T>) -> event<enumitem_operation_variant>
 }, observer<enumitem_operation_variant>>
 
 export type timer = construct<{
@@ -264,14 +273,6 @@ export type controller = construct<{
     state: enumitem_controller_state
 } & operatable<controller>, observer<enumitem_controller_state>>
 
-export type asset<T = unknown> = construct<{
-    read variant: enumitem_asset_type_variant|enumitem_default_variant,
-    read rid: number,
-    state: enumitem_state,
-
-    read get_asset: (self: asset<T>) -> T?
-}, observer<enumitem_state>>
-
 export type tasky<
 	current --[=[*based-on-current-realization*]=]
 > = construct<{
@@ -289,6 +290,14 @@ export type stack<T = unknown> = construct<{
 	read put: (self: stack<T>, value: T) -> (),
 	read count: (self: stack<T>) -> number,
 }, object>
+
+export type maid = construct< {
+	read add_object: (self: maid, that: any, strong: boolean?) -> (),
+	read add_key: <T>(self: maid, of: { [T]: unknown }, key: T) -> (),
+	read remove_object: (self: maid, that: any) -> (),
+	read remove_key: <T>(self: maid, of: { [T]: unknown }, key: T) -> (),
+	read is_supported: (self: maid, that: unknown) -> boolean,
+}, disposable>
 
 export type maybe = construct<{
 	read extract: <T>(self: maybe, it: unknown, make: () -> T) -> T,
