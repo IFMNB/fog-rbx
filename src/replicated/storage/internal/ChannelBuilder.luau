@@ -1,11 +1,9 @@
 --!strict
 
-
-
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const RunService = game:GetService("RunService")
 
-const EnumObject = require("@game/ReplicatedStorage/class/arch/EnumObject")
+const EnumObject = require("@game/ReplicatedStorage/class/core/EnumObject")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const project = require("@game/ReplicatedStorage/static/project")
 

@@ -1,7 +1,7 @@
 --!strict
 
-const EnumObject = require("@game/ReplicatedStorage/class/arch/EnumObject")
-const EnumItem = require("@game/ReplicatedStorage/class/arch/EnumItem")
+const EnumObject = require("@game/ReplicatedStorage/class/core/EnumObject")
+const EnumItem = require("@game/ReplicatedStorage/class/core/EnumItem")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const dgame = require("@game/ReplicatedStorage/static/dgame")
 

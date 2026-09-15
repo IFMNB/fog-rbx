@@ -1,16 +1,15 @@
 --!strict
-const EnumItem = require("@game/ReplicatedStorage/class/arch/EnumItem")
-const EnumObject = require("@game/ReplicatedStorage/class/arch/EnumObject")
-const declare = require("@game/ReplicatedStorage/static/declare")
+const EnumItem = require("@game/ReplicatedStorage/class/core/EnumItem")
+const EnumObject = require("@game/ReplicatedStorage/class/core/EnumObject")
 
-const class: declare.enum_connection_variant = EnumObject:new({
+const class: enum_connection_variant = EnumObject:new({
 	name = script.Name,
-	Ever = EnumItem:new() :: declare.enumitem<any>,
-	Once = EnumItem:new() :: declare.enumitem<any>,
-	Never = EnumItem:new() :: declare.enumitem<any>,
-    Skip = EnumItem:new() :: declare.enumitem<any>,
-	Hold = EnumItem:new() :: declare.enumitem<any>,
-	Next = EnumItem:new() :: declare.enumitem<any>
+	Ever = EnumItem:new() :: enumitem<any>,
+	Once = EnumItem:new() :: enumitem<any>,
+	Never = EnumItem:new() :: enumitem<any>,
+	Skip = EnumItem:new() :: enumitem<any>,
+	Hold = EnumItem:new() :: enumitem<any>,
+	Next = EnumItem:new() :: enumitem<any>,
 })
 
 return class

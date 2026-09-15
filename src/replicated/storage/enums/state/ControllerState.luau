@@ -1,14 +1,13 @@
 --!strict
 
-const EnumObject = require("@game/ReplicatedStorage/class/arch/EnumObject")
-const EnumItem = require("@game/ReplicatedStorage/class/arch/EnumItem")
-const declare = require("@game/ReplicatedStorage/static/declare")
+const EnumObject = require("@game/ReplicatedStorage/class/core/EnumObject")
+const EnumItem = require("@game/ReplicatedStorage/class/core/EnumItem")
 
-const class : declare.enum_controller_state = EnumObject:new({
+const class: enum_controller_state = EnumObject:new({
 	name = script.Name,
-	Continue = EnumItem:new() :: declare.enumitem<any>,
-	Pause = EnumItem:new() :: declare.enumitem<any>,
-	Reset = EnumItem:new() :: declare.enumitem<any>,
+	Continue = EnumItem:new() :: enumitem<any>,
+	Pause = EnumItem:new() :: enumitem<any>,
+	Reset = EnumItem:new() :: enumitem<any>,
 })
 
 return class

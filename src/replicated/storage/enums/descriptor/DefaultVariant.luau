@@ -1,12 +1,11 @@
 --!strict
-const EnumItem = require("@game/ReplicatedStorage/class/arch/EnumItem")
-const EnumObject = require("@game/ReplicatedStorage/class/arch/EnumObject")
-const declare = require("@game/ReplicatedStorage/static/declare")
+const EnumItem = require("@game/ReplicatedStorage/class/core/EnumItem")
+const EnumObject = require("@game/ReplicatedStorage/class/core/EnumObject")
 
-const class: declare.enum_default_variant = EnumObject:new({
+const class: enum_default_variant = EnumObject:new({
 	name = script.Name,
-	Unknown = EnumItem:new() :: declare.enumitem<any>,
-	Any = EnumItem:new() :: declare.enumitem<any>,
+	Unknown = EnumItem:new() :: enumitem<any>,
+	Any = EnumItem:new() :: enumitem<any>,
 })
 
 return class

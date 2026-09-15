@@ -141,6 +141,7 @@ class:host(function(new: declare.input)
 	end)
 end)
 
+
 do
 	type pressed = boolean
 	type clamped = boolean

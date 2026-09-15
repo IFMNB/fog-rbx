@@ -7,18 +7,18 @@ const it = JestGlobals.it
 const expect = JestGlobals.expect
 
 const Observer = require("@game/ReplicatedStorage/class/arch/Observer")
-const EnumItem = require("@game/ReplicatedStorage/class/arch/EnumItem")
-const EnumObject = require("@game/ReplicatedStorage/class/arch/EnumObject")
+const EnumItem = require("@game/ReplicatedStorage/class/core/EnumItem")
+const EnumObject = require("@game/ReplicatedStorage/class/core/EnumObject")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
 const ObserverSettingVariant = require("@game/ReplicatedStorage/enums/descriptor/ObserverSettingVariant")
 
 describe("Observer", function()
-    const cached = EnumObject:new {
-        First = EnumItem:new(),
-        Second = EnumItem:new(),
-        Third = EnumItem:new()
-    }
-    const cached2 = EnumItem:new({name = "TestNotification"})
+	const cached = EnumObject:new({
+		First = EnumItem:new(),
+		Second = EnumItem:new(),
+		Third = EnumItem:new(),
+	})
+	const cached2 = EnumItem:new({ name = "TestNotification" })
 
 	local function create_notification()
 		return cached2
@@ -370,8 +370,8 @@ describe("Observer", function()
 			local first_count = 0
 			local second_count = 0
 
-			local first : any
-			local second : any
+			local first: any
+			local second: any
 
 			first = observer:subscribe(notification, ConnectionVariant.Ever, function()
 				first_count += 1
@@ -392,7 +392,7 @@ describe("Observer", function()
 			expect(first_count).toBe(2)
 			expect(second_count).toBe(1)
 
-            observer:unsubscribe(first)
+			observer:unsubscribe(first)
 		end)
 	end)
 

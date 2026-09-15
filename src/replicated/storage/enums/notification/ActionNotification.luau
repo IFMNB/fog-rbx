@@ -1,15 +1,14 @@
 --!strict
-const EnumItem = require("@game/ReplicatedStorage/class/arch/EnumItem")
-const EnumObject = require("@game/ReplicatedStorage/class/arch/EnumObject")
-const declare = require("@game/ReplicatedStorage/static/declare")
+const EnumItem = require("@game/ReplicatedStorage/class/core/EnumItem")
+const EnumObject = require("@game/ReplicatedStorage/class/core/EnumObject")
 
-const class: declare.enum_action_notification = EnumObject:new({
+const class: enum_action_notification = EnumObject:new({
 	name = script.Name,
-	Step = EnumItem:new() :: declare.enumitem<any>,
-	Signal = EnumItem:new() :: declare.enumitem<any>,
-	Emit = EnumItem:new() :: declare.enumitem<any>,
-	Unobservable = EnumItem:new() :: declare.enumitem<any>,
-	Observer = EnumItem:new() :: declare.enumitem<any>,
+	Step = EnumItem:new() :: enumitem<any>,
+	Signal = EnumItem:new() :: enumitem<any>,
+	Emit = EnumItem:new() :: enumitem<any>,
+	Unobservable = EnumItem:new() :: enumitem<any>,
+	Observer = EnumItem:new() :: enumitem<any>,
 })
 
 return class

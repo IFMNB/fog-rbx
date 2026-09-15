@@ -1,5 +1,8 @@
 --!nolint
+const declare = require("@game/ReplicatedStorage/static/declare")
 const project = {}
+
+warn = warn or print
 
 do --data
 	--[=[
@@ -25,29 +28,63 @@ do --data
         значит что никакой поток не потеряется, то есть его текущий контекст не
         изменится, поэтому эта информация полностью безопасна
     ]]
-	project.parallel = pcall(function(...)
+	project.parallel = pcall(function(): ()
+		if type(task) ~= declare.table then error "project.parallel unsupported env" return end
+		if type(task.desynchronize) ~= declare["function"] then error "project.parallel unsupported env" return end
+		if type(task.synchronize) ~= declare["function"] then error "project.parallel unsupported env" return end
+
 		task.desynchronize()
 		task.synchronize()
 	end)
-
-	project.debug = game["Run Service"]:IsStudio() :: boolean
-	project.debug_show_created_objects = false
-	project.debug_show_notifications_path = false
-	project.debug_show_channel_send_actions = false
-	project.debug_show_maids_releasing = false
-	project.debug_show_channel_internal = false
-	project.debug_show_pickup_internal = false
-	project.debug_show_signal_internal = false
 end
 
-do --properties
-	project.proto = true
+do -- debug
+	project.debug = {}
 
-	project.retry = 5
-	project.retry_time = 1
-	project.timeout = 30
+	project.debug.state = true
+	project.debug.show_created_objects = false
+	project.debug.show_notifications_path = false
+	project.debug.show_channel_send_actions = false
+	project.debug.show_maids_releasing = false
+	project.debug.show_channel_internal = false
+	project.debug.show_pickup_internal = false
+	project.debug.show_signal_internal = false
+end
 
-	project.enumobject_freeze_related_items = true
+do -- object
+
+	project.object = {}
+
+	--[==[
+		Объекты будут получать метаметод `__index` и будут ссылаться на родителя, даже
+		если у них специально занулено требуемое поле
+
+		Включает "Прототипное ООП" вместо обычного "ООП"
+	]==]
+	project.object.prototypes = false
+
+	--[==[
+		Объекты класса `struct` и его наследники будут создаваться всегда замороженными,
+		вне зависимости от того что с ними было. Только `struct:host()` функции и переданый
+		в `struct:new(arg)` `arg` будут способны менять эти объекты, прежде чем они зафиксируются
+	]==]
+	project.object.struct_freeze = true
+end
+
+do -- enums
+	project.enums = {}
+
+	--[==[
+		Объекты `enumobject` будут замораживаться после создания и не смогут быть изменены позже
+
+		С настройкой `project.enums.enumitem_freeze` пересоздаст `enumitem`, чтобы корректно установить его имя
+	]==]
+	project.enums.enumobject_freeze = true
+
+	--[==[
+		Объекты `enumitem` будут замораживаться после создания и не смогут быть изменены позже
+	]==]
+	project.enums.enumitem_freeze = false
 end
 
 do --game
@@ -73,6 +110,8 @@ function project.console_out_error(...: unknown): console_out_type
 	else
 		warn("error ", debug.traceback())
 	end
+
+	return nil :: console_out_type
 end
 
 function project.assert <T> (var: T, out: string?, error: boolean?) : T
@@ -89,7 +128,6 @@ function project.assert <T> (var: T, out: string?, error: boolean?) : T
 	return var
 end
 
-
 --[=[
 	Выводит сообщение в консоль
 
@@ -98,6 +136,14 @@ end
 function project.console_out (...): console_out_type
 	if project.debug then
 		print(...)
+	end
+
+	return nil :: console_out_type
+end
+
+do
+	if project.debug then
+		_G.fg_debug = {}
 	end
 end
 

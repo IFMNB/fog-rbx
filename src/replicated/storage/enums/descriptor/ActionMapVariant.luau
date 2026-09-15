@@ -1,20 +1,19 @@
 --!strict
-const EnumItem = require("@game/ReplicatedStorage/class/arch/EnumItem")
-const EnumObject = require("@game/ReplicatedStorage/class/arch/EnumObject")
-const declare = require("@game/ReplicatedStorage/static/declare")
+const EnumItem = require("@game/ReplicatedStorage/class/core/EnumItem")
+const EnumObject = require("@game/ReplicatedStorage/class/core/EnumObject")
 
-const class: declare.enum_action_map_variant = EnumObject:new({
+const class: enum_action_map_variant = EnumObject:new({
 	name = script.Name,
-    
-    MoveForward = EnumItem:new() :: declare.enumitem<any>,
-    MoveBackward = EnumItem:new() :: declare.enumitem<any>,
-    MoveLeft = EnumItem:new() :: declare.enumitem<any>,
-    MoveRight = EnumItem:new() :: declare.enumitem<any>,
-    MoveJump = EnumItem:new() :: declare.enumitem<any>,
-    MoveCrounch = EnumItem:new() :: declare.enumitem<any>,
-    MoveLying = EnumItem:new() :: declare.enumitem<any>,
-    MoveRun = EnumItem:new() :: declare.enumitem<any>,
-    MoveSlow = EnumItem:new() :: declare.enumitem<any>,
+
+	MoveForward = EnumItem:new() :: enumitem<any>,
+	MoveBackward = EnumItem:new() :: enumitem<any>,
+	MoveLeft = EnumItem:new() :: enumitem<any>,
+	MoveRight = EnumItem:new() :: enumitem<any>,
+	MoveJump = EnumItem:new() :: enumitem<any>,
+	MoveCrounch = EnumItem:new() :: enumitem<any>,
+	MoveLying = EnumItem:new() :: enumitem<any>,
+	MoveRun = EnumItem:new() :: enumitem<any>,
+	MoveSlow = EnumItem:new() :: enumitem<any>,
 })
 
 return class

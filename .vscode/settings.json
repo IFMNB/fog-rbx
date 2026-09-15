@@ -1,0 +1,29 @@
+{
+    "luau-lsp.sourcemap.rojoProjectFile": "default.project.json",
+    "luau-lsp.types.robloxSecurityLevel": "LocalUserSecurity",
+    "luau-lsp.types.definitionFiles": {
+        "@forgotten_grave": "src/declare/core.d.luau",
+    },
+    "luau-lsp.completion.imports.requireStyle": "alwaysAbsolute",
+    "luau-lsp.fflags.override": {
+        "DebugLuauMagicTypes": "true",
+        "LuauUnifierDoesntReferToNewSolver": "false",
+        "LuauLimitUnification": "false",
+        "LuauLimitUnificationRecursion": "false",
+        "LuauNormalizationLimitTyvarUnionSize": "false",
+        "LuauTableTypeMaximumStringifierLength": "5",
+        "LuauTypeFamilyGraphReductionMaximumSteps": "1000000",
+        "LuauSolverConstraintLimit": "1000000",
+        "LuauUnifierRecursionLimit": "1000000",
+        "LuauSubtypingRecursionLimit": "1000000",
+        "LuauTypeInferTypePackLoopLimit": "1000000",
+        "LuauTypeInferIterationLimit": "1000000",
+        "LuauCheckRecursionLimit": "1000000",
+        "LuauVisitRecursionLimit": "1000000",
+        "LuauTypeInferRecursionLimit": "1000000",
+        "LuauTypeMaximumStringifierLength": "50"
+    },
+    "luau-lsp.diagnostics.workspace": true,
+    "luau-lsp.fflags.enableNewSolver": true,
+    "luau-lsp.server.baseLuaurc": "config.luaurc"
+}

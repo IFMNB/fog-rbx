@@ -6,15 +6,15 @@ const describe = JestGlobals.describe
 const it = JestGlobals.it
 const expect = JestGlobals.expect
 
-const enumobject = require("@game/ReplicatedStorage/class/arch/EnumObject")
-const enumitem = require("@game/ReplicatedStorage/class/arch/EnumItem")
+const enumobject = require("@game/ReplicatedStorage/class/core/EnumObject")
+const enumitem = require("@game/ReplicatedStorage/class/core/EnumItem")
 
 describe("enumobject with enumitems", function()
 	local function create_enum()
 		const new = enumobject:new({
-			First = enumitem:new({name = "First"}),
-			Second = enumitem:new({name = "Second"}),
-			Third = enumitem:new({name = "Third"}),
+			First = enumitem:new({ name = "First" }),
+			Second = enumitem:new({ name = "Second" }),
+			Third = enumitem:new({ name = "Third" }),
 		})
 
 		return new
@@ -62,7 +62,7 @@ describe("enumobject with enumitems", function()
 
 		it("does not include non-enumitem fields", function()
 			const new = enumobject:new({
-				First = enumitem:new({name = "First"}),
+				First = enumitem:new({ name = "First" }),
 				value = 123,
 				name = "Test",
 			})

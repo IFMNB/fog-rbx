@@ -1,12 +1,11 @@
 --!strict
-const EnumItem = require("@game/ReplicatedStorage/class/arch/EnumItem")
-const EnumObject = require("@game/ReplicatedStorage/class/arch/EnumObject")
-const declare = require("@game/ReplicatedStorage/static/declare")
+const EnumItem = require("@game/ReplicatedStorage/class/core/EnumItem")
+const EnumObject = require("@game/ReplicatedStorage/class/core/EnumObject")
 
-const class: declare.enum_physx_mode_variant = EnumObject:new({
+const class: enum_physx_mode_variant = EnumObject:new({
 	name = script.Name,
-	Local = EnumItem:new() :: declare.enumitem<any>,
-	Global = EnumItem:new() :: declare.enumitem<any>,
+	Local = EnumItem:new() :: enumitem<any>,
+	Global = EnumItem:new() :: enumitem<any>,
 })
 
 return class

@@ -72,13 +72,21 @@ const class: dgeometry.aabbvolume = CubeVolume:new({
         return true
     end,
 
-	is_intersection = function(self: dgeometry.aabbvolume, ...: dgeometry.geometry_supported): boolean end,
+	is_intersection = function(self: dgeometry.aabbvolume, ...: dgeometry.geometry_supported): boolean
+	
+	end,
 
-	from = function(self: dgeometry.aabbvolume, ...: dgeometry.geometry_supported): dgeometry.aabbvolume end,
+	from = function(self: dgeometry.aabbvolume, ...: dgeometry.geometry_supported): dgeometry.aabbvolume
+	
+	end,
 
-	middle = function(self: dgeometry.aabbvolume, ...: dgeometry.geometry_supported): dgeometry.aabbvolume end,
+	middle = function(self: dgeometry.aabbvolume, ...: dgeometry.geometry_supported): dgeometry.aabbvolume
+	
+	end,
 
-	cover = function(self: dgeometry.aabbvolume, ...: dgeometry.geometry_supported): dgeometry.aabbvolume end,
+	cover = function(self: dgeometry.aabbvolume, ...: dgeometry.geometry_supported): dgeometry.aabbvolume
+	
+	end,
 })
 
 return class

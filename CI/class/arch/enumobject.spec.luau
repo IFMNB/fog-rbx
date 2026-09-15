@@ -1,13 +1,13 @@
 --!strict
 
-const EnumItem = require("@game/ReplicatedStorage/class/arch/EnumItem")
+const EnumItem = require("@game/ReplicatedStorage/class/core/EnumItem")
 const JestGlobals = require("@game/ReplicatedStorage/shared/dev_dependency/JestGlobals")
 
 const describe = JestGlobals.describe
 const it = JestGlobals.it
 const expect = JestGlobals.expect
 
-const enumobject = require("@game/ReplicatedStorage/class/arch/EnumObject")
+const enumobject = require("@game/ReplicatedStorage/class/core/EnumObject")
 const object = require("@game/ReplicatedStorage/object")
 
 describe("enumobject", function()
@@ -78,8 +78,9 @@ describe("enumobject", function()
 			expect(second_name).never.toBe("Second")
 		end)
 
-		it("returns the names of his items", function ()
-			const test = enumobject:new {alpha = EnumItem:new{name = "alpha"}, beta = EnumItem:new({name = "beta"})}
+		it("returns the names of his items", function()
+			const test =
+				enumobject:new({ alpha = EnumItem:new({ name = "alpha" }), beta = EnumItem:new({ name = "beta" }) })
 			const n0, n1 = test:get_enums_name(test.alpha, test.beta)
 
 			expect(n0).toBe(test.alpha.name)

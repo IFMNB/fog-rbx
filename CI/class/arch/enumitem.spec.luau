@@ -6,7 +6,7 @@ const describe = JestGlobals.describe
 const it = JestGlobals.it
 const expect = JestGlobals.expect
 
-const enumitem = require("@game/ReplicatedStorage/class/arch/EnumItem")
+const enumitem = require("@game/ReplicatedStorage/class/core/EnumItem")
 const object = require("@game/ReplicatedStorage/object")
 
 describe("enumitem", function()

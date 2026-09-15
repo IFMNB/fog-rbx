@@ -1,0 +1,48 @@
+{
+    "languageMode": "strict",
+
+    "lint": {
+        "*": false,
+
+        "UnknownGlobal": true,
+        "DeprecatedGlobal": true,
+        "GlobalUsedAsLocal": true,
+        "LocalShadow": false,
+        "SameLineStatement": true,
+        "MultiLineStatement": true,
+        "LocalUnused": true,
+        "FunctionUnused": true,
+        "ImportUnused": true,
+        "BuiltinGlobalWrite": true,
+        "PlaceholderRead": true,
+        "UnreachableCode": true,
+        "UnknownType": true,
+        "ForRange": true,
+        "UnbalancedAssignment": true,
+        "ImplicitReturn": true,
+        "DuplicateLocal": true,
+        "FormatString": true,
+        "TableLiteral": true,
+        "UninitializedLocal": true,
+        "DuplicateFunction": true,
+        "DeprecatedApi": true,
+        "TableOperations": true,
+        "DuplicateCondition": true,
+        "MisleadingAndOr": true,
+        "CommentDirective": true,
+        "IntegerParsing": true,
+        "ComparisonPrecedence": true,
+        "RedundantNativeAttribute": true
+    },
+
+    "lintErrors": true,
+    "typeErrors": true,
+
+    "globals": [
+
+    ],
+
+    "aliases": {
+
+    }
+}

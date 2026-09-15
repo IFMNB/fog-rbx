@@ -1,19 +1,17 @@
 --!strict
 
-const EnumObject = require("@game/ReplicatedStorage/class/arch/EnumObject")
-const EnumItem = require("@game/ReplicatedStorage/class/arch/EnumItem")
-const declare = require("@game/ReplicatedStorage/static/declare")
-const dgeometry = require("@game/ReplicatedStorage/static/dgeometry")
+const EnumObject = require("@game/ReplicatedStorage/class/core/EnumObject")
+const EnumItem = require("@game/ReplicatedStorage/class/core/EnumItem")
 
-const class: dgeometry.enum_direction_variant = EnumObject:new({
+const class: enum_direction_variant = EnumObject:new({
 	name = script.Name,
 
-	Up = EnumItem:new() :: declare.enumitem<any>,
-	Bottom = EnumItem:new() :: declare.enumitem<any>,
-	Left = EnumItem:new() :: declare.enumitem<any>,
-	Right = EnumItem:new() :: declare.enumitem<any>,
-	Front = EnumItem:new() :: declare.enumitem<any>,
-	Back = EnumItem:new() :: declare.enumitem<any>,
+	Up = EnumItem:new() :: enumitem<any>,
+	Bottom = EnumItem:new() :: enumitem<any>,
+	Left = EnumItem:new() :: enumitem<any>,
+	Right = EnumItem:new() :: enumitem<any>,
+	Front = EnumItem:new() :: enumitem<any>,
+	Back = EnumItem:new() :: enumitem<any>,
 })
 
 return class

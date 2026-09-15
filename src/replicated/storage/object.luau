@@ -1,33 +1,32 @@
 --!strict
 
 
+const gall = require("@game/ReplicatedStorage/static/gall")
 const project = require("./static/project")
 const declare = require("./static/declare")
 const ftype = require("./static/ftype")
 const fspec = require("./static/fspec")
 
 const private = {}
-const class: declare.object = {
+const class: object = {
 	identity = "never",
 	type = "object",
 
 	new = ftype:write(function <T,U> (self: T, that: U?)
-		const T = (
-			project.proto
-				and setmetatable(table.clone(self), {
-					__index = private.spec__index,
-				})
-			or table.clone(self)
-		) :: declare.object
+		const T = private.new(self)
 
 		private.load_to_new(T, that)
 		private.bootload_new(T, self) 
 		private.wake(T)
 
+		if T:is("struct") and project.object.struct_freeze then
+			table.freeze(T)
+		end
+
 		return T :: any
 	end, "object", ftype:uor(declare.table, "object"), ftype:opt(declare.table)),
 
-	is = ftype:write(function(this: unknown, that: string): boolean
+	is = ftype:write(function(this: object, that: string): boolean
 		if that == "anyt" then
 			return true
 		end
@@ -48,12 +47,19 @@ const class: declare.object = {
 		return false
 	end, declare.boolean, "object", declare.string),
 
-	equals = ftype:write(function(this: unknown, that: string): boolean
+	it = ftype:write(function(this: object, that: string): boolean
 		const state, cached = private.get_cached(this)
 		return state and cached.__type == that or false
 	end, declare.boolean, "object", declare.string),
 
-	base = ftype:write(function <T> (self: T & declare.object, expected: string|nil) : any
+	eq = ftype:write(function(self: object, that: object) : boolean
+		return self == that or self.it(that, self.type)
+	end, declare.boolean, "object", "object"),
+
+
+
+	
+	base = ftype:write(function <T> (self: T & object, expected: string|nil) : any
 		const base = private.ever[self]
 
 		if expected then 
@@ -67,7 +73,7 @@ const class: declare.object = {
 		return nil
 	end, ftype:opt("object"), "object", ftype:opt(declare.string)),
 
-	host = ftype:write(function <T> (self: T & declare.object, f: (any) -> (), last: boolean?)
+	host = ftype:write(function <T> (self: T & object, f: (any) -> (), last: boolean?)
 		const state, cached = private.get_cached<<T,unknown>>(self)
 
 		if state then
@@ -84,27 +90,22 @@ const class: declare.object = {
 		end
 	end, declare["nil"], "object", declare["function"], ftype:opt(declare.boolean)),
 
-	require = ftype:write(function (identity: unknown, assertion: string?) : any
-		const required = private.identity[identity]
-		
-		if assertion then
-			const state, cached = private.get_cached(required)
-			
-			assert(state, "cannot get necessary object, cache empty")
-			assert(cached.__type == assertion, "retrieved object isn't an assertion")
-		end
-		
-		return required
-	end, ftype:opt("object"), declare.string, ftype:opt(declare.string)),
-
 	as = ftype:write(function <T> (self: unknown, as: string) : T
-		assert((self :: declare.object):is(as), "cannot convert this object to required type")
+		assert((self :: object):is(as), "cannot convert this object to required type")
 		return self :: any
-	end, "object", declare.string)
+	end, "object", declare.string),
+
+	that = ftype:write(function<T>(self: object, that: any) : T?
+		return self.is(that, "object") and that or nil
+	end, ftype:opt("object"), "object", declare.anyt),
+
+	iden = ftype:write(function(self: object) : unknown
+		return private.identity[table.find(private.identity, self) or 0] or nil
+	end, ftype:or_opt(declare.number, declare.string), "object")
 }
 
 do --private_region
-	type cached <T = declare.object, U = unknown> = {
+	type cached <T = object, U = unknown> = {
 		__index: U,
 		__metatable: nil|string,
 		__type: string,
@@ -115,11 +116,13 @@ do --private_region
 	
 	private.frozen = table.freeze {__mode = "ks"}
 	private.cached = setmetatable({} :: { [unknown]: cached }, private.frozen)
-	private.ever = setmetatable({} :: { [declare.object | unknown]: unknown }, private.frozen)
-	private.identity = setmetatable({} :: {[unknown]: declare.object|unknown}, private.frozen)
+	private.ever = setmetatable({} :: { [object ]: object }, private.frozen)
+	private.identity = setmetatable({} :: {[any]: object}, private.frozen)
 	private.counter = 0
 
-	function private.get_cached_by_instance<T,U>(this: unknown): (boolean, cached<T,U>)
+
+
+	function private.get_cached_by_instance<T,U>(this: object): (boolean, cached<T,U>)
 		const ever = private.ever[this]
 		if ever then
 			const cached = private.cached[ever]
@@ -137,7 +140,7 @@ do --private_region
 		return state, cached
 	end
 
-	function private.get_cached<T,U> (this: unknown) : (boolean, cached<T,U>)
+	function private.get_cached<T,U> (this: object) : (boolean, cached<T,U>)
 		local state, cached = private.get_cached_direct <<T,unknown>>(this)
 		if not state then state, cached = private.get_cached_by_instance <<T, unknown>>(this) end
 		return state, cached
@@ -148,7 +151,7 @@ do --private_region
 		const meta: cached = private.cached[this]
 			or {
 				__index = parent,
-				__metatable = if not project.proto then nil else if project.debug then "<metatable>" else nil,
+				__metatable = "<metatable locked>",
 				__type = Ttype == "table" and tostring((this :: any).type) or Ttype,
 
 				self = this,
@@ -159,7 +162,7 @@ do --private_region
 		return meta
 	end
 
-	function private.wake_hosts(inside: cached, to: declare.object)
+	function private.wake_hosts(inside: cached, to: object)
 		for _, v in inside.hosts do
 			if not project.debug then
 				pcall(v, to)
@@ -169,7 +172,20 @@ do --private_region
 		end
 	end
 
-	function private.load_to_new (new: declare.object, load: {[unknown]: unknown}|unknown|nil)
+	function private.new (of: any) : object
+		if project.object.prototypes then
+			return setmetatable(table.clone(of), table.freeze {
+				__index = function (t, i) 
+					return of[i]
+				end,
+				__metatable = "object"
+			}) :: any
+		else
+			return table.clone(of)
+		end
+	end
+
+	function private.load_to_new (new: object, load: {[unknown]: unknown}|unknown|nil)
 		const T = type(load)
 
 		if T == "table" then
@@ -188,7 +204,7 @@ do --private_region
 		end
 	end
 
-	function private.get_hierarchy<T,U>(from: declare.object): {cached<T,U>}
+	function private.get_hierarchy<T,U>(from: object): {cached<T,U>}
 		const result = {}
 		local state, cached = private.get_cached(from)
 
@@ -196,7 +212,7 @@ do --private_region
 			table.insert(result, cached)
 
 			if cached.__index ~= nil then
-				state, cached = private.get_cached(cached.__index)
+				state, cached = private.get_cached(cached.__index :: any)
 
 				if table.find(result, cached) then
 					project.console_out("recursive hierarchy")
@@ -210,8 +226,8 @@ do --private_region
 		return result
 	end
  
-	function private.wake (new: declare.object)
-		const hierarchy =  private.get_hierarchy <<declare.object, unknown>> (new)
+	function private.wake (new: object)
+		const hierarchy =  private.get_hierarchy <<object, unknown>> (new)
 		const count = #hierarchy
 
 		for i = count, 1, -1 do
@@ -220,30 +236,39 @@ do --private_region
 		end
 	end
 
-	function private.generator (new: declare.object)
+	function private.generator (new: object)
 		private.counter += 1
-
-		const __new = new :: {[string]: any}
-		__new.identity = tostring(private.counter)
+		return private.counter
 	end
 
-	function private.spec__index (t, i)
-		return rawget(t, i)
-	end
-
-	function private.bootload_new(new: declare.object, parent: unknown)
-		private.generator(new)	
-		private.identity[new.identity] = new
+	function private.bootload_new(new: object, parent: unknown)
+		const gen_iden = private.generator(new)	
+		private.identity[gen_iden] = new
 		private.ever[new] = parent
 		private.lazyget_cached(new, parent)
 	end
 
 	private.bootload_new(class)
 
-	if project.debug and project.debug_show_created_objects then
-		class:host(function(new: declare.object)
-			project.console_out(string.format("new %s", new.type))
-		end)
+	if project.debug then
+		gall.object_require = ftype:write(function (identity: unknown, assertion: string?) : any
+			const required = private.identity[identity]
+			
+			if assertion then
+				const state, cached = private.get_cached(required :: any)
+				
+				assert(state, "cannot get necessary object, cache empty")
+				assert(cached.__type == assertion, "retrieved object isn't an assertion")
+			end
+			
+			return required
+		end, ftype:opt("object"), declare.string, ftype:opt(declare.string))
+
+		if project.debug.show_created_objects then
+			class:host(function(new: object)
+				project.console_out(string.format("new %s", new.type))
+			end)
+		end
 	end
 end
 
