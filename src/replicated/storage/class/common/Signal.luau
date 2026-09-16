@@ -3,8 +3,8 @@ const Reference = require("@game/ReplicatedStorage/class/common/Reference")
 const Maybe = require("@game/ReplicatedStorage/class/common/gc/Maybe")
 const Event = require("@game/ReplicatedStorage/class/common/signal/Event")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
-const ActionNotification = require("@game/ReplicatedStorage/enums/notification/ActionNotification")
 const ReferenceNotification = require("@game/ReplicatedStorage/enums/notification/ReferenceNotification")
+const TickNotification = require("@game/ReplicatedStorage/enums/notification/TickNotification")
 const ftype = require("@game/ReplicatedStorage/static/ftype")
 const project = require("@game/ReplicatedStorage/static/project")
 
@@ -12,10 +12,8 @@ const private = {}
 const class : signal = Reference:new <<reference<RBXScriptSignal>>> {
     type = "signal",
 
-    get_signal_event = ftype:write(function (self: signal) : event<enumitem_action_notification, ...unknown>
-        return private.maybe:extract(self, function()
-            return Event:new()
-        end)
+    get_signal_event = ftype:write(function (self: signal) : event<enumitem_tick_notification, ...unknown>
+        return private.maybe:enactment(self, Event) :: event<any>
     end, "event", "signal")
 }
 
@@ -36,7 +34,7 @@ class:host(function(new: signal)
                     project.console_out "signal emitted"
                 end
 
-                new:get_signal_event():invoke( ActionNotification.Emit, ...)
+                new:get_signal_event():invoke(TickNotification.Stepped, ...)
             end
         end)
     end)

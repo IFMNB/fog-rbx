@@ -9,11 +9,21 @@ const private = {}
 const class: struct = object:new({
     type = "struct",
 
-    clone = ftype:write(function (self: struct) : any
+    clone = ftype:write(function (self: struct, change: {[unknown]: unknown}?) : any
         const base = self:base <<struct>>("struct")
+        const reconv = private.recursive_convertion(self)
+
+        if change then
+
+            -- Keep an eye on what you send here, the local code changes the structure before it freezes
+
+            for i,v in change do
+                reconv[i] = v
+            end
+        end
         
         if base then
-            const new = base:new(private.recursive_convertion(self))
+            const new = base:new(reconv)
             return new
         else
             project.console_out_error "cannot take base, return self"

@@ -96,7 +96,7 @@ export type enumitem<T = enumobject?> = construct<{
     Every struct-type object is unchangeable and freezed, create a new structure if you need to change something
 ]==]
 export type struct = construct<{
-	read clone: <T>(self: struct | T) -> T,
+	read clone: <T>(self: struct | T, change: {[any]: any} | any | nil) -> T,
 	read each: <T>(self: struct, type: string, f: (value: T) -> T) -> {[unknown]: T},
 }, object>
 
@@ -144,7 +144,7 @@ export type path<T = object> = construct<{
     An observer manages subscriptions through pointer objects
     Each subscription may have its own connection mode and additional parameters
 ]==]
-export type observer<T = enumitem<any> | enumobject> = construct<
+export type observer<T = enumitem | enumobject> = construct<
 	{
 		deffered_call: boolean,
 		deffered_mode: boolean,
@@ -161,8 +161,8 @@ export type observer<T = enumitem<any> | enumobject> = construct<
 		read subscription_get_mode: (self: observer<T>, ...pointer) -> ...enumitem_connection_variant,
 		read notificate: (self: observer<T>, notification: observer_on<T>, ...unknown) -> (),
 
-		read get: <Y>(self: observer<T>, label: unknown) -> Y,
-		read set: <Y>(self: observer<T>, label: unknown, to: Y) -> (),
+		read get: <Y>(self: observer<T>, label: any) -> Y,
+		read set: <Y>(self: observer<T>, label: any, to: Y) -> (),
 	},
 	object
 >
@@ -230,14 +230,14 @@ export type disposable = construct<{
 
 -- Common
 
-export type event<T = enumitem<any>, U... = ...unknown> = construct<{
+export type event<T = enumitem, U... = ...unknown> = construct<{
     read connect: <T0> (self: event<T,U...>, on: T, f: ((U...) -> ())|thread|observer<T>) -> connection<T,U...>,
     read once: <T0> (self: event<T,U...>, on: T, f: ((U...) -> ())|thread|observer<T>) -> connection<T,U...>,
     read wait: (self: event<T,U...>, on: T) -> U...,
     read invoke: (self: event<T,U...>, on: T, U...) -> (),
 } & expected_calltype<T?>, observer<T>> 
 
-export type connection<T = enumitem<any>, U... = ()> = construct<{
+export type connection<T = enumitem, U... = ()> = construct<{
     count: number,
 
     read get_mode: (self: connection<T, U...>) -> enumitem_connection_variant,
@@ -245,8 +245,8 @@ export type connection<T = enumitem<any>, U... = ()> = construct<{
     
     read is_connected: (self: connection<T,U...>) -> boolean,
     read disconnect: (self: connection<T,U...>) -> (),
-} & invokeable<connection<T,U...>,U...> & expected_calltype<T>,
-observer<T|enumitem_connection_variant|enumitem_setup_notification|enumitem_action_notification>>
+} & invokeable<connection<T,U...>,U...> & expected_calltype<T?>,
+observer<enumitem_setup_notification>>
 
 export type value<T = unknown> = construct<{
     read get_value: (self: value<T>) -> T?,                    
@@ -254,34 +254,29 @@ export type value<T = unknown> = construct<{
 }, observer<enumitem_operation_variant>>
 
 export type timer = construct<{
-    seconds: number,
-    previous_stepped: DateTime,
+    read get_elapsed: (self: timer) -> number,
+    read get_remaining: (self: timer) -> number,
+    read get_duration: (self: timer) -> number,
+    read get_step: (self: timer) -> number,
 
-    read schedule: (self: timer) -> (),    
-    read get_delta: (self: timer) -> number,
-} & iterations<number> & modifier<number> & controllable<timer>, observer<enumitem_action_notification>>
+    read set_duration: (self: timer, to: number) -> (),
+    read set_step: (self: timer, to: number) -> (),
+
+    read is_running: (self: timer) -> boolean,
+    read is_finished: (self: timer) -> boolean,
+}  & iterations<number> & modifier<number> & controllable<timer>, observer<enumitem_tick_notification>>
 
 export type reference<T = Instance> = construct<{
     read clear: (self: reference<T>) -> ()
 } & instanceable<reference<T>, T>, observer<enumitem_reference_notification>>
 
 export type signal<T... = ...unknown> = construct<{
-    read get_signal_event: (self: signal<T...>) -> event<enumitem_action_notification, T...>
+    read get_signal_event: (self: signal<T...>) -> event<enumitem_tick_notification, T...>
 }, reference<RBXScriptSignal<T...>>>
 
 export type controller = construct<{
     state: enumitem_controller_state
 } & operatable<controller>, observer<enumitem_controller_state>>
-
-export type tasky<
-	current --[=[*based-on-current-realization*]=]
-> = construct<{
-	read deploy: (self: tasky<current>, path: string) -> (),
-	read get_online: (self: tasky<current>) -> { [string]: current },
-	read get_offline: (self: tasky<current>) -> { [string]: current },
-	read get_existed: (self: tasky<current>, path: string) -> current?,
-	read is_exists: (self: tasky<current>, path: string) -> boolean,
-} & asyncable, object>
 
 export type stack<T = unknown> = construct<{
 	max: number,
@@ -299,53 +294,86 @@ export type maid = construct< {
 	read is_supported: (self: maid, that: unknown) -> boolean,
 }, disposable>
 
-export type maybe = construct<{
-	read extract: <T>(self: maybe, it: unknown, make: () -> T) -> T,
-	read erase: (self: maybe, it: unknown) -> (),
-	read exist: (self: maybe, it: unknown) -> boolean,
-}, object>
+export type maybe <T = unknown, U = unknown> = construct<{
+	read extract: (self: maybe<T,U>, it: U, make: () -> T) -> T,
+    read enactment: (self: maybe<T,U>, it: U, of: object) -> T,
+	read erase: (self: maybe<T,U>, it: U) -> (),
+	read exist: (self: maybe<T,U>, it: U) -> boolean,
+}, observer<enumitem_operation_variant>>
+
+export type statemachine <T = enumitem> = construct<{
+    read get_state: (self: statemachine<T>, ...T) -> boolean,
+    read set_state: (self: statemachine<T>, to: boolean?, ...T) -> (),
+    
+    read blacklist: (self: statemachine<T>, ...T) -> (),
+}, observer<enumitem_statemachine_notification>>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 -- Component
 
 
-export type user<T = enumitem<any>> = construct<{
+export type profile<T = enumitem> = construct<{
     read uid: number,
 
-    read get_inlined: (self: user<T>, uid: number) -> user<T>, 
-    read get_player: (self: user<T>) -> Player?,
-    read get_reference: (self: user<T>) -> reference<Player>,
-    read get_configurated: <Y> (self: user<T>, of: enumitem<any>) -> variable<Y>,
-    read get_joined_at: (self: user<T>) -> DateTime,
-    read get_last_seen_at: (self: user<T>) -> DateTime?,
-    read get_last_server_id: (self: user<T>) -> string?,
-    read get_permissions: (self: user<T>) -> {enumitem<any>},
-    read get_restrictions: (self: user<T>) -> {enumitem<any>},
+    read get_inlined: (self: profile<T>, uid: number) -> profile<T>, 
+    read get_player: (self: profile<T>) -> Player?,
+    read get_reference: (self: profile<T>) -> reference<Player>,
+    read get_configurated: <Y> (self: profile<T>, of: enumitem) -> variable<Y>,
+    read get_joined_at: (self: profile<T>) -> DateTime,
+    read get_last_seen_at: (self: profile<T>) -> DateTime?,
+    read get_last_server_id: (self: profile<T>) -> string?,
+    read get_permissions: (self: profile<T>) -> {enumitem},
+    read get_restrictions: (self: profile<T>) -> {enumitem},
 
-    read set_configurated: <Y> (self: user<T>, of: enumitem<any>, ...unknown) -> (),
-    read set_permissions: (self: user<T>, to: boolean, ...enumitem<any>) -> (),
-    read set_restrictions: (self: user<T>, to: boolean, ...enumitem<any>) -> (),
-    read set_platform: (self: user<T>, to: boolean, ...enumitem_user_machine_variant) -> (),
+    read set_configurated: <Y> (self: profile<T>, of: enumitem, ...unknown) -> (),
+    read set_permissions: (self: profile<T>, to: boolean, ...enumitem) -> (),
+    read set_restrictions: (self: profile<T>, to: boolean, ...enumitem) -> (),
+    read set_platform: (self: profile<T>, to: boolean, ...enumitem_user_machine_variant) -> (),
 
-    read has_platform: (self: user<T>, ...enumitem_user_machine_variant) -> boolean,
-    read has_restricitions: (self: user<T>, ...enumitem<any>) -> ...boolean,
-    read has_permissions: (self: user<T>, ...enumitem<any>) -> ...boolean,
+    read has_platform: (self: profile<T>, ...enumitem_user_machine_variant) -> boolean,
+    read has_restricitions: (self: profile<T>, ...enumitem) -> ...boolean,
+    read has_permissions: (self: profile<T>, ...enumitem) -> ...boolean,
 
-    read is_banned: (self: user<T>) -> boolean,
-    read is_kicked: (self: user<T>) -> boolean,
-    read is_out: (self: user<T>) -> boolean,
-    read is_in_place: (self: user<T>) -> boolean,
-    read is_in_server: (self: user<T>) -> boolean,
+    read is_banned: (self: profile<T>) -> boolean,
+    read is_kicked: (self: profile<T>) -> boolean,
+    read is_out: (self: profile<T>) -> boolean,
+    read is_in_place: (self: profile<T>) -> boolean,
+    read is_in_server: (self: profile<T>) -> boolean,
 }, observer<enumitem_user_notification>>
 
 export type localuser = construct<{
     read uid: number,
     read get_player: (self: localuser) -> Player,
 
-    read require_get_configuration: (self: localuser, of: enumitem<any>) -> result,
-    read require_save_configuration: (self: localuser, of: enumitem<any>, ...unknown) -> (),
+    read require_get_configuration: (self: localuser, of: enumitem) -> result,
+    read require_save_configuration: (self: localuser, of: enumitem, ...unknown) -> (),
 
-    read get_user: (self: localuser) -> user,
+    read get_user: (self: localuser) -> profile,
 }, object>
 
 
@@ -372,27 +400,6 @@ export type localuser = construct<{
 
 
 -- Hierarchy
-
-export type node<T = Instance, U = enumitem<any>> = construct<{
-    auto_free_on_destroying: boolean,
-
-    read get_attribute_list: (self: node<T,U>) -> {[string]: value},
-    read get_attribute: (self: node<T,U>, name: string) -> value?,
-    read add_attribute: (self: node<T,U>, name: string) -> value,
-    read remove_attribute: (self: node<T,U>, name: string) -> (),
-
-    read add_dependent: (self: node<T,U>, t: object) -> (),
-    read remove_dependent: (self: node<T,U>, t: object) -> (),
-    read get_dependents: (self: node<T,U>, like: object) -> {object}
-} & referenceable<node<T,U>,T?> , disposable>
-
-export type graphnode = construct<{
-    read get_parent: (self: graphnode) -> Instance?,
-    read set_parent: (self: graphnode, parent: Instance|reference|node|graphnode) -> ()
-}, disposable>
-
-
-
 
 
 
@@ -423,6 +430,30 @@ export type graphnode = construct<{
 
 -- Game
 
+export type round = construct<{
+    read get_members: (self: round) -> faction
+} & stateable<round, enumitem_round_state>, timer>
+
+export type faction = construct<{
+    read get_member: (self: faction) -> ...character,
+    read add_member: (self: faction, ...character) -> (),
+    read rem_member: (self: faction, ...character) -> (),
+    read is_member: (self: faction, ...character) -> ...boolean
+} & nameable, object>
+
+export type character = construct<{
+    read get_aabb: (self: character) -> aabbvolume,
+    read get_obb: (self: character) -> obbvolume,
+
+
+}, observer>
+
+
+
+
+
+
+
 
 
 
@@ -450,17 +481,16 @@ export type graphnode = construct<{
 -- Struct
 
 export type result<T = unknown, U... = ...unknown> = construct<{
-
     read state: boolean,
     read result: T,
-
     read unpack: (self: result<T,U...>) -> U...
 }, struct>
 
 
+
 export type aabbvolume = construct<{
-    min: vector,
-    max: vector
+    read min: vector,
+    read max: vector
 } & geometry_half &
     geometry_check<aabbvolume, geometry_supported> & 
     geometry_convertation<aabbvolume, geometry_supported>, 
@@ -470,6 +500,8 @@ export type obbvolume = construct<geometry_convertation<obbvolume, geometry_supp
     geometry_half &
     geometry_check<obbvolume, geometry_supported>,
 cubevolume<obbvolume>>
+
+--[===[
 
 export type spherevolume = construct<{
     radius: number,
@@ -490,6 +522,8 @@ export type capsulevolume = construct<geometry_half &
     geometry_convertation<capsulevolume, geometry_supported>, 
 struct>
 
+]===]
+
 export type triangle = construct<{
     read from_vector: (self: triangle, right: vector?, up: vector?, front: vector?) -> triangle
 } & centerable<triangle> & 
@@ -499,22 +533,31 @@ export type triangle = construct<{
 struct>
 
 export type quad = construct<{
-    left: triangle,
-    right: triangle,
+    read left: triangle,
+    read right: triangle,
 } & centerable<quad> & 
     normals<quad> & 
     math_operations<quad, quad>, 
 struct>
 
-export type directions = construct<axisable<vector> & 
-    vector_operations<directions, directions> & 
+export type directions = construct<vector_operations<directions, directions> & axisable<vector> & 
     math_operations<directions, directions>, 
 struct>
 
+
+--[==[
+    Геометрический аналог CFrame
+]==]
+export type basis = construct<{
+    read orthonormalize: (self: basis) -> basis,
+    read euler_angles: (self: basis) -> ...number,
+    read components: (self: basis) -> ...vector,
+} & math_operations<basis, basis> & positioned & rotateable, struct>
+
 export type vertex<T = vertex> = construct<{
 
-    normal: vector,
-    mtv_min: number,
+    read normal: vector,
+    read mtv_min: number,
 
     read from_global_point: (self: vertex<T>, position: vector?) -> T,
     read from_local_point: (self: vertex<T>, local_position: vector?, position: vector?) -> T
@@ -523,12 +566,12 @@ export type vertex<T = vertex> = construct<{
 struct>
 
 export type cubevolume <T = cubevolume> = construct<{
-    up: vector,
-    bottom: vector,
-    left: vector,
-    right: vector,
-    front: vector,
-    back: vector,
+    read up: vector,
+    read bottom: vector,
+    read left: vector,
+    read right: vector,
+    read front: vector,
+    read back: vector,
 
     read get_corners: (self: cubevolume<T>) -> {vertex},
     read get_direction: (self: cubevolume<T>, direction: enumitem_direction_variant) -> vector,
@@ -540,15 +583,68 @@ export type cubevolume <T = cubevolume> = construct<{
     vector_operations<cubevolume<T>, T>, 
 struct>
 
-export type physics = construct<{
 
-    read locked_rotation: {enumitem_direction_variant},
-    read locked_position: {enumitem_direction_variant},
 
-    read is_locked_rotation: (self: physics, variant: enumitem_direction_variant?) -> boolean,
-    read is_locked_position: (self: physics, variant: enumitem_direction_variant?) -> boolean,
-    read is_locked_both: (self: physics, variant: enumitem_direction_variant?) -> boolean
-}, struct>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- Service
+
+
+export type securityrng = construct<{
+	read seed: number,
+
+	read get_hash_sha256: (self: securityrng, element: string) -> string,
+	read get_hash_blake3: (self: securityrng, element: string) -> string,
+	read get_uid: (self: securityrng) -> string,
+}, service>
+
+export type charregistry = construct<{
+    read get_character: (self: charregistry, of: profile) -> character?,
+    read set_character: (self: charregistry, of: profile, to: character?) -> (),
+
+    read get_profile: (self: charregistry, of: character) -> profile?,
+    read set_profile: (self: charregistry, of: character, to: profile?) -> (),
+
+    read get_faction: (self: charregistry, of: character) -> ...faction,
+    read set_faction: (self: charregistry, of: character, ...faction) -> (),
+
+    read is_character: (self: charregistry, ...Humanoid|Model|BasePart ) -> ...boolean,
+}, service>
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -675,14 +771,24 @@ export type enum_setup_notification = construct<{
 	read Disconnected: enumitem_setup_notification,
 }, enumobject>
 
-export type enumitem_action_notification = enumitem<enum_action_notification>
-export type enum_action_notification = construct<{
-	read Signal: enumitem_action_notification,
-	read Step: enumitem_action_notification,
-	read Emit: enumitem_action_notification,
-	read Unobservable: enumitem_action_notification,
-	read Observer: enumitem_action_notification,
+export type enumitem_tick_notification = enumitem<enum_tick_notification>
+export type enum_tick_notification = construct<{
+    read Started: enumitem_tick_notification,
+    read Stepped: enumitem_tick_notification,
+    read Paused: enumitem_tick_notification,
+    read Resumed: enumitem_tick_notification,
+    read Finished: enumitem_tick_notification,
 }, enumobject>
+
+export type enumitem_round_state = enumitem<enum_round_state>
+export type enum_round_state = construct<{
+    read Preparing: enumitem_round_state,
+    read Begining: enumitem_round_state,
+    read AtWork: enumitem_round_state,
+    read Ending: enumitem_round_state,
+    read Ended: enumitem_round_state
+}, enumobject>
+
 
 export type enumitem_asset_type_variant = enumitem<enum_asset_type_variant>
 export type enum_asset_type_variant = construct<{
@@ -723,6 +829,15 @@ export type enum_action_map_variant = construct<{
 	read MoveLying: enumitem_action_map_variant,
 	read MoveRun: enumitem_action_map_variant,
 	read MoveSlow: enumitem_action_map_variant,
+}, enumobject>
+
+export type enumitem_statemachine_notification = enumitem<enum_statemachine_notification>
+export type enum_statemachine_notification = construct<{
+    read ChangedState: enumitem_statemachine_notification,
+    read NewState: enumitem_statemachine_notification,
+
+    read BlacklistAdded: enumitem_statemachine_notification,
+    read BlacklistRemoved: enumitem_statemachine_notification,
 }, enumobject>
 
 export type enumitem_connection_variant = enumitem<enum_connection_variant>
@@ -847,56 +962,209 @@ export type asyncable = {
     attempts: number,
 }
 
-export type geometry_volume = spherevolume | aabbvolume  | obbvolume | trianglevolume | capsulevolume | cubevolume
+export type geometry_volume = aabbvolume  | obbvolume | cubevolume -- TODO | spherevolume | trianglevolume | capsulevolume
 export type geometry_primetive = triangle | quad | vertex | vector | cubevolume
 export type geometry_check <T = unknown, U... = ...unknown> = {
+
+    --[==[
+        Переданные данные охвачены диапазоном объекта, из которого вызывается этот метод,
+        либо нет, что в итоге приведет к `false`
+    ]==]
     read is_inside: (self: T, U...) -> boolean,
+
+    --[==[
+        Переданные данные вообще как-либо взаимодействуют с объектом, из которого
+        вызван этот метод
+
+        Аналогичен:
+
+        ```luau
+            const interacts = self:is_inside(val) and self:is_intersection(val)
+        ```
+    ]==]
     read is_interacts: (self: T, U...) -> boolean,
+
+    --[==[
+        Переданные данные, хотя-бы один из них, пересекается с объектом, из которого
+        вызван этот метод. Даже если пересечение совсем небольшое
+    ]==]
     read is_intersection: (self: T, U...) -> boolean,
 }
+
 export type geometry_half = {
+    --[==[
+        Полуразмер представляет собой удобный способ проводить вычисления через центр
+        и полуоси, через `min | max` или прямые конвертации | сравнения
+    ]==]
     half: vector
 }
+
+--[==[
+    Операции конвертаций геометрических структур из 1 вида в другой, то есть
+    трансформация информации
+]==]
 export type geometry_convertation <T = unknown, U... = ...unknown> = {
+    --[==[
+        Входящие данные должны быть переведены в тот же тип что и объект, откуда
+        вызывается данный метод. При этом сами сконвертированные данные после
+        не должны быть как-либо связаны с начальным объектом
+    ]==]
     read from: (self: T, U...) -> T,
+
+    --[==[
+        Между всеми полученными значениями вычисляется состояние,
+        которое охватывает хотя-бы какую-то часть всех переданных элементов
+        и сводит все к среднему арифметическому варианту
+    ]==]
     read middle: (self: T, U...) -> T,
-    read cover: (self: T, U...) -> T
+
+    --[==[
+        Новое значение должно гарантированно захватывать такое состояние,
+        которое удовлетворяет условиям всех переданных данных. Результат должен
+        захватывать все данные в себе
+
+        Например:
+
+        ```luau
+            if volume.size == 49 then -- not OK
+                -- ...
+            end
+
+            const result = volume:cover(BasePart, BasePart, Model, obbvolume, volume)
+            
+            if result.size == 595 then -- OK
+                -- ...
+            end
+        ```
+    ]==]
+    read cover: (self: T, U...) -> T,
 }
+
+
 export type geometry_supported = geometry_volume | Model | BasePart | PVInstance
-export type geometry_sat <T = unknown, U... = ...unknown> = {
-    read mtv: (self: T, U...) -> vertex,    
-}
+
 export type math_operations<T=unknown,U... = ()> = {
     read multiple: (self: T, to: number) -> U...,
     read divide: (self: T, to: number) -> U...,
-    read invert: (self: T) -> U...,
     read append: (self: T, to: number) -> U...,
     read substract: (self: T, to: number) -> U...,
+
+    --[==[
+        Объект сравнивается с другим объектом на основании допуска, который
+        указывает максимальную границу различий между `A` и `B`
+    ]==]
+    read fuzzy_eq: (self: T, to: T, epsilon: number?) -> boolean,
+
+    --[==[
+        Все значения объекта, с учетом `alpha` аргумента, "перетекут" к цели
+        насколько это позволяет `alpha` от `0` - начала, до `1` - конечной
+    ]==]
+    read lerp: (self: T, to: T, alpha: number) -> U...,
+
+    --[==[
+        Все значения объекта инвертируют свой знак
+    ]==]
+    read invert: (self: T) -> U...,
+
+    --[==[
+        Все значения объекта сводятся в положительную сторону
+    ]==]
     read absolute: (self: T) -> U...,
+
+    --[==[
+        Все значения объекта сводятся в отрицательную сторону
+    ]==]
+    read negation: (self: T) -> U...,
+
+    --[==[
+        Все значения объекта сводятся к `-1 | 1` через `clamp()`
+    ]==]
     read normalize: (self: T) -> U...,
 
+    --[==[
+        Все значения объекта сводятся в `0`
+    ]==]
     read null: (self: T) -> U...,
+
+    --[==[
+        Все значения объекта сводятся в `math.huge`
+    ]==]
     read infinity: (self: T) -> U...,
 }
 export type vector_operations<T=unknown,U... = ()> = {
-    read to_cframe: (self: T) -> CFrame,
+    read to_basis: (self: T) -> basis,
     read to_vector: (self: T) -> vector
 }
 export type positioned<T=vector> = {
+
+    --[==[
+        Позиция, представляющая собой центр геомтрического объекта
+
+        Статически известна, либо вычисляется так, что вычислить информацию о ней
+        динамически не представляется возможным. Например, для `Vertex`
+    ]==]
     position: T
 }
 export type axisable<T = unknown> = {
+    --[==[
+        Направление оси по `X`
+    ]==]
     right: T,
+
+    --[==[
+        Направление оси по `Y`
+    ]==]
     up: T,
+
+    --[==[
+        Направление оси по `-Z`
+    ]==]
     front: T
 }
+
 export type centerable<T = unknown> = {
+    --[==[
+        Вычисляет геометрический центр объекта исходя из доступной информации
+    ]==]
     read get_center: (self: T) -> vector
 }
 export type rotateable<T = unknown> = {
+    --[==[
+        Определяет локальный поворот объекта относительной мировой сцены, что позволяет
+        внезапно менять, например, гравитацию персонажа, если она рассчитывается вручную
+        в обход движка, на котором исполняется код
+    ]==]
     rotation: directions
 }
 export type normals<T=unknown, U=vector> = {
+    --[==[
+        Возвращает геометрическую нормаль
+
+        Геометрическая нормаль получается из геометрии описываемой геометрической фигуры,
+        за счет чего обладает свойством повторять ее поверхность и направление относительно
+        взгляда этой поверхности
+
+        Это обычная нормаль поверхности
+    ]==]
     read get_normal_geometric: (self: T) -> U,
+
+    --[==[
+        Возвращает интерполированную (световую) нормаль
+
+        Интерполированная нормаль получается исходя из общей интерполяции геометрической фигуры,
+        как если бы доступные нормали участка 1 `Quad`, который представляет из себя острый угол
+        под 90 градусов, внезапно усреднили и получили бы 45 градусное направление
+
+        Это световая нормаль поверхности, она используется в основном для сглаженного шейдинга,
+        однако подходит и под другие задачи
+    ]==]
     read get_normal_interpolated: (self: T) -> U,
+}
+export type stateable<T = unknown, U = enumitem> = {
+    --[==[
+        Возвращает автомат состояний у этого объекта, с которым он неразрывно связан
+
+        Используется для внутренней логики через декомпозицию, в основном
+    ]==]
+    read get_states: (self: T) -> statemachine<U>
 }

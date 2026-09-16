@@ -94,8 +94,19 @@ do -- enums
 	project.enums.enumitem_freeze = false
 end
 
+do -- geometry
+	project.geometry = {}
+
+	--[==[
+		Граница, за которой геометрические объекты будут считать метод `self:fuzzy_eq()`
+		без `epsilon` значения как `false`, если разница между участками `A` и `B` >= чем
+		это значение
+	]==]
+	project.geometry.fuzzy_eq_diff = 0.01
+end
+
 do --game
-	
+	project.game = {}
 end
 
 type console_out_type = never

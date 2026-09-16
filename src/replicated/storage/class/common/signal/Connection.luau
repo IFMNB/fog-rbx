@@ -4,7 +4,6 @@ const Observer = require("@game/ReplicatedStorage/class/core/Observer")
 const Pointer = require("@game/ReplicatedStorage/class/core/Pointer")
 const SecurityRNG = require("@game/ReplicatedStorage/class/service/SecurityRNG")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
-const DefaultVariant = require("@game/ReplicatedStorage/enums/descriptor/DefaultVariant")
 const SetupNotification = require("@game/ReplicatedStorage/enums/notification/SetupNotification")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const project = require("@game/ReplicatedStorage/static/project")
@@ -24,9 +23,9 @@ const ftype = require("@game/ReplicatedStorage/static/ftype")
 ]]
 
 const private = {}
-const class: connection = Observer:new({
+const class: connection = (Observer :: observer<enumitem_setup_notification>):new({
 	type = "connection",
-	on = DefaultVariant.Unknown,
+	on = nil :: enumitem<any>?,
 	count = 1,
 
 	get_mode = ftype:write(function(self: connection): enumitem_connection_variant
@@ -82,7 +81,7 @@ class:host(function(new: connection)
 				return
 			end
 
-			if item == new.on then
+			if item == new.on or new.on == nil then
 				new:invoke(...)
 			end
 		end)

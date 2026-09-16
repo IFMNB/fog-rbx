@@ -10,7 +10,7 @@ const declare = require("@game/ReplicatedStorage/static/declare")
 const ftype = require("@game/ReplicatedStorage/static/ftype")
 
 const private = {}
-const class: event = Observer:new({
+const class: event = (Observer :: observer<enumitem<any>>):new({
 	type = "event",
 	on = DefaultVariant.Unknown,
 

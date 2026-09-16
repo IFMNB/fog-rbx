@@ -1,41 +1,63 @@
 --!strict
-const object = require("@game/ReplicatedStorage/object")
+const Observer = require("@game/ReplicatedStorage/class/core/Observer")
+const SecurityRNG = require("@game/ReplicatedStorage/class/service/SecurityRNG")
+const OperationVariant = require("@game/ReplicatedStorage/enums/descriptor/OperationVariant")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const ftype = require("@game/ReplicatedStorage/static/ftype")
+const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
-const class: maybe = object:new({
+const class: maybe = (Observer :: observer<enumitem_operation_variant>):new({
 	type = "maybe",
 
 	extract = ftype:write(function(self: maybe, it: unknown, make: () -> any): any
-		const that = private.stored[self][it] or make()
+		const stored = private.get(self)
+		const that = stored[it] or make()
 
-		if private.stored[self][it] == nil then
-			private.stored[self][it] = that
+		if stored[it] == nil then
+			stored[it] = that
+			self:notificate(OperationVariant.New, it, that)
 		end
 
 		return that
 	end, declare.anyt, "maybe", declare.anyt, declare["function"]),
 
+	enactment = function (self: maybe, it: unknown, of: object) : object
+		if not project.assert(self:that(of, "object"), "unexpected obhect", true) then return of end
+
+		const stored = private.get(self)
+		const new = of:new():as(of.type)
+		if stored[it] == nil then
+			stored[it] = new
+			self:notificate(OperationVariant.New, it, new)
+		end
+
+		return new
+	end,
+
 	exist = ftype:write(function(self: maybe, it: unknown): boolean
-		return private.stored[self][it] ~= nil
+		return private.get(self)[it] ~= nil
 	end, declare.boolean, "maybe", declare.anyt),
 
 	erase = ftype:write(function(self: maybe, it: unknown): ()
-		private.stored[self][it] = nil
+		const stored = private.get(self)
+
+		if stored[it] == nil then return end
+		stored[it] = nil
+
+		self:notificate(OperationVariant.Remove, it)
 	end, declare["nil"], "maybe", declare.anyt),
 })
 
 class:host(function(new: maybe)
-	private.stored[new] = setmetatable({}, private.frozen)
+	new:set(private.key, setmetatable({}, declare.tables.__mode_ks))
 end)
 
 do
-	private.frozen = table.freeze({ __mode = "ks" })
-	private.stored = setmetatable(
-		{} :: { [maybe]: setmetatable<{ [unknown]: any }, typeof(private.frozen)> },
-		private.frozen
-	)
+	private.key = SecurityRNG:get_hash_blake3("maybe_key")
+	private.get = function (self: maybe)
+		return self:get <<{[unknown]: unknown}>>(private.key)
+	end
 end
 
 return class

@@ -6,7 +6,7 @@ const declare = require("@game/ReplicatedStorage/static/declare")
 const ftype = require("@game/ReplicatedStorage/static/ftype")
 const project = require("@game/ReplicatedStorage/static/project")
 
-const class: controller = Observer:new({
+const class: controller = (Observer :: observer<enumitem_controller_state>):new({
 	type = "controller",
 	state = ControllerState.Pause,
 

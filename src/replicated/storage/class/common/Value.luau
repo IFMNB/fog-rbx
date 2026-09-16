@@ -7,7 +7,7 @@ const ftype = require("@game/ReplicatedStorage/static/ftype")
 const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
-const class: value = Observer:new({
+const class: value = (Observer :: observer<enumitem_operation_variant>):new({
 	type = "value",
 
 	get_value = ftype:write(function(self: value ): any

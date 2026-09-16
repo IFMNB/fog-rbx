@@ -75,4 +75,11 @@ return table.freeze({
 		["Vector3"] = "Vector3" :: "Vector3",
 		["Vector3int16"] = "Vector3int16" :: "Vector3int16",
 	}),
+
+    ["tables"] = table.freeze {
+        ["dummy"] = table.freeze {},
+        ["__mode_ks"] = table.freeze {__mode = "ks" :: 'ks'},
+        ["__mode_vs"] = table.freeze {__mode = "vs" :: "vs"},
+        ["__mode_kvs"] = table.freeze {__mode = "kvs" :: "kvs"},
+    }
 })
