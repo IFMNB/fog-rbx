@@ -432,29 +432,309 @@ export type localuser = construct<{
 
 -- Game
 
+type collidable = Model|BasePart
+type collidable_ref = reference<collidable>
+
+export type collision = construct<{
+    read get_collision: (self: collision) -> ...reference<Instance>,
+    read set_collision: (self: collision, ...collidable_ref|collidable) -> (),
+    read rem_collision: (self: collision, ...collidable_ref|collidable) -> ()
+}, disposable>
+
+
+--[==[
+
+]==]
 export type round = construct<{
+    --[==[
+        Возвращает специальную фракцию текущих персонажей в игре,
+        она должна исчезнуть вместе с пропажей этого экземпляра
+        объекта `round`
+    ]==]
     read get_members: (self: round) -> faction,
 
+    --[==[
+        Возвращает настоящие зарегистрированные в раунде фракции
+    ]==]
     read get_faction: (self: round) -> ...faction,
+
+    --[==[
+        Добавляет указанную фракцию в раунд, если ее не было
+    ]==]
     read add_faction: (self: round, ...faction) -> (),
+
+    --[==[
+        Удаляет указанную фракцию из раунда, если она была в нем
+    ]==]
     read rem_faction: (self: round, ...faction) -> (),
-    read has_faction: (self: round, ...faction) -> boolean
+
+    --[==[
+        Проверяет, есть ли данная фракция в этом раунде или нет
+    ]==]
+    read has_faction: (self: round, ...faction) -> boolean,
+
+    --[==[
+        Для всех указанных участников возвращаются те фракции, в которых они
+        состоят в этом раунде
+
+        Не возвращается фракция members, это техническая фракция
+    ]==]
+    read find_member: (self: round, ...character) -> ...faction
 } & stateable<round, enumitem_round_state>, timer>
 
+--[==[
+    Объект, хранящий в себе список персонажей, которые к этой
+    фракции принадлежат на данный момент
+
+    Фракция представляет собой не сколько фракцию, сколько аналог
+    объекта `Team`, перенесенного в логику
+]==]
 export type faction = construct<{
+    --[==[
+        Возвращает всех участников персонажей для этой фракции
+
+        Узнать какой персонаж к какому игроку или машине принадлежит
+        можно через сервисы, фракция не занимается этим
+    ]==]
     read get_member: (self: faction) -> ...character,
+
+    --[==[
+        Добавить нового участника в фракцию, если его нет
+    ]==]
     read add_member: (self: faction, ...character) -> (),
+
+    --[==[
+        Удалить участника из фракции, если он в ней был
+    ]==]
     read rem_member: (self: faction, ...character) -> (),
+
+    --[==[
+        Проверить является ли персонаж участником этой фракции
+    ]==]
     read is_member: (self: faction, ...character) -> ...boolean
-} & nameable, object>
+} & nameable, observer>
 
+--[==[
+    Объект, представляющий собой логическую сущность "персонаж"
+
+    У этого объекта нет ответа на вопрос как именно этот персонаж работает,
+    он отвечает прежде всего на вопрос: "что сейчас делает игра с персонажем"
+
+    Поскольку он не является фактическим состоянием персонажа, его связанность
+    с рантаймом почти нулевая и завязана в основе исключительно на том как
+    система интерпретирует эту логическую сущность
+]==]
 export type character = construct<{
-    read get_aabb: (self: character) -> aabbvolume,
-    read get_obb: (self: character) -> obbvolume,
+    --[==[
+        Это специальный ключ, по которому для этого персонажа могут быть
+        подобраны подходящие ему предметы, способности, снаряжение или
+        модели
+
+        Это используется в сервисах, которым необходимо выдавать релевантные
+        данные к этому объекту, при этом не давая ему право обладать этими
+        данными
+    ]==]
+    token: enumitem,
+
+    --[==[
+        У персонажа как такового определенных констант параметров нет, они создаются
+        динамически при обращении. В ситуации когда они не были созданы будут предпочитаться
+        стандартные данные от `characterinfo`, иначе динамические
+
+        Это создано для того чтобы не определять десятки тысяч параметров персонажа, которых
+        у него могут быть чуть ли не бесконечно много
+    ]==]
+    read get_parameter: (self: character, of: enumitem) -> value,
+
+    --[==[
+        Был ли данный параметр создан когда-либо для этого персонажа?
+    ]==]
+    read has_parameter: (self: character, of: enumitem) -> boolean,
+
+    --[==[
+        Использует `self.token` для доступа в хранилище способностей,
+        после чего самостоятельно выбирает нужный пакет и возвращает его
+    ]==]
+    read get_abilities: (self: character) -> ...ability,
+
+    --[==[
+        Возвращает инвентарь конкретного персонажа и то чем он сейчас
+        обладает
+    ]==]
+    read get_inventory: (self: character) -> inventory,
+
+} & referenceable<character, Model> & informable<character, characterinfo>, observer>
 
 
-}, observer>
+--[==[
+    Объект, представляющий собой пул информации о персонаже, который
+    встраивается в него каждый раз когда к части рантайма персонажа
+    обращается кто-либо, при этом эта часть у персонажа не была активной
+    ранее или не была создана в другом моменте
 
+    Эта информация применяется постепенно и может быть передана на разных
+    персонажей, а также она не зависит от токенов или любых других данных
+
+    Предоставленная информация может быть проигнорирована в разных случаях,
+    поскольку она декларирует поведение относительно стандартного сценария,
+    когда не вызываются никакие способности или выполняется что-либо еще
+]==]
+export type characterinfo = construct<{
+    read has_health: boolean,
+    read has_stamina: boolean,
+    read has_stamina_use: boolean,
+    read has_stamina_regen: boolean,
+    read has_health_regen: boolean,
+    read has_stamina_runspeed_related_mod: boolean,
+    read has_health_runspeed_related_mod: boolean,
+    read has_jump_cooldown: boolean,
+    read has_run_cooldown: boolean,
+    
+    read can_run: boolean,
+    read can_jump: boolean,
+    read can_move: boolean,
+    read can_die: boolean,
+    read can_revived: boolean,
+
+    read health: number,
+    read stamina: number,
+    read speed: number,
+    read runspeed: number,
+    read run_cooldown: number,
+    read jump_cooldown: number,
+    read revives: number,
+
+},struct>
+
+
+--[==[
+    Объект, представляющий собой игровую способность с возможностью определения
+    собственного поведения
+
+    У данного объекта нет публичных методов для настройки кроме легко изменяемой
+    информации балансировки. Сам объект не представляет их потому что этим должен
+    заниматься код, который создает объект способности: подразумевается, что
+    код создаст саму способность и настроит ее, а уже остальной код будет наследоваться
+    от этой новосозданной способности и будет являться ее экземплярами
+
+    Для реализации этого принципа используйте то, что способность провайдит собственные
+    енамайтемы и сигнализирует о начальной фазе работы, после чего вручную управляйте ее
+    конечным автоматом и уведомлениями прямо из функции способности
+]==]
+export type ability <T... = ...unknown> = construct<{
+    --[==[
+        Активирует способность от перспективы указанного персонажа
+
+        Перспектива персонажа используется в качестве источника первоначальной информации,
+        она отвечает на вопрос: "что мы вообще пытаемся сделать прямо сейчас?"
+    ]==]
+    read activate: (self: ability, on: character, T...) -> (),
+    --[==[
+        Насильно заставляет способность перезарядить свой кулдаун таймер,
+        если он конечно есть
+    ]==]
+    read reload: (self: ability) -> (),
+    --[==[
+        Таймер, контроллирующий текущее состояние кулдауна способности
+    ]==]
+    read cooldown: (self: ability) -> timer,
+    
+
+} & informable<ability, abilityinfo> & collidable<ability> & stateable<ability, enumitem_round_state>, observer<enumitem_ability_notification>>
+
+
+
+
+--[==[
+    Объект, представляющий балансную информацию о способности
+
+    Его можно менять, создавать новые варианты баланса или редактировать
+    на лету, а поскольку способность использует каждый раз те данные,
+    что ей доступны на момент вызова, то и применяется это всегда
+]==]
+export type abilityinfo = construct<{
+    
+    --[==[
+        Имеет ли способность время перезарядки после вызова?
+    ]==]
+    read has_cooldown: boolean,
+
+    --[==[
+        Имеет ли способность стан, в течении которого пораженная сущность не может выполнять
+        активные или какие-либо другие действия?
+    ]==]
+    read has_stun: boolean
+
+    --[==[
+        Есть ли у способности отброс для пораженной сущности, в которую способность попала?
+
+        Может быть отрицательным, тогда пораженная сущность должна полететь в сторону откуда прилетел в нее снаря
+    ]==]
+    read has_kickback: boolean,
+
+    --[==[
+        Есть ли у способности отдача в персонажа, от лица которого она вызывается?
+    ]==]
+    read has_recoil: boolean,
+
+    --[==[
+        Применяется ли к пораженной сущности модификатор замедления передвижения?
+
+        Может быть больше 1, тогда будет ускорять
+    ]==]
+    read has_slow: boolean,
+
+    --[==[
+        В зависимости от состояния полей `can_move_on_...` в указанной фазе способности
+        будет применяться модификатор `slow` на персонажа, от лица которого вызвана
+        эта способность
+    ]==]
+    read has_self_slow: boolean,
+
+
+
+
+
+
+
+
+    --[==[
+        Время перезарядки самой способности, в течении которого способность будет недоступна
+    ]==]
+    read cooldown: number,
+
+    --[==[
+        Время стана, в течении которого пораженный персонаж не может передвигаться или
+        использовать что-либо, включая свои способности
+    ]==]
+    read stun: number,
+
+    --[==[
+        Сила отдачи, которая применяется на персонажа, от лица которого выполнена эта способность
+    ]==]
+    read recoil: number,
+
+    --[==[
+        Сила отдачи, которая применяется к тому, во что врежется эта способность, будь бы это предмет
+        или другой персонаж
+    ]==]
+    read kickback: number,
+
+    --[==[
+        Применяемый модификатор замедления на пораженную цель, если он вообще указан
+    ]==]
+    read slow: number,
+
+    read can_move_on_prepare_time: boolean,
+    read can_move_on_action_time: boolean,
+    read can_move_on_post_action_time: boolean,
+    
+    read prepare_action_time: number,
+    read work_action_time: number,
+    read post_action_time: number
+
+
+}, struct>
 
 
 
@@ -674,12 +954,21 @@ export type charregistry = construct<{
     read get_character: (self: charregistry, of: profile) -> character?,
     read set_character: (self: charregistry, of: profile, to: character?) -> (),
 
+    --[==[
+        Профиль игрока связан с персонажем, если конечно это было, поэтому
+        получить игрока к которому принадлежит этот персонаж можно при помощи
+        этого сервиса
+    ]==]
     read get_profile: (self: charregistry, of: character) -> profile?,
+    
+    --[==[
+        Позволяет назначить этого персонажа данному игроку
+    ]==]
     read set_profile: (self: charregistry, of: character, to: profile?) -> (),
 
-    read get_faction: (self: charregistry, of: character) -> ...faction,
-    read set_faction: (self: charregistry, of: character, ...faction) -> (),
-
+    --[==[
+        Проверяет, является ли указанный объект тем, что принадлежит хотя бы одному персонажу
+    ]==]
     read is_character: (self: charregistry, ...Humanoid|Model|BasePart ) -> ...boolean,
 }, service>
 
@@ -760,6 +1049,14 @@ export type enum_input_notification = construct<{
 	read NetworkEnabled: enumitem_input_notification,
 	read NetworkDisabled: enumitem_input_notification,
 }, enumobject>
+
+export type enumitem_ability_notification = enumitem<enum_ability_notification>
+export type enum_ability_notification = construct<{
+	read AbilityCast: enumitem_ability_notification,
+    read AbilityEnd: enumitem_ability_notification,
+    read AbilityCooldown: enumitem_ability_notification,
+}, enumobject>
+
 
 export type enumitem_state = enumitem<enum_state>
 export type enum_state = construct<{
@@ -1097,6 +1394,25 @@ export type geometry_convertation <T = unknown, U... = ...unknown> = {
     read cover: (self: T, U...) -> T,
 }
 
+--[==[
+    Объекты с этим интерфейсом обладают легко изменяемой логической реализацией,
+    данные которой никак не влияют на саму функцию, которая работает с ними
+
+    Это могут быть объекты баланса, объекты описывающие поведение того или иного
+    элемента системы или нечто иное, что только декларирует что можно, что нельзя,
+    насколько и по какому принципу
+]==]
+export type informable<T = unknown, U = unknown> = {
+    --[==[
+        Возвращает доступный пакет информации о способности
+    ]==]
+    read get_info: (self: T) -> U,
+
+    --[==[
+        Устанавливает новый пакет информации о способности
+    ]==]
+    read set_info: (self: T, info: U) -> ()
+}
 
 export type geometry_supported = geometry_volume | Model | BasePart | PVInstance
 
@@ -1193,6 +1509,27 @@ export type rotateable<T = unknown> = {
     ]==]
     rotation: directions
 }
+
+--[==[
+    Тип так или иначе заставляет взаимодействовать с определенными группами коллизий
+]==]
+export type collidable<T = unknown> = {
+    --[==[
+        Возвращает все коллизии, с которыми доступно взаимодействие
+    ]==]
+    read get_collision: (self: ability) -> ...collision,
+
+    --[==[
+        Добавляет указанные коллизии в список, с которыми доступно взаимодействие
+    ]==]
+    read add_collision: (self: ability, ...collision) -> (),
+
+    --[==[
+        Удаляет указанные коллизии из списка доступных взаимодействий
+    ]==]
+    read rem_collision: (self: ability, ...collision) -> ()
+}
+
 export type normals<T=unknown, U=vector> = {
     --[==[
         Возвращает геометрическую нормаль
