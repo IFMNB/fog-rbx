@@ -1,16 +1,23 @@
 --!strict
+--!native
+--!optimize 2
 
-const Struct = require("@game/ReplicatedStorage/class/core/Struct")
+const EnumItem = require("@game/ReplicatedStorage/class/core/EnumItem")
+const Basis = require("@game/ReplicatedStorage/class/struct/geometry/Basis")
+const Directions = require("@game/ReplicatedStorage/class/struct/geometry/Directions")
+const GeoVolume = require("@game/ReplicatedStorage/class/struct/geometry/GeoVolume")
 const Quad = require("@game/ReplicatedStorage/class/struct/geometry/Quad")
 const Triangle = require("@game/ReplicatedStorage/class/struct/geometry/Triangle")
-const Vertex = require("@game/ReplicatedStorage/class/struct/geometry/Vertex")
 const DirectionVariant = require("@game/ReplicatedStorage/enums/descriptor/DirectionVariant")
+const ctags = require("@game/ReplicatedStorage/static/ctags")
+const ctype = require("@game/ReplicatedStorage/static/ctype")
 const declare = require("@game/ReplicatedStorage/static/declare")
+const ftype = require("@game/ReplicatedStorage/static/ftype")
 const project = require("@game/ReplicatedStorage/static/project")
 
 
 
-const class : cubevolume = Struct:new {
+const class : cubevolume = (GeoVolume :: geovolume<cubevolume>):new {
     type = "cubevolume",
 
     up = vector.zero,
@@ -20,20 +27,23 @@ const class : cubevolume = Struct:new {
     front = vector.zero,
     back = vector.zero,
 
-    get_corners = function (self: cubevolume) : {vertex} 
+    get_corners = ftype:write(function (self: cubevolume) : {vector} 
         const center: vector = self:get_center()
 
         return {
-            Vertex:from_local_point(center, self.up),
-            Vertex:from_local_point(center, self.bottom),
-            Vertex:from_local_point(center, self.left),
-            Vertex:from_local_point(center, self.right),
-            Vertex:from_local_point(center, self.front),
-            Vertex:from_local_point(center, self.back),
-        }
-    end,
+            self.right + self.up + self.front - center * 2,
+            self.right + self.up + self.back - center * 2,
+            self.right + self.bottom + self.front - center * 2,
+            self.right + self.bottom + self.back - center * 2,
 
-    get_direction = function (self: cubevolume, direction: enumitem) : vector
+            self.left + self.up + self.front - center * 2,
+            self.left + self.up + self.back - center * 2,
+            self.left + self.bottom + self.front - center * 2,
+            self.left + self.bottom + self.back - center * 2,
+        }
+    end, declare.table, "cubevolume"),
+
+    get_direction = ftype:write(function (self: cubevolume, direction: enumitem) : vector
         if direction == DirectionVariant.Right then
             return self.right
         elseif direction == DirectionVariant.Left then
@@ -49,28 +59,29 @@ const class : cubevolume = Struct:new {
         end
 
         return project.console_out_error("unsupported DirectionVariant item")
-    end,
+    end, declare.vector, "cubevolume", EnumItem.type),
 
-    get_axises = function (self: cubevolume) : {vector}
-        return {
-            self:get_direction(DirectionVariant.Right),
-            self:get_direction(DirectionVariant.Up),
-            self:get_direction(DirectionVariant.Front)
+    get_axises = ftype:write(function (self: cubevolume) : directions
+        return Directions:new {
+            right = self:get_direction(DirectionVariant.Right),
+            up = self:get_direction(DirectionVariant.Up),
+            front = self:get_direction(DirectionVariant.Front)
         }
-    end,
+    end, Directions.type, "cubevolume"),
 
-    get_sat_axises = function (self: cubevolume) : {vector}
+    get_sat_axises = ftype:write(function (self: cubevolume) : {vector}
         const axises = self:get_axises()
         const center = self:get_center()
+        const result = {}
 
-        for i = 1, #axises do
-            axises[i] = vector.normalize(axises[i] - center)
-        end
+        result[1] = vector.normalize(axises.right - center)
+	    result[2] = vector.normalize(axises.up - center)
+    	result[3] = vector.normalize(axises.front - center)
 
-        return axises
-    end,
+        return result
+    end, declare.table, "cubevolume"),
 
-    get_quad = function (self: cubevolume, direction: enumitem) : quad 
+    get_quad = ftype:write(function (self: cubevolume, direction: enumitem) : quad 
 
         if direction == DirectionVariant.Right then
             return Quad:new {
@@ -158,96 +169,24 @@ const class : cubevolume = Struct:new {
         end
 
         return project.console_out_error("unsupported DirectionVariant item")
-    end,
+    end, Quad.type, "cubevolume", EnumItem.type),
 
-    to_vector = function (self: cubevolume) : vector
+    to_vector = ftype:write(function (self: cubevolume) : vector
         return vector.create(vector.magnitude(self.right), vector.magnitude(self.up), vector.magnitude(self.front))
-    end,
-    
-    to_cframe = function (self: cubevolume) : CFrame
-        const center = self:get_center()
+    end, declare.vector, "cubevolume"),
 
-        return CFrame.fromMatrix(Vector3.new(center.x, center.y, center.z),
-            Vector3.new(self.right.x, self.right.y, self.right.z),
-            Vector3.new(self.up.x, self.up.y, self.up.z), 
-            Vector3.new(self.front.x, self.front.y, self.front.z))
-    end,
+    to_basis = ftype:write(function (self: cubevolume) : basis
+        return Basis:new {
+            position = self:get_center(),
+            rotation = self:get_axises()
+        }
+    end, declare.vector, "cubevolume"),
 
-    get_center = function (self: cubevolume) : vector
+    get_center = ftype:write(function (self: cubevolume) : vector
         return (self.up + self.bottom + self.left + self.right + self.front + self.back) / 6
-    end,
-
-    absolute = function (self: cubevolume) : cubevolume
-        const clone = self:clone(self:each<<vector>>(declare.vector, function(value: vector): vector
-            return vector.abs(value)
-        end))
-
-        return clone
-    end,
-
-    null = function (self: cubevolume) : cubevolume
-        const clone = self:clone(self:each<<vector>>(declare.vector, function(value: vector): vector
-            return vector.zero
-        end))
-
-        return clone
-    end,
-
-    substract = function (self: cubevolume, with: number) : cubevolume
-        const clone = self:clone(self:each<<vector>>(declare.vector, function(value: vector): vector
-            return vector.create(value.x - with, value.y - with, value.z - with)
-        end))
-        
-        return clone
-    end,
-
-    append = function (self: cubevolume, with: number) : cubevolume
-        const clone = self:clone(self:each<<vector>>(declare.vector, function(value: vector): vector
-            return vector.create(value.x + with, value.y + with, value.z + with)
-        end))
-        
-        return clone
-    end,
-
-    multiple = function (self: cubevolume, with: number) : cubevolume
-        const clone = self:clone(self:each<<vector>>(declare.vector, function(value: vector): vector
-            return value * with
-        end))
-
-        return clone
-    end,
-
-    divide = function (self: cubevolume, with: number) : cubevolume
-        const clone = self:clone(self:each<<vector>>(declare.vector, function(value: vector): vector
-            return value / with
-        end))
-        
-        return clone
-    end,
-
-    invert = function (self: cubevolume) : cubevolume
-        const clone = self:clone(self:each<<vector>>(declare.vector, function(value: vector): vector
-            return -value
-        end))
-        
-        return clone
-    end,
-
-    normalize = function (self: cubevolume) : cubevolume
-        const clone = self:clone(self:each<<vector>>(declare.vector, function(value: vector): vector
-            return vector.normalize(value)
-        end))
-        
-        return clone
-    end,
-
-    infinity = function(self: cubevolume) : cubevolume
-        const clone = self:clone(self:each<<vector>>(declare.vector, function(value: vector): vector
-            return vector.create(math.huge, math.huge, math.huge)
-        end))
-
-        return clone
-    end
+    end, declare.vector, "cubevolume"),
 }
+
+ctype:read(class):write_tag(ctags.geometry, ctags.struct)
 
 return class

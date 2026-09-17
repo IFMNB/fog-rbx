@@ -1,6 +1,11 @@
 --!strict
+--!native
+--!optimize 2
+
 const Struct = require("@game/ReplicatedStorage/class/core/Struct")
 const Triangle = require("@game/ReplicatedStorage/class/struct/geometry/Triangle")
+const ctags = require("@game/ReplicatedStorage/static/ctags")
+const ctype = require("@game/ReplicatedStorage/static/ctype")
 
 const class: quad = Struct:new({
 	type = "quad",
@@ -101,6 +106,10 @@ const class: quad = Struct:new({
 		return clone
 	end,
 
+	fuzzy_eq = function (self: quad, to: quad, epsilon: number?) : boolean
+		return self.left:fuzzy_eq(to.left, epsilon) and self.right:fuzzy_eq(to.right, epsilon)
+	end,
+
 	normalize = function(self: quad): quad
 		const clone = self:clone({
 			right = self.right:normalize(),
@@ -119,5 +128,7 @@ const class: quad = Struct:new({
 		return clone
 	end,
 })
+
+ctype:read(class):write_tag(ctags.geometry, ctags.struct)
 
 return class

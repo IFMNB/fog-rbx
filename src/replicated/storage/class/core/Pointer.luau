@@ -1,5 +1,7 @@
 --!strict
 const object = require("@game/ReplicatedStorage/object")
+const ctags = require("@game/ReplicatedStorage/static/ctags")
+const ctype = require("@game/ReplicatedStorage/static/ctype")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const ftype = require("@game/ReplicatedStorage/static/ftype")
 const project = require("@game/ReplicatedStorage/static/project")
@@ -47,5 +49,7 @@ do
     private.points_hard = setmetatable({} :: list<unknown>, private.meta)
 	private.points = setmetatable({} :: list<unknown>, table.freeze({ __mode = "kvs" }))
 end
+
+ctype:read(class):write_tag(ctags.core)
 
 return class

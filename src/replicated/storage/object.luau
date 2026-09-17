@@ -1,6 +1,8 @@
 --!strict
 
 
+const ctags = require("@game/ReplicatedStorage/static/ctags")
+const ctype = require("@game/ReplicatedStorage/static/ctype")
 const gall = require("@game/ReplicatedStorage/static/gall")
 const project = require("./static/project")
 const declare = require("./static/declare")
@@ -9,7 +11,6 @@ const fspec = require("./static/fspec")
 
 const private = {}
 const class: object = {
-	identity = "never",
 	type = "object",
 
 	new = ftype:write(function <T,U> (self: T, that: U?)
@@ -241,11 +242,15 @@ do --private_region
 		return private.counter
 	end
 
-	function private.bootload_new(new: object, parent: unknown)
+	function private.bootload_new(new: object, parent: object?)
 		const gen_iden = private.generator(new)	
 		private.identity[gen_iden] = new
 		private.ever[new] = parent
 		private.lazyget_cached(new, parent)
+		
+		if parent and not ctype:is_registered(parent) then
+			ctype:write(parent, ctype:generate_metainfo(parent, {}, parent.type))
+		end
 	end
 
 	private.bootload_new(class)
@@ -270,6 +275,11 @@ do --private_region
 			end)
 		end
 	end
+
+	ctype:write(class, ctype:generate_metainfo(class, {
+		ctags.core,
+		ctags.common
+	}, class.type))
 end
 
 

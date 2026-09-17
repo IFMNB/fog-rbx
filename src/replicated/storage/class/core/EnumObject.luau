@@ -5,6 +5,8 @@ const object = require("@game/ReplicatedStorage/object")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const project = require("@game/ReplicatedStorage/static/project")
 const EnumItem = require("@game/ReplicatedStorage/class/core/EnumItem")
+const ctags = require("@game/ReplicatedStorage/static/ctags")
+const ctype = require("@game/ReplicatedStorage/static/ctype")
 const ftype = require("@game/ReplicatedStorage/static/ftype")
 
 const private = {}
@@ -150,5 +152,7 @@ do
 		end
 	end
 end
+
+ctype:read(class):write_tag(ctags.core)
 
 return class

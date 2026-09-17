@@ -1,5 +1,7 @@
 --!strict
 const object = require("@game/ReplicatedStorage/object")
+const ctags = require("@game/ReplicatedStorage/static/ctags")
+const ctype = require("@game/ReplicatedStorage/static/ctype")
 
 const private = {}
 const class : variable = object:new {
@@ -27,5 +29,7 @@ do
     private.space = setmetatable({} :: {[variable]: {[number]: unknown}}, private.meta)
     private.space[class] = {}
 end
+
+ctype:read(class):write_tag(ctags.core)
 
 return class

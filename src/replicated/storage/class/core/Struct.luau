@@ -1,6 +1,8 @@
 --!strict
 
 const object = require("@game/ReplicatedStorage/object")
+const ctags = require("@game/ReplicatedStorage/static/ctags")
+const ctype = require("@game/ReplicatedStorage/static/ctype")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const ftype = require("@game/ReplicatedStorage/static/ftype")
 const project = require("@game/ReplicatedStorage/static/project")
@@ -11,7 +13,7 @@ const class: struct = object:new({
 
     clone = ftype:write(function (self: struct, change: {[unknown]: unknown}?) : any
         const base = self:base <<struct>>("struct")
-        const reconv = private.recursive_convertion(self)
+        const reconv = {}
 
         if change then
 
@@ -64,6 +66,6 @@ do
     end
 end
 
-
+ctype:read(class):write_tag(ctags.struct, ctags.core)
 
 return class

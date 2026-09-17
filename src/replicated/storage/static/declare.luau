@@ -13,19 +13,43 @@ return table.freeze({
 	["buffer"] = "buffer" :: "buffer",
 	["anyt"] = "anyt" :: "anyt",
 
-	is_primetive = function(t: unknown)
-		const T = type(t)
+	is_primitive = function(self, t: unknown): boolean
 
-		if t == "number" or t == "string" or t == "boolean" or t == "anyt" then
+		if t == self.number or t == self.string or t == self.boolean or t == self.anyt then
 			return true
 		end
 
-		if T == "number" or T == "string" or T == "boolean" or T == "anyt" then
+        const T = type(t)
+
+		if T == self.number or T == self.string or T == self.boolean or T == self.anyt then
 			return true
 		end
 
 		return false
 	end,
+
+    is_declared_type = function (self, t: unknown) : boolean
+        const T = typeof(t)
+        local find: any
+
+        find = function (tbl)
+            for i, v in tbl do
+                if type(v) == self.table then
+                    const r = find(v)
+                    if r then return r end
+                    
+                end
+
+                if tbl[t] or tbl[T] then
+                    return true
+                end
+            end
+
+            return false
+        end
+
+        return find(self) or false
+    end,
 
 	["roblox"] = table.freeze({
 		["AdReward"] = "AdReward" :: "AdReward",
@@ -81,5 +105,7 @@ return table.freeze({
         ["__mode_ks"] = table.freeze {__mode = "ks" :: 'ks'},
         ["__mode_vs"] = table.freeze {__mode = "vs" :: "vs"},
         ["__mode_kvs"] = table.freeze {__mode = "kvs" :: "kvs"},
+        ["__newindex_null"] = table.freeze {__newindex = function () end},
+        ["__null"] = setmetatable({} :: {[any]: any}, {__newindex = function () end})
     }
 })

@@ -5,6 +5,8 @@ const Pointer = require("@game/ReplicatedStorage/class/core/Pointer")
 const SecurityRNG = require("@game/ReplicatedStorage/class/service/SecurityRNG")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
 const object = require("@game/ReplicatedStorage/object")
+const ctags = require("@game/ReplicatedStorage/static/ctags")
+const ctype = require("@game/ReplicatedStorage/static/ctype")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const project = require("@game/ReplicatedStorage/static/project")
 const ftype = require("@game/ReplicatedStorage/static/ftype")
@@ -365,5 +367,7 @@ do
 			end,
 		}) :: { [enumitem_connection_variant]: (work: pointer_internal, pointer: pointer) -> () }
 end
+
+ctype:read(class):write_tag(ctags.core)
 
 return class

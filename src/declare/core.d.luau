@@ -25,7 +25,9 @@ export type object = {
     read base: <T>(self: object, expected: string | nil) -> (object & T)?,
 	read host: <T>(self: object, f: (new: T) -> ()) -> (),
     read that: <T>(self: object, that: unknown, otype: object_type) -> (object & T)?,
-    read iden: (self: object) -> object_identity
+    read iden: (self: object) -> object_identity,
+
+    --[string]: unknown?
 }
 
 --[==[
@@ -96,7 +98,7 @@ export type enumitem<T = enumobject?> = construct<{
     Every struct-type object is unchangeable and freezed, create a new structure if you need to change something
 ]==]
 export type struct = construct<{
-	read clone: <T>(self: struct | T, change: {[any]: any} | any | nil) -> T,
+	read clone: <T>(self: T, change: unknown?) -> T,
 	read each: <T>(self: struct, type: string, f: (value: T) -> T) -> {[unknown]: T},
 }, object>
 
@@ -431,7 +433,12 @@ export type localuser = construct<{
 -- Game
 
 export type round = construct<{
-    read get_members: (self: round) -> faction
+    read get_members: (self: round) -> faction,
+
+    read get_faction: (self: round) -> ...faction,
+    read add_faction: (self: round, ...faction) -> (),
+    read rem_faction: (self: round, ...faction) -> (),
+    read has_faction: (self: round, ...faction) -> boolean
 } & stateable<round, enumitem_round_state>, timer>
 
 export type faction = construct<{
@@ -492,11 +499,26 @@ export type aabbvolume = construct<{
     read min: vector,
     read max: vector
 } & geometry_half &
+    geometry_control<aabbvolume> &
     geometry_check<aabbvolume, geometry_supported> & 
     geometry_convertation<aabbvolume, geometry_supported>, 
 cubevolume<aabbvolume>>
 
-export type obbvolume = construct<geometry_convertation<obbvolume, geometry_supported> &
+export type obbvolume = construct<{
+    --[==[
+        Поворачивает `obbvolume` относительно его текущего локального поворота,
+        путем прибавления или убавления радиан
+    ]==]
+    read rotate_radian: (self: obbvolume, rad_vector: vector) -> obbvolume,
+
+    --[==[
+        Возвращает абсолютный угол поворота по радианам относительно
+        мирового стандартного угла
+    ]==]
+    read get_rotation_radian: (self: obbvolume) -> vector
+} &
+    geometry_convertation<obbvolume, geometry_supported> &
+    geometry_control<obbvolume> &
     geometry_half &
     geometry_check<obbvolume, geometry_supported>,
 cubevolume<obbvolume>>
@@ -526,11 +548,10 @@ struct>
 
 export type triangle = construct<{
     read from_vector: (self: triangle, right: vector?, up: vector?, front: vector?) -> triangle
-} & centerable<triangle> & 
-    axisable<vertex> & 
-    normals<triangle> & 
-    math_operations<triangle, triangle>, 
-struct>
+} &centerable<triangle> & 
+    axisable<vector> & 
+    normals<triangle>,
+geovolume<triangle>>
 
 export type quad = construct<{
     read left: triangle,
@@ -540,9 +561,7 @@ export type quad = construct<{
     math_operations<quad, quad>, 
 struct>
 
-export type directions = construct<vector_operations<directions, directions> & axisable<vector> & 
-    math_operations<directions, directions>, 
-struct>
+export type directions = construct<vector_operations<directions, directions> & axisable<vector>, geovolume<directions>>
 
 
 --[==[
@@ -551,41 +570,71 @@ struct>
 export type basis = construct<{
     read orthonormalize: (self: basis) -> basis,
     read euler_angles: (self: basis) -> ...number,
-    read components: (self: basis) -> ...vector,
-} & math_operations<basis, basis> & positioned & rotateable, struct>
-
-export type vertex<T = vertex> = construct<{
-
-    read normal: vector,
-    read mtv_min: number,
-
-    read from_global_point: (self: vertex<T>, position: vector?) -> T,
-    read from_local_point: (self: vertex<T>, local_position: vector?, position: vector?) -> T
-} & positioned<vector> & 
-    math_operations<vertex<T>, T>, 
-struct>
+    read components: (self: basis) -> ...number,
+} & positioned & rotateable, geovolume<basis>>
 
 export type cubevolume <T = cubevolume> = construct<{
+    --[==[
+        Направление `+Y`, эквивалетное как `UpVector`
+    ]==]
     read up: vector,
+
+    --[==[
+        Направление `-Y`, эквивалетное как `-UpVector`
+    ]==]
     read bottom: vector,
+
+    --[==[
+        Направление `-X`, эквивалетное как `-RightVector`
+    ]==]
     read left: vector,
+
+    --[==[
+        Направление `+X`, эквивалетное как `RightVector`
+    ]==]
     read right: vector,
+
+    --[==[
+        Направление `-Z`, эквивалетное как `LookVector`
+    ]==]
     read front: vector,
+
+    --[==[
+        Направление `Z`, эквивалентное как `-LookVector`
+    ]==]
     read back: vector,
 
-    read get_corners: (self: cubevolume<T>) -> {vertex},
+    --[==[
+        Возвращает все вершины куба в их абсолютном виде
+    ]==]
+    read get_corners: (self: cubevolume<T>) -> {vector},
+
+    --[==[
+        Возвращает направление согласно полученному `enumitem`
+    ]==]
     read get_direction: (self: cubevolume<T>, direction: enumitem_direction_variant) -> vector,
-    read get_axises: (self: cubevolume<T>) -> {vector},
+
+    --[==[
+        Вовзращает `XYZ` направления, то есть основные оси по которым распределен этот
+        конкретный `cubevolume`
+    ]==]
+    read get_axises: (self: cubevolume<T>) -> directions,
+
+    --[==[
+        Возвращает нормализованные направления, подогнанные для работы `SAT`
+    ]==]
     read get_sat_axises: (self: cubevolume<T>) -> {vector},
+
+    --[==[
+        Из указанного направления построит `Quad` (фейс) из 2 треугольников на
+        основании вершин куба
+    ]==]
     read get_quad: (self: cubevolume<T>, direction: enumitem_direction_variant) -> quad,
-} & centerable<cubevolume<T>> & 
-    math_operations<cubevolume<T>, T> & 
+} & centerable<cubevolume<T>>& 
     vector_operations<cubevolume<T>, T>, 
-struct>
+geovolume<cubevolume<T>>>
 
-
-
-
+export type geovolume<T = any> = construct<math_operations<T, T>, struct>
 
 
 
@@ -963,7 +1012,7 @@ export type asyncable = {
 }
 
 export type geometry_volume = aabbvolume  | obbvolume | cubevolume -- TODO | spherevolume | trianglevolume | capsulevolume
-export type geometry_primetive = triangle | quad | vertex | vector | cubevolume
+export type geometry_primetive = triangle | quad | vector | cubevolume
 export type geometry_check <T = unknown, U... = ...unknown> = {
 
     --[==[
@@ -997,6 +1046,14 @@ export type geometry_half = {
         и полуоси, через `min | max` или прямые конвертации | сравнения
     ]==]
     half: vector
+}
+
+export type geometry_control <T = unknown> = {
+    --[==[
+        Заставляет геометрическую фигуру направиться лицевой стороной на указанную
+        в пространстве точку
+    ]==]
+    read look_at: (self: T, that: vector, up: vector?) -> T,
 }
 
 --[==[
