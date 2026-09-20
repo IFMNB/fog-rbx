@@ -3,6 +3,11 @@
 --- CORE
 
 export type construct<T = unknown, U = unknown> = T & U
+
+type mt__vs = { read __mode: "vs"}
+type mt__ks = { read __mode: "ks"}
+type mt__kvs = { read __mode: "kvs" }
+
 type object_identity = unknown | string
 type object_type = string
 
@@ -397,20 +402,59 @@ export type localuser = construct<{
 
 
 
+--[==[
+    Объект, представляющий геометрическое пространство
+
+    В обычном случае такие объекты представляются синглтон-пространствами
+    внутри самого физического движка и не представляет собой какие-либо
+    объекты. В контексте конкретно этой архитектуры он полезен именно
+    как реестр для `geovolume` структур
 
 
+]==]
+export type world = construct<{
+    --[==[
+        Выполняет операцию рейкаста в мире
+    ]==]
+    read raycast: (self: world, from: vector, to: vector, info: rayinfo?) -> ...unknown,
 
+    --[==[
+        Проверяет, какие другие возможные `volume` могут иметь коллизии с этим
+        конкретным объектом
+    ]==]
+    read volumecast: (self: world, at: unknown) -> ...unknown,
 
--- Hierarchy
+    read insert_volume: (self: world, ...unknown) -> (),
+    read remove_volume: (self: world, ...unknown) -> (),
+    
+    read get_grid: (self: world) -> {[number]: {[number]: {[number]: geometry_check}}},
+    read get_grid_size: (self: world) -> number,
+    read set_grid_size: (self: world, to: number) -> (),
+} & collidable<world>, observer>
 
+--[==[
+    Объект, представляющий набор информации для геометрических фигур
+]==]
+export type rayinfo = construct<{
+    --[==[
+        Первый попавшийся объект будет возвращен, и только он
+    ]==]
+    read only_one_output: boolean,
+    
+    --[==[
+        Рейкаст будет создаваться не только в локальном пространстве, но и в
+        пространстве игры, в которой работает
+    ]==]
+    read engine_hit: boolean,
 
-
-
-
-
-
-
-
+    --[==[
+        Попадание будет создавать `world:volumecast()` для всех, в кого
+        оно было зарегистрировано. Если `self.only_one_output`, то это
+        свойство его игнорирует, - будут возвращены все кто попал в `world:volemucast()`
+    ]==]
+    read volume_hit: boolean,
+    
+}, struct>
 
 
 
@@ -432,13 +476,13 @@ export type localuser = construct<{
 
 -- Game
 
-type collidable = Model|BasePart
+type collidable_instance = Model|BasePart
 type collidable_ref = reference<collidable>
 
 export type collision = construct<{
     read get_collision: (self: collision) -> ...reference<Instance>,
-    read set_collision: (self: collision, ...collidable_ref|collidable) -> (),
-    read rem_collision: (self: collision, ...collidable_ref|collidable) -> ()
+    read set_collision: (self: collision, ...collidable_ref|collidable_instance) -> (),
+    read rem_collision: (self: collision, ...collidable_ref|collidable_instance) -> ()
 }, disposable>
 
 
@@ -561,7 +605,7 @@ export type character = construct<{
         Возвращает инвентарь конкретного персонажа и то чем он сейчас
         обладает
     ]==]
-    read get_inventory: (self: character) -> inventory,
+    read get_inventory: (self: character) -> unknown,
 
 } & referenceable<character, Model> & informable<character, characterinfo>, observer>
 
@@ -663,7 +707,7 @@ export type abilityinfo = construct<{
         Имеет ли способность стан, в течении которого пораженная сущность не может выполнять
         активные или какие-либо другие действия?
     ]==]
-    read has_stun: boolean
+    read has_stun: boolean,
 
     --[==[
         Есть ли у способности отброс для пораженной сущности, в которую способность попала?
@@ -758,94 +802,205 @@ export type abilityinfo = construct<{
 
 
 
-
-
-
-
-
-
-
 -- Struct
 
+--[==[
+    Объект, представляющий унифицированный результат выполнения той или иной операции
+]==]
 export type result<T = unknown, U... = ...unknown> = construct<{
+
+    --[==[
+        Статус выполнения этой операции
+    ]==]
     read state: boolean,
+
+    --[==[
+        Результат, который был получен за эту операцию
+
+        Он не обязан быть корректным, если `self.state` является `false`
+    ]==]
     read result: T,
+
+    --[==[
+        Применяется строго в случаях, когда значение результа по типу является
+        либо `table`, либо `function`, иначе ничего не вернет
+    ]==]
     read unpack: (self: result<T,U...>) -> U...
 }, struct>
 
 
 
+--[==[
+    Объект, представляющий кубическую, неповорачиваемую и при этом
+    проверяемую область в пространстве
+
+    Специфичный случай `cubevolume`
+]==]
 export type aabbvolume = construct<{
+    --[==[
+        Часть куба, которая участвует в определении области пространства,
+        которую занимает этот объект. Указывает на крайний угол противположной
+        стороны куба
+    ]==]
     read min: vector,
+
+    --[==[
+        Часть куба, которая участвует в определении области пространства,
+        которую занимает этот объект. Указывает на крайний угол противположной
+        стороны куба
+    ]==]
     read max: vector
 } & geometry_half &
     geometry_control<aabbvolume> &
-    geometry_check<aabbvolume, geometry_supported> & 
+    geometry_check<aabbvolume> & 
     geometry_convertation<aabbvolume, geometry_supported>, 
 cubevolume<aabbvolume>>
 
-export type obbvolume = construct<{
-    --[==[
-        Поворачивает `obbvolume` относительно его текущего локального поворота,
-        путем прибавления или убавления радиан
-    ]==]
-    read rotate_radian: (self: obbvolume, rad_vector: vector) -> obbvolume,
 
-    --[==[
-        Возвращает абсолютный угол поворота по радианам относительно
-        мирового стандартного угла
-    ]==]
-    read get_rotation_radian: (self: obbvolume) -> vector
-} &
+--[==[
+    Объект, представляющий кубическую поворачиваемую и проверяемую
+    область в пространстве
+
+    Специфичный случай `cubevolume`
+]==]
+export type obbvolume = construct<geometry_rotatable &
     geometry_convertation<obbvolume, geometry_supported> &
     geometry_control<obbvolume> &
     geometry_half &
-    geometry_check<obbvolume, geometry_supported>,
+    geometry_check<obbvolume>,
 cubevolume<obbvolume>>
 
 --[===[
 
+--[==[
+    Объект, представляющий собой сферическую область в пространстве
+]==]
 export type spherevolume = construct<{
     radius: number,
 } & centerable<spherevolume> & 
     math_operations<spherevolume, spherevolume>, 
 struct>
 
-export type trianglevolume = construct<{
-    read get_directions: (self: trianglevolume) -> triangle
-} & centerable<trianglevolume> & 
-    math_operations<trianglevolume, trianglevolume>, 
-struct>
+--[==[
+    Объект, представляющий собой конусную область в пространстве
 
-export type capsulevolume = construct<geometry_half & 
-    centerable<capsulevolume> & 
-    math_operations<capsulevolume, capsulevolume> & 
-    geometry_check<capsulevolume, geometry_supported> & 
-    geometry_convertation<capsulevolume, geometry_supported>, 
-struct>
+    Основание этого объекта является окружностью
+]==]
+export type conevolume = construct<{
+
+    --[==[
+        Кончик конуса будет выставлен на указанную точку в пространстве, при этом
+        база (платфома, тупая часть конуса, то есть низ) будет повернута в сторону
+        куда смотрит кончик конуса
+
+        Переданный дополнительный аргумент смещает основание базы на указанную позицию
+    ]==]
+    read edge_point: (self: conevolume, to: vector, base: vector?) -> conevolume,
+
+} & centerable<conevolume> & 
+    geometry_convertation<conevolume, geometry_supported> &
+    geometry_rotatable &
+    geometry_control<conevolume> &
+    geometry_check<conevolume>,
+geovolume<conevolume>>
+
+--[==[
+    Объект, представляющий собой капсульную область в пространстве
+]==]
+export type capsulevolume = construct<{
+
+}
+& centerable<capsulevolume> & 
+    geometry_convertation<capsulevolume, geometry_supported> &
+    geometry_rotatable &
+    geometry_control<capsulevolume> &
+    geometry_check<capsulevolume>,
+geovolume<capsulevolume>>
+
+--[==[
+    Объект, представляющий собой область в пространстве с `N` количеством
+    опорных вертексов, с которыми проводятся вычисления
+
+    Операции с этим объектом могут быть ресурсозатратными
+]==]
+export type tetavolume = construct<{
+
+    --[==[
+        Возвращает все опорные вертексы этой области
+    ]==]
+    read get_vertex: (self: tetavolume) -> ...vector,
+
+    --[==[
+        Добавляет опорный вертекс к этой области
+    ]==]
+    read add_vertex: (self: tetavolume, ...vector) -> (),
+
+    --[==[
+        Удаляет опорный вертекс из этой области, если он есть
+
+        Если таких векторов несколько, будет удален первый попавшийся
+    ]==]
+    read rem_vertex: (self: tetavolume, ...vector) -> (),
+}
+& centerable<tetavolume> & 
+    geometry_convertation<tetavolume, geometry_supported> &
+    geometry_rotatable &
+    geometry_control<tetavolume> &
+    geometry_check<tetavolume, geometry_supported>,
+geovolume<tetavolume>>
 
 ]===]
 
+--[==[
+    Объект, представляющий собой треугольник из 3 векторов в пространстве,
+    образующий таким образом часть полигона
+]==]
 export type triangle = construct<{
+    --[==[
+        Утилитарная функция по созданию стандартного `triangle` объекта,
+        фактически ничем не отличающаяся от примера:
+
+        ```luau
+        self:new {
+            right = right,
+            up = up,
+            front = front
+        }
+        ```
+    ]==]
     read from_vector: (self: triangle, right: vector?, up: vector?, front: vector?) -> triangle
-} &centerable<triangle> & 
+} & centerable<triangle> & 
     axisable<vector> & 
     normals<triangle>,
 geovolume<triangle>>
 
+--[==[
+    Объект, представляющий собой полигон из 2 треугольников
+]==]
 export type quad = construct<{
+    --[==[
+        Левый треугольник, часть полигона
+    ]==]
     read left: triangle,
+
+    --[==[
+        Правый треугольник, часть полигона
+    ]==]
     read right: triangle,
 } & centerable<quad> & 
     normals<quad> & 
     math_operations<quad, quad>, 
 struct>
 
+--[==[
+    Объект, использующийся для определения осей пространства
+]==]
 export type directions = construct<vector_operations<directions, directions> & axisable<vector>, geovolume<directions>>
 
-
 --[==[
-    Геометрический аналог CFrame
+    Объект, представляющий собой геометрический аналог координаты
+
+    Хранит в себе информацию о повороте и положении в пространстве
 ]==]
 export type basis = construct<{
     read orthonormalize: (self: basis) -> basis,
@@ -853,6 +1008,9 @@ export type basis = construct<{
     read components: (self: basis) -> ...number,
 } & positioned & rotateable, geovolume<basis>>
 
+--[==[
+    Объект, представляющий собой область пространства в форме восьмиугольника
+]==]
 export type cubevolume <T = cubevolume> = construct<{
     --[==[
         Направление `+Y`, эквивалетное как `UpVector`
@@ -914,6 +1072,15 @@ export type cubevolume <T = cubevolume> = construct<{
     vector_operations<cubevolume<T>, T>, 
 geovolume<cubevolume<T>>>
 
+--[==[
+    Базовый абстрактный класс для части геометрии, использующийся в качестве
+    общего математического и утилитарного api
+
+    Его используют все `volume` объекты, представляющие хоть какую-то область
+    в пространстве
+
+    Сам по себе не имеет смысла
+]==]
 export type geovolume<T = any> = construct<math_operations<T, T>, struct>
 
 
@@ -1310,13 +1477,19 @@ export type asyncable = {
 
 export type geometry_volume = aabbvolume  | obbvolume | cubevolume -- TODO | spherevolume | trianglevolume | capsulevolume
 export type geometry_primetive = triangle | quad | vector | cubevolume
-export type geometry_check <T = unknown, U... = ...unknown> = {
+export type geometry_supported = geometry_volume | Model | BasePart | PVInstance
+
+--[==[
+    Интерфейс предоставляет объекту операции геометрических проверок для
+    уточнения факта коллизий
+]==]
+export type geometry_check <T = unknown> = {
 
     --[==[
         Переданные данные охвачены диапазоном объекта, из которого вызывается этот метод,
         либо нет, что в итоге приведет к `false`
     ]==]
-    read is_inside: (self: T, U...) -> boolean,
+    read is_inside: (self: T, ...unknown) -> boolean,
 
     --[==[
         Переданные данные вообще как-либо взаимодействуют с объектом, из которого
@@ -1328,13 +1501,13 @@ export type geometry_check <T = unknown, U... = ...unknown> = {
             const interacts = self:is_inside(val) and self:is_intersection(val)
         ```
     ]==]
-    read is_interacts: (self: T, U...) -> boolean,
+    read is_interacts: (self: T, ...unknown) -> boolean,
 
     --[==[
         Переданные данные, хотя-бы один из них, пересекается с объектом, из которого
         вызван этот метод. Даже если пересечение совсем небольшое
     ]==]
-    read is_intersection: (self: T, U...) -> boolean,
+    read is_intersection: (self: T, ...unknown) -> boolean,
 }
 
 export type geometry_half = {
@@ -1345,12 +1518,33 @@ export type geometry_half = {
     half: vector
 }
 
+--[==[
+    Управляющие контроллеры над самой геометрической фигурой типа смотри туда, делай то
+    и тому подобного
+]==]
 export type geometry_control <T = unknown> = {
     --[==[
         Заставляет геометрическую фигуру направиться лицевой стороной на указанную
         в пространстве точку
     ]==]
     read look_at: (self: T, that: vector, up: vector?) -> T,
+}
+
+export type geometry_rotatable <T = unknown> = {
+    --[==[
+        Поворачивает объект относительно его текущего локального поворота,
+        путем прибавления или убавления радиан
+
+        В пространстве определяется центр объекта, и относительно него и идет
+        поворот объекта
+    ]==]
+    read rotate_radian: (self: obbvolume, rad_vector: vector) -> obbvolume,
+
+    --[==[
+        Возвращает абсолютный угол поворота по радианам относительно
+        мирового стандартного угла (0 0 0)
+    ]==]
+    read get_rotation_radian: (self: obbvolume) -> vector
 }
 
 --[==[
@@ -1414,7 +1608,6 @@ export type informable<T = unknown, U = unknown> = {
     read set_info: (self: T, info: U) -> ()
 }
 
-export type geometry_supported = geometry_volume | Model | BasePart | PVInstance
 
 export type math_operations<T=unknown,U... = ()> = {
     read multiple: (self: T, to: number) -> U...,
@@ -1517,17 +1710,17 @@ export type collidable<T = unknown> = {
     --[==[
         Возвращает все коллизии, с которыми доступно взаимодействие
     ]==]
-    read get_collision: (self: ability) -> ...collision,
+    read get_collision: (self: T) -> ...collision,
 
     --[==[
         Добавляет указанные коллизии в список, с которыми доступно взаимодействие
     ]==]
-    read add_collision: (self: ability, ...collision) -> (),
+    read add_collision: (self: T, ...collision) -> (),
 
     --[==[
         Удаляет указанные коллизии из списка доступных взаимодействий
     ]==]
-    read rem_collision: (self: ability, ...collision) -> ()
+    read rem_collision: (self: T, ...collision) -> ()
 }
 
 export type normals<T=unknown, U=vector> = {

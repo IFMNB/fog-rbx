@@ -18,7 +18,7 @@ const class: aabbvolume = CubeVolume:new({
 	min = vector.zero,
 	max = vector.zero,
 
-	is_inside = ftype:write(function(self: aabbvolume, ...: geometry_supported): boolean
+	is_inside = ftype:write(function(self: aabbvolume, ...: unknown): boolean
 		for _, value in { ... } do
 			if typeof(value) == declare.roblox.Instance then
 				const instance = value :: Instance
@@ -69,7 +69,7 @@ const class: aabbvolume = CubeVolume:new({
 		return true
 	end, declare.boolean, "aabbvolume", ftype:var(declare.roblox.Instance, "aabbvolume", "obbvolume", "cubevolume")),
 
-	is_interacts = ftype:write(function(self: aabbvolume, ...: geometry_supported): boolean
+	is_interacts = ftype:write(function(self: aabbvolume, ...: unknown): boolean
 		for _, value in {...} do
 			if not self:is_inside(value) and not self:is_intersection(value) then
 				return false
@@ -79,7 +79,7 @@ const class: aabbvolume = CubeVolume:new({
 		return true
 	end, declare.boolean, "aabbvolume", ftype:var(declare.roblox.Instance, "aabbvolume", "obbvolume", "cubevolume")),
 
-	is_intersection = ftype:write(function(self: aabbvolume, ...: geometry_supported): boolean
+	is_intersection = ftype:write(function(self: aabbvolume, ...: unknown): boolean
 		for _, value in {...} do
 			if typeof(value) == declare.roblox.Instance then
 				const instance = value :: Instance

@@ -108,9 +108,9 @@ const class : obbvolume = CubeVolume:new {
 		return private.cover(self, { ... })
 	end, "obbvolume", "obbvolume", ftype:var(declare.roblox.Instance, "aabbvolume", "obbvolume", "cubevolume")),
 
-	is_inside = ftype:write(function(self: obbvolume, ...: geometry_supported): boolean
+	is_inside = ftype:write(function(self: obbvolume, ...: unknown): boolean
 		for _, value in { ... } do
-			const volume = private.convert(value)
+			const volume = private.convert(value :: any)
 
 			if not volume then
 				project.console_out_error("unsupported geometry in OBB is_inside")
@@ -125,7 +125,7 @@ const class : obbvolume = CubeVolume:new {
 		return true
 	end, declare.boolean, "obbvolume", ftype:var(declare.roblox.Instance, "aabbvolume", "obbvolume", "cubevolume")),
 
-	is_interacts = ftype:write(function(self: obbvolume, ...: geometry_supported): boolean
+	is_interacts = ftype:write(function(self: obbvolume, ...: unknown): boolean
 		for _, value in { ... } do
 			if not self:is_inside(value) and not self:is_intersection(value) then
 				return false
@@ -135,9 +135,9 @@ const class : obbvolume = CubeVolume:new {
 		return true
 	end, declare.boolean, "obbvolume", ftype:var(declare.roblox.Instance, "aabbvolume", "obbvolume", "cubevolume")),
 
-	is_intersection = ftype:write(function(self: obbvolume, ...: geometry_supported): boolean
+	is_intersection = ftype:write(function(self: obbvolume, ...: unknown): boolean
 		for _, value in { ... } do
-			const volume = private.convert(value)
+			const volume = private.convert(value :: any)
 
 			if not volume then
 				project.console_out_error("unsupported geometry in OBB is_intersection")

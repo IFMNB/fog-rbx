@@ -1,0 +1,625 @@
+--!strict
+
+--[[ TODO
+	Отказаться от константной скорости Settle, рассчитывать ее на основе Humanoid.speed
+	Добавить fallback на реальное положение origin если raycast не попал
+	Добавить проверку на возможность переступления ноги
+		Если впереди есть препядствие, за которое нельзя поставить ногу, то
+		активировать переступление по idle режиму
+
+	При move-direction назад, если torso смотрит в противоположную сторону, то
+	предполагается использование shiftlock, следовательно ноги должны смотреть в
+	ту же сторону что и torso (инвертироваться)
+
+	По окончанию драфт код нужно разбить и переписать на объектную систему,
+	а затем оптимизировать (так как тут ничего не оптимизировалось)
+]]
+
+const players = game:GetService("Players")
+const runservice = game:GetService("RunService")
+
+const tools = require("@game/StarterPlayer/StarterPlayerScripts/draftcode/tools")
+
+const STEP_TORSO_ALPHA = 0
+const STEP_MAX_RANGE_DIFF = 1
+
+--[==[
+	Расстояние, на которое выносится вперед raycast
+]==]
+const STEP_FORWARD = 1.5
+
+const STEP_SPEED = 55
+--[==[
+	Фактическая скорость переступления шагом
+]==]
+const SETTLE_SPEED = 100
+const PLANTED_SPEED = 60
+
+const IDLE_TIME = 0.35
+const STAND_FORWARD = 0.1
+
+const FOOT_SETTLE_ANGLE = math.rad(2)
+
+--[==[
+	Глубина расстояния между точками рейкаста относительно bottom-torso определяется
+	как `s - LEG_FROM_COEF_DIFF`, где s - отрицательное или положительное соответствующее
+	как Left/Right или cframe.X (right) и -cframe.X (left)
+]==]
+const LEG_FROM_COEF_DIF = 0.4
+const LEG_FOLLOW_SPEED = 30
+const LEG_PREDICTION_SCALE = 2
+
+const RAYCAST_UP = 1
+const RAYCAST_DOWN = 6
+
+type FootPhase = "planted" | "stepping" | "settling"
+
+type FootState = {
+	part: BasePart,
+
+	target: CFrame,
+	contact: vector,
+
+	diff: number,
+	phase: FootPhase,
+}
+
+type CharacterState = {
+	character: Model,
+	humanoid: Humanoid,
+	torso: BasePart,
+
+	left: FootState,
+	right: FootState,
+
+	active: FootState,
+	idle_time: number,
+}
+
+const SIGNAL: RBXScriptSignal<number> = runservice.Heartbeat
+const STATES = {}
+const MAP = {} :: { [BasePart]: CFrame }
+
+const function get_limb(character: Humanoid, model: Model, limb: Enum.Limb): BasePart
+	for _, v in model:GetChildren() do
+		if v:IsA("BasePart") and character:GetLimb(v) == limb then
+			return v
+		end
+	end
+
+	error(`cannot find limb {limb.Name} in {model:GetFullName()}`)
+end
+
+const function get_foots(character: Humanoid, model: Model): { left: BasePart, right: BasePart }
+	return {
+		left = get_limb(character, model, Enum.Limb.LeftLeg),
+		right = get_limb(character, model, Enum.Limb.RightLeg),
+	}
+end
+
+const function get_torso(character: Humanoid, model: Model): BasePart
+	return get_limb(character, model, Enum.Limb.Torso)
+end
+
+const function get_humanoid(character: Model): Humanoid
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+
+	if not humanoid then
+		for i = 1, 3 do
+			task.wait(i)
+			humanoid = character:FindFirstChildOfClass("Humanoid")
+
+			if humanoid then
+				break
+			end
+		end
+	end
+
+	return humanoid :: Humanoid
+end
+
+const function get_bottom(torso: BasePart, diff: number): vector
+	const position = tools.to_vector(torso.Position)
+	const right = tools.to_vector(torso.CFrame.RightVector)
+
+	return position + vector.create(0, -torso.Size.Y / 2, 0) + right * diff
+end
+
+const function create_rayparams(model: Model): RaycastParams
+	const rayparams = RaycastParams.new()
+
+	rayparams.FilterType = Enum.RaycastFilterType.Exclude
+	rayparams.RespectCanCollide = true
+	rayparams.BruteForceAllSlow = false
+	rayparams.IgnoreWater = true
+
+	rayparams.ExcludeInstances = model:GetDescendants()
+
+	return rayparams
+end
+
+const function raycast(origin: vector, direction: vector, params: RaycastParams?): RaycastResult?
+	const safe_origin = origin + direction * 0.01
+
+	return workspace:Raycast(tools.to_vector3(safe_origin), tools.to_vector3(direction), params)
+end
+
+const function get_step_raycast(
+	from: vector,
+	torso: BasePart,
+	move_dir: vector,
+	forward_distance: number
+): (vector, vector)
+	const cframe = torso.CFrame
+
+	const up = tools.to_vector(cframe.UpVector)
+	const down = -up
+
+	const move_length = vector.magnitude(move_dir)
+
+	local horizontal_direction: vector
+
+	if move_length > 0.001 then
+		horizontal_direction = move_dir / move_length
+	else
+		horizontal_direction = tools.to_vector(cframe.LookVector)
+	end
+
+	const origin = from + up * RAYCAST_UP
+	const direction = horizontal_direction * forward_distance + down * (RAYCAST_UP + RAYCAST_DOWN)
+
+	return origin, direction
+end
+
+const function cross(a: vector, b: vector): vector
+	return vector.create(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x)
+end
+
+const function get_horizontal_velocity(humanoid: Humanoid): vector
+	const root = humanoid.RootPart
+
+	if not root then
+		return vector.zero
+	end
+
+	const velocity = tools.to_vector(root.AssemblyLinearVelocity)
+
+	return vector.create(velocity.x, 0, velocity.z)
+end
+
+const function get_plant_target(foot: FootState, torso: BasePart): CFrame
+	const part = foot.part
+	const half_height = part.Size.Y * 0.5
+	const contact = foot.contact
+	const out_point = get_bottom(torso, foot.diff)
+	local up = tools.to_vector(part.CFrame.UpVector)
+
+	for _ = 1, 2 do
+		const center = contact + up * half_height
+
+		const direction = out_point - center
+		const length = vector.magnitude(direction)
+
+		if length <= 1e-5 then
+			return part.CFrame
+		end
+
+		up = direction / length
+	end
+
+	local forward = out_point - tools.to_vector(torso.Position)
+
+	forward = forward - up * vector.dot(forward, up)
+
+	if vector.magnitude(forward) <= 1e-5 then
+		return part.CFrame
+	end
+
+	forward = vector.normalize(forward)
+
+	const right = vector.normalize(cross(forward, up))
+	const back = vector.normalize(cross(right, up))
+	const center = contact + up * half_height
+	const center3, right3, up3, back3 = tools.to_vector3(center, right, up, back)
+
+	return CFrame.fromMatrix(center3, right3, up3, back3)
+end
+
+
+const function get_knee_pos(
+	of: vector,
+	rayresult: RaycastResult,
+	up: vector,
+	move_dir: vector,
+	facing_dir: vector
+): vector
+	const foot = tools.to_vector(rayresult.Position)
+	const normal = tools.to_vector(rayresult.Normal)
+
+	const leg = foot - of
+	const distance = vector.magnitude(leg)
+
+	if distance <= 1e-5 then
+		return foot
+	end
+
+	const leg_dir = vector.normalize(leg)
+	const move_flat = vector.create(move_dir.x, 0, move_dir.z)
+	const facing_flat = vector.create(facing_dir.x, 0, facing_dir.z)
+
+	const has_move = vector.magnitude(move_flat) > 1e-5
+
+	const desired = if has_move
+		then vector.normalize(move_flat)
+		else if vector.magnitude(facing_flat) > 1e-5 then vector.normalize(facing_flat) else vector.zero
+
+	const pole = desired - leg_dir * vector.dot(desired, leg_dir)
+	const pole_dir = if vector.magnitude(pole) > 1e-5 then vector.normalize(pole) else vector.zero
+	const blended_up = vector.lerp(up, normal, 0.2)
+	const bend_up = if vector.magnitude(blended_up) > 1e-5 then vector.normalize(blended_up) else vector.normalize(up)
+
+	const midpoint = of + leg * 0.5
+	const half = distance * 0.5
+	const pole_length = if has_move then half else distance * 0.1
+
+	return midpoint + pole_dir * pole_length + bend_up * half
+end
+
+const function get_leg_cframe(leg: BasePart, torso: BasePart, foot: vector, knee: vector, move_dir: vector): CFrame
+	const torso_cframe = torso.CFrame
+	const torso_inverse = torso_cframe:Inverse()
+	const has_move = vector.magnitude(move_dir) > 1e-5
+	const foot_local = tools.to_vector(torso_inverse:PointToWorldSpace(tools.to_vector3(foot)))
+	const knee_local = tools.to_vector(torso_inverse:PointToWorldSpace(tools.to_vector3(knee)))
+	const direction = knee_local - foot_local
+	const length = vector.magnitude(direction)
+
+	if length <= 1e-5 then
+		return leg.CFrame
+	end
+
+	const up = direction / length
+	const torso_fwd_local = vector.create(0, 0, -1)
+	const move_local = tools.to_vector(torso_inverse:VectorToWorldSpace(tools.to_vector3(move_dir)))
+	const move_norm = if has_move then vector.normalize(move_local) else torso_fwd_local
+	const blended_fwd = vector.normalize(vector.lerp(move_norm, torso_fwd_local, STEP_TORSO_ALPHA))
+	local forward = blended_fwd - up * vector.dot(blended_fwd, up)
+
+	if vector.magnitude(forward) <= 1e-5 then
+		const fallback = vector.create(1, 0, 0)
+
+		forward = fallback - up * vector.dot(fallback, up)
+
+		if vector.magnitude(forward) <= 1e-5 then
+			return leg.CFrame
+		end
+	end
+
+	forward = vector.normalize(forward)
+
+	const right = vector.normalize(cross(forward, up))
+	const back = vector.normalize(cross(right, up))
+
+	const center = foot_local + up * (leg.Size.Y * 0.5)
+
+	const center3, right3, up3, back3 = tools.to_vector3(center, right, up, back)
+
+	const local_cframe = CFrame.fromMatrix(center3, right3, up3, back3)
+
+	return torso_cframe * local_cframe
+end
+
+const function step(character: Humanoid, model: Model, leg: BasePart, torso: BasePart, diff: number): CFrame?
+	const move_direction = tools.to_vector(character.MoveDirection)
+
+	const bottom = get_bottom(torso, diff)
+
+	const velocity = get_horizontal_velocity(character)
+
+	const prediction_time = LEG_PREDICTION_SCALE / LEG_FOLLOW_SPEED
+	const predicted_bottom = bottom + velocity * prediction_time
+
+	const ray_origin, ray_direction = get_step_raycast(predicted_bottom, torso, move_direction, STEP_FORWARD)
+	const params = create_rayparams(model)
+	const ray_result = raycast(ray_origin, ray_direction, params)
+
+	if not ray_result then
+		return nil
+	end
+
+	const knee_pos = get_knee_pos(
+		bottom,
+		ray_result,
+		tools.to_vector(torso.CFrame.UpVector),
+		move_direction,
+		tools.to_vector(torso.CFrame.LookVector)
+	)
+
+	const target = get_leg_cframe(leg, torso, tools.to_vector(ray_result.Position), knee_pos, move_direction)
+	const old = MAP[leg]
+
+	if not old then
+		return target
+	end
+
+	const target_delta = target.Position - old.Position
+	const range_difference = Vector3.new(target_delta.X, 0, target_delta.Z).Magnitude
+
+	if range_difference > STEP_MAX_RANGE_DIFF then
+		return target
+	elseif vector.magnitude(move_direction) < 0.01 then
+		return target
+	else
+		return nil
+	end
+end
+
+const function stand(character: Humanoid, model: Model, leg: BasePart, torso: BasePart, diff: number): CFrame?
+	const move_direction = vector.zero
+	const bottom = get_bottom(torso, diff)
+
+	const ray_origin, ray_direction = get_step_raycast(bottom, torso, move_direction, STAND_FORWARD)
+
+	const params = create_rayparams(model)
+	const ray_result = raycast(ray_origin, ray_direction, params)
+
+	if not ray_result then
+		return nil
+	end
+
+	const up = tools.to_vector(torso.CFrame.UpVector)
+	const facing = tools.to_vector(torso.CFrame.LookVector)
+
+	const knee_pos = get_knee_pos(bottom, ray_result, up, vector.zero, facing)
+
+	return get_leg_cframe(leg, torso, tools.to_vector(ray_result.Position), knee_pos, vector.zero)
+end
+
+const function character_added(character: Model)
+	const humanoid = get_humanoid(character)
+
+	const legs = get_foots(humanoid, character)
+	const torso = get_torso(humanoid, character)
+
+	const origin_left = legs.left
+	const origin_right = legs.right
+
+	const clone_left = origin_left:Clone()
+	const clone_right = origin_right:Clone()
+
+	origin_left.Transparency = 1
+	origin_right.Transparency = 1
+	--torso.Transparency = 0.95
+	--clone_left.Transparency = 0.5
+	--clone_right.Transparency = 0.5
+
+	clone_left.Anchored = true
+	clone_left.CanCollide = false
+	clone_left.CanQuery = false
+	clone_left.CanTouch = false
+	clone_left.Name ..= "_VIS"
+
+	clone_right.Anchored = true
+	clone_right.CanCollide = false
+	clone_right.CanQuery = false
+	clone_right.CanTouch = false
+	clone_right.Name ..= "_VIS"
+
+
+
+	clone_left.Parent = character
+	clone_right.Parent = character
+
+	local left: FootState = {
+		part = clone_left,
+		target = clone_left.CFrame,
+		contact = tools.to_vector(clone_left.Position),
+		diff = -(1 - LEG_FROM_COEF_DIF),
+		phase = "planted",
+	}
+
+	local right: FootState = {
+		part = clone_right,
+		target = clone_right.CFrame,
+		contact = tools.to_vector(clone_right.Position),
+		diff = 1 - LEG_FROM_COEF_DIF,
+		phase = "planted",
+	}
+
+	STATES[character] = {
+		character = character,
+		humanoid = humanoid,
+		torso = torso,
+
+		left = left,
+		right = right,
+
+		active = left,
+		idle_time = 0,
+	}
+end
+
+const function begin_step(foot: FootState, target: CFrame)
+	foot.target = target
+
+	-- Нижняя поверхность ноги должна остаться в точке raycast.
+	const position = tools.to_vector(target.Position)
+	const up = tools.to_vector(target.UpVector)
+
+	foot.contact = position - up * (foot.part.Size.Y * 0.5)
+	foot.phase = "stepping"
+end
+
+const function is_step_finished(foot: FootState): boolean
+	const position_delta = foot.target.Position - foot.part.Position
+
+	if position_delta.Magnitude > 0.05 then
+		return false
+	end
+
+	const current_up = foot.part.CFrame.UpVector
+	const target_up = foot.target.UpVector
+
+	return math.acos(math.clamp(current_up:Dot(target_up), -1, 1)) <= math.rad(5)
+end
+
+const function is_settle_finished(foot: FootState, target: CFrame): boolean
+	const current_up = foot.part.CFrame.UpVector
+	const target_up = target.UpVector
+
+	const up_dot = math.clamp(current_up:Dot(target_up), -1, 1)
+
+	return math.acos(up_dot) <= FOOT_SETTLE_ANGLE
+end
+
+const function solve_foot(foot: FootState, torso: BasePart, delta: number)
+	local alpha = 1 - math.exp(-LEG_FOLLOW_SPEED * delta)
+
+	if foot.phase == "stepping" then
+		alpha = 1 - math.exp(-STEP_SPEED * delta)
+		const current = foot.part.CFrame
+		const target = foot.target
+
+		const next = current:Lerp(target, alpha)
+
+		const offset = target.Position - next.Position
+		const horizontal = Vector3.new(offset.X, 0, offset.Z)
+
+		const distance = horizontal.Magnitude
+		const lift = math.min(distance, 1)
+
+		const position = Vector3.new(next.Position.X, target.Position.Y + lift, next.Position.Z)
+
+		foot.part.CFrame = CFrame.new(position) * next.Rotation
+
+		if is_step_finished(foot) then
+			foot.phase = "settling"
+		end
+
+		return
+	end
+
+	if foot.phase == "settling" then
+		alpha = 1 - math.exp(-SETTLE_SPEED * delta)
+		const target = get_plant_target(foot, torso)
+
+		foot.target = target
+
+		const current = foot.part.CFrame
+		const next = current:Lerp(target, alpha)
+
+		foot.part.CFrame = next
+
+		if is_settle_finished(foot, target) then
+			foot.phase = "planted"
+		end
+
+		return
+	end
+
+	alpha = 1 - math.exp(-PLANTED_SPEED * delta)
+	const target = get_plant_target(foot, torso)
+
+	foot.target = target
+	foot.part.CFrame = foot.part.CFrame:Lerp(target, alpha)
+end
+
+SIGNAL:Connect(function(delta: number)
+	for character, state in STATES do
+		if not character.Parent then
+			STATES[character] = nil
+			continue
+		end
+
+		const move_direction = tools.to_vector(state.humanoid.MoveDirection)
+		const is_moving = vector.magnitude(move_direction) >= 0.01
+
+		if is_moving then
+			state.idle_time = 0
+		else
+			state.idle_time += delta
+		end
+
+		solve_foot(state.left, state.torso, delta)
+		solve_foot(state.right, state.torso, delta)
+
+		if not is_moving and state.idle_time >= IDLE_TIME then
+			if state.left.phase == "planted" then
+				const target = stand(state.humanoid, state.character, state.left.part, state.torso, state.left.diff)
+
+				if target then
+					state.left.target = target
+					state.left.contact = tools.to_vector(target.Position)
+						- tools.to_vector(target.UpVector) * (state.left.part.Size.Y * 0.5)
+				end
+			end
+
+			if state.right.phase == "planted" then
+				const target = stand(state.humanoid, state.character, state.right.part, state.torso, state.right.diff)
+
+				if target then
+					state.right.target = target
+					state.right.contact = tools.to_vector(target.Position)
+						- tools.to_vector(target.UpVector) * (state.right.part.Size.Y * 0.5)
+				end
+			end
+
+			continue
+		end
+
+		if not is_moving then
+			continue
+		end
+
+		const active = state.active
+		const other = if active == state.left then state.right else state.left
+
+		if active.phase ~= "planted" then
+			continue
+		end
+
+		const target = step(state.humanoid, state.character, other.part, state.torso, other.diff)
+
+		if not target then
+			continue
+		end
+
+		begin_step(other, target)
+
+		state.active = other
+	end
+end)
+
+SIGNAL:Connect(function(delta: number)
+	for i, v in MAP do
+		const current = i.CFrame
+		const target = v
+		const alpha = 1 - math.exp(-LEG_FOLLOW_SPEED * delta)
+
+		local next = current:Lerp(target, alpha)
+		const offset = target.Position - next.Position
+		const horizontal = Vector3.new(offset.X, 0, offset.Z)
+		const distance = horizontal.Magnitude
+
+		const lift = math.min(distance, 1)
+		const position = Vector3.new(next.Position.X, target.Position.Y + lift, next.Position.Z)
+
+		i.CFrame = CFrame.new(position) * next.Rotation
+	end
+end)
+
+const function player_added(player: Player)
+	player.CharacterAdded:Connect(character_added)
+
+	if player.Character then
+		character_added(player.Character)
+	end
+end
+
+do
+	for _, v in players:GetPlayers() do
+		player_added(v)
+	end
+
+	players.PlayerAdded:Connect(player_added)
+end

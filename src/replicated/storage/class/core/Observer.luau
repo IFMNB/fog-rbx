@@ -174,8 +174,8 @@ do
 	}
 
 
-	private.dummy = table.freeze({})
-	private.meta = table.freeze({ __mode = "ks" })
+	private.dummy = declare.tables.dummy
+	private.meta = declare.tables.__mode_ks
 	private.shadow_space = setmetatable({} :: {[observer]: {[any]: any}}, private.meta)
 	private.pointers = SecurityRNG:get_hash_sha256("observer_pointers")
 	private.items = SecurityRNG:get_hash_sha256("observer_items")
