@@ -41,7 +41,7 @@ const class: connection = (Observer :: observer<enumitem_setup_notification>):ne
 		if not self:is_connected() then
 			return
 		end
-		self:subscription_set_mode(mode, self:get(private.key))
+		self:subscription_set_mode(mode, self:get <<pointer>>(private.key))
 	end, declare["nil"], "connection", "enumitem"),
 
 	is_connected = ftype:write(function(self: connection): boolean

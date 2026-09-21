@@ -148,7 +148,7 @@ const class: observer = object:new({
 
     set = function <Y> (self: observer, label: unknown, to: Y) : ()
         private.shadow_space[self][label] = to
-    end
+    end 
 })
 
 class:host(function(new: observer)

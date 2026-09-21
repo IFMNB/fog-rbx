@@ -648,7 +648,7 @@ do
 			func = list[var.type]
 
 		elseif typeof(v) == declare.roblox.Instance then
-			const var = v :: Instance
+			const var = v :: Model | BasePart | PVInstance
 
 			-- Сначала точное имя класса.
 			func = list[var.ClassName]

@@ -168,7 +168,14 @@ export type observer<T = enumitem | enumobject> = construct<
 		read subscription_get_mode: (self: observer<T>, ...pointer) -> ...enumitem_connection_variant,
 		read notificate: (self: observer<T>, notification: observer_on<T>, ...unknown) -> (),
 
+        --[==[
+            Получить из внутреннего приватного хранилища объекта какое-либо значение по `label`
+        ]==]
 		read get: <Y>(self: observer<T>, label: any) -> Y,
+
+        --[==[
+            Установить во внутреннее приватное хранилище объекта какое-либо значение по `label`
+        ]==]
 		read set: <Y>(self: observer<T>, label: any, to: Y) -> (),
 	},
 	object
@@ -273,6 +280,12 @@ export type timer = construct<{
     read is_finished: (self: timer) -> boolean,
 }  & iterations<number> & modifier<number> & controllable<timer>, observer<enumitem_tick_notification>>
 
+--[==[
+    Объект, представляющий динамический доступ к требуемому объекту
+
+    Он не гарантирует наличие объекта, безопасность подключения к его сигналам или всего
+    остального. Он контроллируется внешними управляющими механизмами
+]==]
 export type reference<T = Instance> = construct<{
     read clear: (self: reference<T>) -> ()
 } & instanceable<reference<T>, T>, observer<enumitem_reference_notification>>
@@ -301,11 +314,32 @@ export type maid = construct< {
 	read is_supported: (self: maid, that: unknown) -> boolean,
 }, disposable>
 
+--[==[
+    Объект, представляющий ленивое хранилище
+]==]
 export type maybe <T = unknown, U = unknown> = construct<{
+
+    --[==[
+        Выполяет переданную функцию только 1 раз, далее возвращает кэшированный
+        результат работы функции
+    ]==]
 	read extract: (self: maybe<T,U>, it: U, make: () -> T) -> T,
+
+    --[==[
+        Создает наследника переданного объекта, а затем возвращает его как кэшированный
+        результат работы
+    ]==]
     read enactment: (self: maybe<T,U>, it: U, of: object) -> T,
-	read erase: (self: maybe<T,U>, it: U) -> (),
-	read exist: (self: maybe<T,U>, it: U) -> boolean,
+
+    --[==[
+        Для указанного `it` удаляет значение
+    ]==]
+    read erase: (self: maybe<T,U>, it: U) -> (),
+	
+    --[==[
+        Проверяет, существует ли значение для указанного `it`
+    ]==]
+    read exist: (self: maybe<T,U>, it: U) -> boolean,
 }, observer<enumitem_operation_variant>>
 
 export type statemachine <T = enumitem> = construct<{
@@ -479,15 +513,20 @@ export type rayinfo = construct<{
 type collidable_instance = Model|BasePart
 type collidable_ref = reference<collidable>
 
+--[==[
+    Объект, представляющий группу коллизий
+]==]
 export type collision = construct<{
     read get_collision: (self: collision) -> ...reference<Instance>,
     read set_collision: (self: collision, ...collidable_ref|collidable_instance) -> (),
-    read rem_collision: (self: collision, ...collidable_ref|collidable_instance) -> ()
+    read rem_collision: (self: collision, ...collidable_ref|collidable_instance) -> (),
+    read set_name: (self: collision, to: string) -> (),
+    read get_name: (self: collision) -> string,
 }, disposable>
 
 
 --[==[
-
+    Объект, представляющий доменную логику раунда и дающий возможность структурно управлять игрой
 ]==]
 export type round = construct<{
     --[==[
@@ -523,7 +562,7 @@ export type round = construct<{
 
         Не возвращается фракция members, это техническая фракция
     ]==]
-    read find_member: (self: round, ...character) -> ...faction
+    read find_member: (self: round, ...character) -> {[character]: {faction}?}
 } & stateable<round, enumitem_round_state>, timer>
 
 --[==[
@@ -532,6 +571,11 @@ export type round = construct<{
 
     Фракция представляет собой не сколько фракцию, сколько аналог
     объекта `Team`, перенесенного в логику
+
+    Используются объекты `character` как участники, поскольку доменная
+    сущность которая управляет `character` независима от них и наоборот:
+    `character` может существовать и сам по себе, его не интересует
+    кто им управляет и управляет ли
 ]==]
 export type faction = construct<{
     --[==[
@@ -556,7 +600,7 @@ export type faction = construct<{
         Проверить является ли персонаж участником этой фракции
     ]==]
     read is_member: (self: faction, ...character) -> ...boolean
-} & nameable, observer>
+} & nameable, observer<enumitem_faction_notification>>
 
 --[==[
     Объект, представляющий собой логическую сущность "персонаж"
@@ -567,10 +611,14 @@ export type faction = construct<{
     Поскольку он не является фактическим состоянием персонажа, его связанность
     с рантаймом почти нулевая и завязана в основе исключительно на том как
     система интерпретирует эту логическую сущность
+
+    Дальнейшие операции и работа с ними производится исключительно
 ]==]
 export type character = construct<{
     --[==[
-        Это специальный ключ, по которому для этого персонажа могут быть
+        Получить текущий токен персонажа
+
+        Токен - специальный ключ, по которому для этого персонажа могут быть
         подобраны подходящие ему предметы, способности, снаряжение или
         модели
 
@@ -578,7 +626,20 @@ export type character = construct<{
         данные к этому объекту, при этом не давая ему право обладать этими
         данными
     ]==]
-    token: enumitem,
+    read get_token: (self: character) -> enumitem,
+
+    --[==[
+        Установить новый токен персонажа
+
+        Токен - специальный ключ, по которому для этого персонажа могут быть
+        подобраны подходящие ему предметы, способности, снаряжение или
+        модели
+
+        Это используется в сервисах, которым необходимо выдавать релевантные
+        данные к этому объекту, при этом не давая ему право обладать этими
+        данными
+    ]==]
+    read set_token: (self: character, to: enumitem) -> (),
 
     --[==[
         У персонажа как такового определенных констант параметров нет, они создаются
@@ -587,13 +648,15 @@ export type character = construct<{
 
         Это создано для того чтобы не определять десятки тысяч параметров персонажа, которых
         у него могут быть чуть ли не бесконечно много
+
+        В этом конструкторе по умолчанию `всегда` создается релевантный по типу `value`
     ]==]
-    read get_parameter: (self: character, of: enumitem) -> value,
+    read get_parameter: (self: character, ...enumitem_character_parameter_variant) -> ...value<number>,
 
     --[==[
         Был ли данный параметр создан когда-либо для этого персонажа?
     ]==]
-    read has_parameter: (self: character, of: enumitem) -> boolean,
+    read has_parameter: (self: character, ...enumitem_character_parameter_variant) -> boolean,
 
     --[==[
         Использует `self.token` для доступа в хранилище способностей,
@@ -605,50 +668,59 @@ export type character = construct<{
         Возвращает инвентарь конкретного персонажа и то чем он сейчас
         обладает
     ]==]
-    read get_inventory: (self: character) -> unknown,
+    read get_inventory: (self: character) -> unknown, -- TODO
 
-} & referenceable<character, Model> & informable<character, characterinfo>, observer>
+    --[==[
+        Возвращает референс на модель персонажа
+    ]==]
+    read get_model_reference: (self: character) -> reference<Model?>,
 
+    --[==[
+        Вовзращает референс на `Humanoid` персонажа
+    ]==]
+    read get_humanoid_reference: (self: character) -> reference<Humanoid?>
+} & informable<character, characterinfo>, observer>
 
 --[==[
-    Объект, представляющий собой пул информации о персонаже, который
-    встраивается в него каждый раз когда к части рантайма персонажа
-    обращается кто-либо, при этом эта часть у персонажа не была активной
-    ранее или не была создана в другом моменте
+    Объект, представляющий логического персонажа R6
 
-    Эта информация применяется постепенно и может быть передана на разных
-    персонажей, а также она не зависит от токенов или любых других данных
+    Объект всегда гарантирует существование R6 объектов
+    в роблокс иерархии, иначе просто не получится присвоить референс
+    на модель, к которой он обращается
 
-    Предоставленная информация может быть проигнорирована в разных случаях,
-    поскольку она декларирует поведение относительно стандартного сценария,
-    когда не вызываются никакие способности или выполняется что-либо еще
+    Обладает собственным функционалом для процедурной
+    генерации и управлением частями тела R6
 ]==]
-export type characterinfo = construct<{
-    read has_health: boolean,
-    read has_stamina: boolean,
-    read has_stamina_use: boolean,
-    read has_stamina_regen: boolean,
-    read has_health_regen: boolean,
-    read has_stamina_runspeed_related_mod: boolean,
-    read has_health_runspeed_related_mod: boolean,
-    read has_jump_cooldown: boolean,
-    read has_run_cooldown: boolean,
+export type char6 = construct<{
+
+    --[==[
+        Вернет текущий пресет `leginfo`, который использует IK решатель
+    ]==]
+    read get_ik_leginfo: (self: char6) -> leginfo,
+    --[==[
+        Установит текущий пресет `leginfo` на указанный
+
+        Изменения будут приведены в действие мгновенно, со следующего кадра
+        решатель будет использовать новую информацию
+    ]==]
+    read set_ik_leginfo: (self: char6, new: leginfo) -> (),
     
-    read can_run: boolean,
-    read can_jump: boolean,
-    read can_move: boolean,
-    read can_die: boolean,
-    read can_revived: boolean,
+    --[==[
+        Вернет текущее состояние IK решателя для ног
+    ]==]
+    read is_ik_legs_active: (self: char6) -> boolean,
 
-    read health: number,
-    read stamina: number,
-    read speed: number,
-    read runspeed: number,
-    read run_cooldown: number,
-    read jump_cooldown: number,
-    read revives: number,
+    --[==[
+        Установить новое состояние для IK решателя ног
+    ]==]
+    read set_ik_legs_active: (self: char6, to: boolean) -> (),
 
-},struct>
+    --[==[
+        Гарантированно вернет Humanoid
+    ]==]
+    read get_humanoid: (self: char6) -> Humanoid    
+}, character>
+
 
 
 --[==[
@@ -672,20 +744,61 @@ export type ability <T... = ...unknown> = construct<{
         Перспектива персонажа используется в качестве источника первоначальной информации,
         она отвечает на вопрос: "что мы вообще пытаемся сделать прямо сейчас?"
     ]==]
-    read activate: (self: ability, on: character, T...) -> (),
-    --[==[
-        Насильно заставляет способность перезарядить свой кулдаун таймер,
-        если он конечно есть
-    ]==]
-    read reload: (self: ability) -> (),
+    read activate: (self: ability<T...>, on: character, T...) -> (),
+
     --[==[
         Таймер, контроллирующий текущее состояние кулдауна способности
     ]==]
-    read cooldown: (self: ability) -> timer,
+    read cooldown: (self: ability<T...>) -> timer,
     
 
-} & informable<ability, abilityinfo> & collidable<ability> & stateable<ability, enumitem_round_state>, observer<enumitem_ability_notification>>
+} & informable<ability<T...>, abilityinfo> &
+    collidable<ability<T...>> &
+    stateable<ability<T...>, enumitem_round_state>,
+observer<enumitem_ability_notification>>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- Game Struct
 
 
 
@@ -779,6 +892,298 @@ export type abilityinfo = construct<{
 
 
 }, struct>
+
+--[==[
+	Объект, предоставляющий информацию для IK решателя `char6`,
+	в частности информацию для поведения IK ног.
+]==]
+export type leginfo = construct<{
+	--[[
+		Величина смешивания направления движения/ориентации ноги
+		с направлением корпуса.
+
+		Используется при вычислении forward-направления ноги:
+		`0` — полностью используется направление, в котором должна
+		смотреть стопа; `1` — полностью используется локальное
+		направление корпуса.
+	]]
+	read step_use_torso_alpha: number,
+
+	--[[
+		Максимальное расстояние вперед от точки постановки ноги,
+		на котором проверяется наличие препятствия.
+
+		Если препятствие находится ближе этого расстояния,
+		оно может заблокировать обычный шаг.
+	]]
+	read step_block_distance: number,
+
+	--[[
+		Максимальная высота препятствия, которую нога может
+		перешагнуть.
+
+		Если найденная верхняя поверхность находится выше
+		этого значения относительно основания корпуса,
+		обычный шаг считается невозможным.
+	]]
+	read step_max_height: number,
+
+	--[[
+		Высота над основанием ноги, с которой выполняется
+		первичный raycast для обнаружения вертикального
+		препятствия перед ногой.
+
+		Используется только для проверки блокирующей стены,
+		а не для непосредственного поиска поверхности стопы.
+	]]
+	read step_obstacle_height: number,
+
+	--[[
+		Минимальная скорость перемещения стопы во время фазы
+		`stepping`.
+
+		Используется как нижняя граница интерполяционной
+		скорости при минимальной скорости персонажа.
+	]]
+	read step_speed_min: number,
+
+	--[[
+		Максимальная скорость перемещения стопы во время фазы
+		`stepping`.
+
+		Используется как верхняя граница интерполяционной
+		скорости при достижении максимальной учитываемой
+		горизонтальной скорости персонажа.
+	]]
+	read step_speed_max: number,
+
+	--[[
+		Минимальная горизонтальная скорость персонажа,
+		соответствующая `step_speed_min`.
+
+		Скорость ниже этого значения не уменьшает скорость
+		шага дальше установленного минимума.
+	]]
+	read step_velocity_min: number,
+
+	--[[
+		Максимальная горизонтальная скорость персонажа,
+		соответствующая `step_speed_max`.
+
+		Скорость выше этого значения не увеличивает скорость
+		шага дальше установленного максимума.
+	]]
+	read step_velocity_max: number,
+
+	--[[
+		Минимальная скорость интерполяции ноги в фазе
+		`settling`.
+
+		Используется при минимальном коэффициенте скорости
+		персонажа.
+	]]
+	read settle_speed_min: number,
+
+	--[[
+		Максимальная скорость интерполяции ноги в фазе
+		`settling`.
+
+		Используется при максимальном коэффициенте скорости
+		персонажа.
+	]]
+	read settle_speed_max: number,
+
+	--[[
+		Скорость, с которой нога продолжает следовать за
+		рассчитанной опорной точкой в состоянии `planted`.
+
+		Определяет скорость сглаживания текущего положения
+		стопы относительно нового `plant target`.
+	]]
+	read planted_speed: number,
+
+	--[[
+		Базовая скорость следования ноги за целевым положением.
+
+		В текущей реализации значение фактически не участвует
+		в конечном расчете `solve_foot`: в каждой фазе значение
+		`alpha` переопределяется собственной скоростью
+		(`step`, `settle` или `planted`).
+	]]
+	read leg_follow_speed: number,
+
+	--[[
+		Порог скалярного произведения между направлением движения
+		и направлением корпуса, после которого ориентация стопы
+		переключается обратно на направление корпуса.
+
+		При меньшем значении считается, что персонаж движется
+		достаточно сильно в сторону, противоположную направлению
+		корпуса, поэтому направление стопы берется от корпуса.
+
+		При значении `0.5` порог соответствует углу примерно 60°.
+	]]
+	read leg_rotation_inverse_coefficient: number,
+
+	--[[
+		Минимальное время предсказания положения основания ноги
+		по горизонтальной скорости персонажа.
+
+		Применяется при вычислении предсказанной позиции перед
+		raycast для шага.
+	]]
+	read leg_prediction_time_min: number,
+
+	--[[
+		Максимальное время предсказания положения основания ноги
+		по горизонтальной скорости персонажа.
+
+		При увеличении скорости персонажа значение стремится
+		к этому пределу.
+	]]
+	read leg_prediction_time_max: number,
+
+	--[[
+		Показатель степени кривой интерполяции времени предсказания.
+
+		Коэффициент скорости сначала вычисляется в диапазоне
+		`0..1`, после чего возводится в эту степень перед
+		интерполяцией между `leg_prediction_time_min` и
+		`leg_prediction_time_max`.
+
+		Значение больше `1` смещает рост предсказания в сторону
+		более высоких скоростей.
+	]]
+	read leg_prediction_curve: number,
+
+	--[[
+		Расстояние вперед по направлению движения, на которое
+		смещается raycast при обычном шаге.
+
+		Используется для поиска новой поверхности постановки стопы.
+	]]
+	read step_forward: number,
+
+	--[[
+		Расстояние вперед, на которое смещается raycast при
+		поиске поверхности для установки ноги в состоянии покоя.
+
+		Используется процедурой `stand`.
+	]]
+	read stand_forward: number,
+
+	--[[
+		Расстояние вперед для специального шага в idle-режиме.
+
+		Используется, когда обычный шаг заблокирован препятствием
+		и система пытается переставить свободную ногу через
+		`begin_idle_step`.
+
+		Значение `0` означает поиск опоры непосредственно под
+		ногой без дополнительного смещения вперед.
+	]]
+	read idle_step_forward: number,
+
+	--[[
+		Время отсутствия движения перед переходом в idle-логику.
+
+		После достижения этого времени выполняется обновление
+		целевых положений обеих стоящих ног через `stand`.
+	]]
+	read idle_time: number,
+
+	--[[
+		Максимально допустимая угловая ошибка между текущей
+		ориентацией стопы и нормалью/ориентацией рассчитанной
+		опорной поверхности во время `settling`.
+
+		Когда ошибка становится меньше этого значения,
+		фаза `settling` завершается и нога переходит в
+		состояние `planted`.
+	]]
+	read foot_settle_angle: number,
+}, struct>
+
+--[==[
+    Объект, представляющий собой пул информации о персонаже, который
+    встраивается в него каждый раз когда к части рантайма персонажа
+    обращается кто-либо, при этом эта часть у персонажа не была активной
+    ранее или не была создана в другом моменте
+
+    Эта информация применяется постепенно и может быть передана на разных
+    персонажей, а также она не зависит от токенов или любых других данных
+
+    Предоставленная информация может быть проигнорирована в разных случаях,
+    поскольку она декларирует поведение относительно стандартного сценария,
+    когда не вызываются никакие способности или выполняется что-либо еще
+]==]
+export type characterinfo = construct<{
+    read has_health: boolean,
+    read has_stamina: boolean,
+    read has_stamina_use: boolean,
+    read has_stamina_regen: boolean,
+    read has_health_regen: boolean,
+    read has_stamina_runspeed_related_mod: boolean,
+    read has_health_runspeed_related_mod: boolean,
+    read has_jump_cooldown: boolean,
+    read has_run_cooldown: boolean,
+    
+    read can_run: boolean,
+    read can_jump: boolean,
+    read can_move: boolean,
+    read can_die: boolean,
+    read can_revived: boolean,
+
+    read health: number,
+    read stamina: number,
+    read speed: number,
+    read runspeed: number,
+    read run_cooldown: number,
+    read jump_cooldown: number,
+    read revives: number,
+
+},struct>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1219,9 +1624,12 @@ export type enum_input_notification = construct<{
 
 export type enumitem_ability_notification = enumitem<enum_ability_notification>
 export type enum_ability_notification = construct<{
-	read AbilityCast: enumitem_ability_notification,
-    read AbilityEnd: enumitem_ability_notification,
-    read AbilityCooldown: enumitem_ability_notification,
+	read CastAbility: enumitem_ability_notification,
+    read WaitingDataAbility: enumitem_ability_notification,
+    read ActiveAbility: enumitem_ability_notification,
+    read CancelAbility: enumitem_ability_notification,
+    read EndingAbility: enumitem_ability_notification,
+    read CooldownAbility: enumitem_ability_notification,
 }, enumobject>
 
 
@@ -1269,6 +1677,17 @@ export type enum_executor_notification = construct<{
 	read Simulation: enumitem_executor_notification,
 }, enumobject>
 
+export type enumitem_character_parameter_variant = enumitem<enum_character_parameter_variant>
+export type enum_character_parameter_variant = construct<{
+	read Health: enumitem_character_parameter_variant,
+	read Stamina: enumitem_character_parameter_variant,
+	read Speed: enumitem_character_parameter_variant,
+	read RunSpeed: enumitem_character_parameter_variant,
+	read RunCooldown: enumitem_character_parameter_variant,
+	read JumpCooldown: enumitem_character_parameter_variant,
+	read Revives: enumitem_character_parameter_variant,
+}, enumobject>
+
 export type enumitem_attribute_notification = enumitem<enum_attribute_notification>
 export type enum_attribute_notification = construct<{
 	read Added: enumitem_attribute_notification,
@@ -1308,6 +1727,12 @@ export type enum_asset_type_variant = construct<{
 	read Model: enumitem_asset_type_variant,
 	read Sound: enumitem_asset_type_variant,
 	read Image: enumitem_asset_type_variant,
+}, enumobject>
+
+export type enumitem_faction_notification = enumitem<enum_faction_notification>
+export type enum_faction_notification = construct<{
+	read MemberJoined: enumitem_faction_notification,
+    read MemberRemoved: enumitem_faction_notification
 }, enumobject>
 
 export type enumitem_user_data_require = enumitem<enum_user_data_require>

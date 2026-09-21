@@ -291,7 +291,7 @@ do
 
 	private.get_bounds = function(self: aabbvolume, value: geometry_supported): (vector?, vector?)
 		if typeof(value) == declare.roblox.Instance then
-			const instance = value :: Instance
+			const instance = value :: Model | BasePart | PVInstance
 
 			return private.get_instance_bounds(instance)
 		end

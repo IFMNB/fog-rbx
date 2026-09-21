@@ -2,14 +2,20 @@
 
 --[[ TODO
 	Отказаться от константной скорости Settle, рассчитывать ее на основе Humanoid.speed
+		-- Выполнено
+	
 	Добавить fallback на реальное положение origin если raycast не попал
+		-- Выполнено
+	
 	Добавить проверку на возможность переступления ноги
 		Если впереди есть препядствие, за которое нельзя поставить ногу, то
 		активировать переступление по idle режиму
+			-- Выполнено
 
 	При move-direction назад, если torso смотрит в противоположную сторону, то
 	предполагается использование shiftlock, следовательно ноги должны смотреть в
 	ту же сторону что и torso (инвертироваться)
+		-- Выполнено
 
 	По окончанию драфт код нужно разбить и переписать на объектную систему,
 	а затем оптимизировать (так как тут ничего не оптимизировалось)
@@ -21,24 +27,36 @@ const runservice = game:GetService("RunService")
 const tools = require("@game/StarterPlayer/StarterPlayerScripts/draftcode/tools")
 
 const STEP_TORSO_ALPHA = 0
-const STEP_MAX_RANGE_DIFF = 1
 
---[==[
-	Расстояние, на которое выносится вперед raycast
-]==]
-const STEP_FORWARD = 1.5
-
-const STEP_SPEED = 55
---[==[
-	Фактическая скорость переступления шагом
-]==]
-const SETTLE_SPEED = 100
-const PLANTED_SPEED = 60
-
+const STEP_FORWARD = 0.1
 const IDLE_TIME = 0.35
 const STAND_FORWARD = 0.1
 
 const FOOT_SETTLE_ANGLE = math.rad(2)
+
+const STEP_BLOCK_DISTANCE = 0.45
+const STEP_MAX_HEIGHT = 0.65
+const STEP_OBSTACLE_HEIGHT = 0.12
+
+const IDLE_STEP_FORWARD = 0
+
+const STEP_SPEED_MIN = 5
+const STEP_SPEED_MAX = 80
+
+const STEP_VELOCITY_MIN = 0
+const STEP_VELOCITY_MAX = 32
+
+const SETTLE_SPEED_MIN = 10
+const SETTLE_SPEED_MAX = 150
+
+const PLANTED_SPEED = 50
+
+const LEG_FOLLOW_SPEED = 15
+const LEG_ROTATION_INV_COEF = 0.5
+
+const PREDICTION_TIME_MIN = 0.01
+const PREDICTION_TIME_MAX = 0.1
+const PREDICTION_CURVE = 1.1
 
 --[==[
 	Глубина расстояния между точками рейкаста относительно bottom-torso определяется
@@ -46,39 +64,38 @@ const FOOT_SETTLE_ANGLE = math.rad(2)
 	как Left/Right или cframe.X (right) и -cframe.X (left)
 ]==]
 const LEG_FROM_COEF_DIF = 0.4
-const LEG_FOLLOW_SPEED = 30
-const LEG_PREDICTION_SCALE = 2
 
 const RAYCAST_UP = 1
-const RAYCAST_DOWN = 6
+const RAYCAST_DOWN = 2
 
 type FootPhase = "planted" | "stepping" | "settling"
 
 type FootState = {
-	part: BasePart,
+	read origin: BasePart,
+	read part: BasePart,
 
 	target: CFrame,
 	contact: vector,
 
-	diff: number,
+	read diff: number,
 	phase: FootPhase,
 }
 
 type CharacterState = {
-	character: Model,
-	humanoid: Humanoid,
-	torso: BasePart,
+	read character: Model,
+	read humanoid: Humanoid,
+	read torso: BasePart,
 
 	left: FootState,
 	right: FootState,
 
 	active: FootState,
 	idle_time: number,
+	fallback: boolean,
 }
 
 const SIGNAL: RBXScriptSignal<number> = runservice.Heartbeat
 const STATES = {}
-const MAP = {} :: { [BasePart]: CFrame }
 
 const function get_limb(character: Humanoid, model: Model, limb: Enum.Limb): BasePart
 	for _, v in model:GetChildren() do
@@ -187,6 +204,68 @@ const function get_horizontal_velocity(humanoid: Humanoid): vector
 	return vector.create(velocity.x, 0, velocity.z)
 end
 
+const function get_speed_factor(humanoid: Humanoid): number
+	const speed = vector.magnitude(get_horizontal_velocity(humanoid))
+	const walk_speed = math.max(humanoid.WalkSpeed, 0.001)
+
+	const factor = speed / walk_speed
+
+	return math.clamp(factor, 0, 1)
+end
+
+const function is_step_blocked(
+	foot: FootState,
+	torso: BasePart,
+	bottom: vector,
+	move_direction: vector,
+	params: RaycastParams
+): boolean
+	const move_length = vector.magnitude(move_direction)
+
+	if move_length <= 1e-5 then
+		return false
+	end
+
+	const direction = move_direction / move_length
+	const up = tools.to_vector(torso.CFrame.UpVector)
+
+	-- Проверяем, есть ли прямо перед ногой вертикальное препятствие.
+	const obstacle_origin = bottom + up * STEP_OBSTACLE_HEIGHT
+	const obstacle = raycast(obstacle_origin, direction * STEP_BLOCK_DISTANCE, params)
+
+	if not obstacle then
+		return false
+	end
+
+	const normal = tools.to_vector(obstacle.Normal)
+
+	-- Наклонная/горизонтальная поверхность не считается стеной.
+	if math.abs(vector.dot(normal, up)) > 0.5 then
+		return false
+	end
+
+	-- Ищем верх препятствия в пределах допустимой высоты.
+	const top_origin = tools.to_vector(obstacle.Position)
+		+ direction * (foot.part.Size.Z * 0.5 + 0.05)
+		+ up * (STEP_MAX_HEIGHT + 0.05)
+
+	const top_result = raycast(top_origin, -up * (STEP_MAX_HEIGHT + 0.15), params)
+
+	if not top_result then
+		return true
+	end
+
+	const top_normal = tools.to_vector(top_result.Normal)
+
+	if vector.dot(top_normal, up) < 0.7 then
+		return true
+	end
+
+	const height = vector.dot(tools.to_vector(top_result.Position) - bottom, up)
+
+	return height > STEP_MAX_HEIGHT
+end
+
 const function get_plant_target(foot: FootState, torso: BasePart): CFrame
 	const part = foot.part
 	const half_height = part.Size.Y * 0.5
@@ -224,7 +303,6 @@ const function get_plant_target(foot: FootState, torso: BasePart): CFrame
 
 	return CFrame.fromMatrix(center3, right3, up3, back3)
 end
-
 
 const function get_knee_pos(
 	of: vector,
@@ -265,10 +343,26 @@ const function get_knee_pos(
 	return midpoint + pole_dir * pole_length + bend_up * half
 end
 
+const function get_foot_facing(torso: BasePart, move_dir: vector): vector
+	const torso_facing = tools.to_vector(torso.CFrame.LookVector)
+
+	if vector.magnitude(move_dir) <= 1e-5 then
+		return torso_facing
+	end
+
+	const move = vector.normalize(move_dir)
+	const facing = vector.normalize(torso_facing)
+
+	if vector.dot(move, facing) < LEG_ROTATION_INV_COEF then
+		return facing
+	end
+
+	return move
+end
+
 const function get_leg_cframe(leg: BasePart, torso: BasePart, foot: vector, knee: vector, move_dir: vector): CFrame
 	const torso_cframe = torso.CFrame
 	const torso_inverse = torso_cframe:Inverse()
-	const has_move = vector.magnitude(move_dir) > 1e-5
 	const foot_local = tools.to_vector(torso_inverse:PointToWorldSpace(tools.to_vector3(foot)))
 	const knee_local = tools.to_vector(torso_inverse:PointToWorldSpace(tools.to_vector3(knee)))
 	const direction = knee_local - foot_local
@@ -279,10 +373,11 @@ const function get_leg_cframe(leg: BasePart, torso: BasePart, foot: vector, knee
 	end
 
 	const up = direction / length
+	const facing_dir = get_foot_facing(torso, move_dir)
+	const facing_local = tools.to_vector(torso_inverse:VectorToWorldSpace(tools.to_vector3(facing_dir)))
+
 	const torso_fwd_local = vector.create(0, 0, -1)
-	const move_local = tools.to_vector(torso_inverse:VectorToWorldSpace(tools.to_vector3(move_dir)))
-	const move_norm = if has_move then vector.normalize(move_local) else torso_fwd_local
-	const blended_fwd = vector.normalize(vector.lerp(move_norm, torso_fwd_local, STEP_TORSO_ALPHA))
+	const blended_fwd = vector.normalize(vector.lerp(facing_local, torso_fwd_local, STEP_TORSO_ALPHA))
 	local forward = blended_fwd - up * vector.dot(blended_fwd, up)
 
 	if vector.magnitude(forward) <= 1e-5 then
@@ -309,56 +404,68 @@ const function get_leg_cframe(leg: BasePart, torso: BasePart, foot: vector, knee
 	return torso_cframe * local_cframe
 end
 
-const function step(character: Humanoid, model: Model, leg: BasePart, torso: BasePart, diff: number): CFrame?
+const function get_step_speed(humanoid: Humanoid): number
+	const velocity = get_horizontal_velocity(humanoid)
+	const speed = vector.magnitude(velocity)
+
+	const factor =
+		math.clamp((speed - STEP_VELOCITY_MIN) / math.max(STEP_VELOCITY_MAX - STEP_VELOCITY_MIN, 0.001), 0, 1)
+
+	return STEP_SPEED_MIN + (STEP_SPEED_MAX - STEP_SPEED_MIN) * factor
+end
+
+const function get_settle_speed(humanoid: Humanoid): number
+	const factor = get_speed_factor(humanoid)
+
+	return SETTLE_SPEED_MIN + (SETTLE_SPEED_MAX - SETTLE_SPEED_MIN) * factor
+end
+
+const function step(character: Humanoid, model: Model, foot: FootState, torso: BasePart): (CFrame?, boolean)
 	const move_direction = tools.to_vector(character.MoveDirection)
-
-	const bottom = get_bottom(torso, diff)
-
+	const bottom = get_bottom(torso, foot.diff)
 	const velocity = get_horizontal_velocity(character)
-
-	const prediction_time = LEG_PREDICTION_SCALE / LEG_FOLLOW_SPEED
+	const speed_factor = get_speed_factor(character)
+	const prediction_factor = speed_factor ^ PREDICTION_CURVE
+	const prediction_time = PREDICTION_TIME_MIN + (PREDICTION_TIME_MAX - PREDICTION_TIME_MIN) * prediction_factor
 	const predicted_bottom = bottom + velocity * prediction_time
+	const foot_facing = get_foot_facing(torso, move_direction)
+	const params = create_rayparams(model)
+
+	if is_step_blocked(foot, torso, predicted_bottom, move_direction, params) then
+		return nil, true
+	end
 
 	const ray_origin, ray_direction = get_step_raycast(predicted_bottom, torso, move_direction, STEP_FORWARD)
-	const params = create_rayparams(model)
+
 	const ray_result = raycast(ray_origin, ray_direction, params)
 
 	if not ray_result then
-		return nil
+		return nil, false
 	end
 
 	const knee_pos = get_knee_pos(
 		bottom,
 		ray_result,
 		tools.to_vector(torso.CFrame.UpVector),
-		move_direction,
+		foot_facing,
 		tools.to_vector(torso.CFrame.LookVector)
 	)
 
-	const target = get_leg_cframe(leg, torso, tools.to_vector(ray_result.Position), knee_pos, move_direction)
-	const old = MAP[leg]
-
-	if not old then
-		return target
-	end
-
-	const target_delta = target.Position - old.Position
-	const range_difference = Vector3.new(target_delta.X, 0, target_delta.Z).Magnitude
-
-	if range_difference > STEP_MAX_RANGE_DIFF then
-		return target
-	elseif vector.magnitude(move_direction) < 0.01 then
-		return target
-	else
-		return nil
-	end
+	return get_leg_cframe(foot.part, torso, tools.to_vector(ray_result.Position), knee_pos, foot_facing), false
 end
 
-const function stand(character: Humanoid, model: Model, leg: BasePart, torso: BasePart, diff: number): CFrame?
+const function stand(
+	character: Humanoid,
+	model: Model,
+	leg: BasePart,
+	torso: BasePart,
+	diff: number,
+	forward_distance: number?
+): CFrame?
 	const move_direction = vector.zero
 	const bottom = get_bottom(torso, diff)
 
-	const ray_origin, ray_direction = get_step_raycast(bottom, torso, move_direction, STAND_FORWARD)
+	const ray_origin, ray_direction = get_step_raycast(bottom, torso, move_direction, forward_distance or STAND_FORWARD)
 
 	const params = create_rayparams(model)
 	const ray_result = raycast(ray_origin, ray_direction, params)
@@ -405,12 +512,11 @@ const function character_added(character: Model)
 	clone_right.CanTouch = false
 	clone_right.Name ..= "_VIS"
 
-
-
 	clone_left.Parent = character
 	clone_right.Parent = character
 
 	local left: FootState = {
+		origin = origin_left,
 		part = clone_left,
 		target = clone_left.CFrame,
 		contact = tools.to_vector(clone_left.Position),
@@ -419,6 +525,7 @@ const function character_added(character: Model)
 	}
 
 	local right: FootState = {
+		origin = origin_right,
 		part = clone_right,
 		target = clone_right.CFrame,
 		contact = tools.to_vector(clone_right.Position),
@@ -436,6 +543,7 @@ const function character_added(character: Model)
 
 		active = left,
 		idle_time = 0,
+		fallback = false,
 	}
 end
 
@@ -448,6 +556,39 @@ const function begin_step(foot: FootState, target: CFrame)
 
 	foot.contact = position - up * (foot.part.Size.Y * 0.5)
 	foot.phase = "stepping"
+end
+
+const function begin_idle_step(state: CharacterState): boolean
+	const active = state.active
+	const other = if active == state.left then state.right else state.left
+
+	if active.phase ~= "planted" then
+		return false
+	end
+
+	const target = stand(state.humanoid, state.character, other.part, state.torso, other.diff, IDLE_STEP_FORWARD)
+
+	if not target then
+		return false
+	end
+
+	begin_step(other, target)
+	state.active = other
+
+	return true
+end
+
+const function begin_fallback(state: CharacterState)
+	state.fallback = true
+
+	state.left.phase = "planted"
+	state.right.phase = "planted"
+
+	state.left.target = state.left.origin.CFrame
+	state.right.target = state.right.origin.CFrame
+
+	state.left.part.CFrame = state.left.origin.CFrame
+	state.right.part.CFrame = state.right.origin.CFrame
 end
 
 const function is_step_finished(foot: FootState): boolean
@@ -472,11 +613,31 @@ const function is_settle_finished(foot: FootState, target: CFrame): boolean
 	return math.acos(up_dot) <= FOOT_SETTLE_ANGLE
 end
 
-const function solve_foot(foot: FootState, torso: BasePart, delta: number)
+const function get_origin_contact(foot: FootState): vector
+	const origin = foot.origin
+	const up = tools.to_vector(origin.CFrame.UpVector)
+
+	return tools.to_vector(origin.Position) - up * (foot.part.Size.Y * 0.5)
+end
+
+const function solve_fallback(state: CharacterState)
+	for _, foot in { state.left, state.right } do
+		const origin_cframe = foot.origin.CFrame
+
+		foot.phase = "planted"
+		foot.target = origin_cframe
+		foot.contact = get_origin_contact(foot)
+
+		foot.part.CFrame = origin_cframe
+	end
+end
+
+const function solve_foot(foot: FootState, torso: BasePart, delta: number, humanoid: Humanoid)
 	local alpha = 1 - math.exp(-LEG_FOLLOW_SPEED * delta)
 
 	if foot.phase == "stepping" then
-		alpha = 1 - math.exp(-STEP_SPEED * delta)
+		const step_speed = get_step_speed(humanoid)
+		alpha = 1 - math.exp(-step_speed * delta)
 		const current = foot.part.CFrame
 		const target = foot.target
 
@@ -500,7 +661,8 @@ const function solve_foot(foot: FootState, torso: BasePart, delta: number)
 	end
 
 	if foot.phase == "settling" then
-		alpha = 1 - math.exp(-SETTLE_SPEED * delta)
+		const settle_speed = get_settle_speed(humanoid)
+		alpha = 1 - math.exp(-settle_speed * delta)
 		const target = get_plant_target(foot, torso)
 
 		foot.target = target
@@ -540,8 +702,12 @@ SIGNAL:Connect(function(delta: number)
 			state.idle_time += delta
 		end
 
-		solve_foot(state.left, state.torso, delta)
-		solve_foot(state.right, state.torso, delta)
+		if state.fallback then
+			solve_fallback(state)
+		else
+			solve_foot(state.left, state.torso, delta, state.humanoid)
+			solve_foot(state.right, state.torso, delta, state.humanoid)
+		end
 
 		if not is_moving and state.idle_time >= IDLE_TIME then
 			if state.left.phase == "planted" then
@@ -578,33 +744,25 @@ SIGNAL:Connect(function(delta: number)
 			continue
 		end
 
-		const target = step(state.humanoid, state.character, other.part, state.torso, other.diff)
+		const target, blocked = step(state.humanoid, state.character, other, state.torso)
 
-		if not target then
+		if blocked then
+			if not begin_idle_step(state) then
+				begin_fallback(state)
+			end
+
 			continue
 		end
 
+		if not target then
+			begin_fallback(state)
+			continue
+		end
+
+		state.fallback = false
+
 		begin_step(other, target)
-
 		state.active = other
-	end
-end)
-
-SIGNAL:Connect(function(delta: number)
-	for i, v in MAP do
-		const current = i.CFrame
-		const target = v
-		const alpha = 1 - math.exp(-LEG_FOLLOW_SPEED * delta)
-
-		local next = current:Lerp(target, alpha)
-		const offset = target.Position - next.Position
-		const horizontal = Vector3.new(offset.X, 0, offset.Z)
-		const distance = horizontal.Magnitude
-
-		const lift = math.min(distance, 1)
-		const position = Vector3.new(next.Position.X, target.Position.Y + lift, next.Position.Z)
-
-		i.CFrame = CFrame.new(position) * next.Rotation
 	end
 end)
 

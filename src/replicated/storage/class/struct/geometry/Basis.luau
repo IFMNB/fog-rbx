@@ -10,6 +10,7 @@ const declare = require("@game/ReplicatedStorage/static/declare")
 const ftype = require("@game/ReplicatedStorage/static/ftype")
 
 const class : basis = (GeoVolume :: geovolume<basis>):new {
+    type = "basis",
     rotation = Directions:new(),
     position = vector.zero,
     

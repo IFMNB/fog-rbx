@@ -7,7 +7,7 @@ const private = {}
 const class : variable = object:new {
     creation_time = os.clock(),
 
-    get_value = function <T> (self: variable<T>) : T
+    get_value = function <T> (self: variable<T>) : unknown
         return private.space[self][#private.space[self]]
     end,
 
