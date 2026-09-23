@@ -63,7 +63,6 @@ do -- debug
 	project.debug.show_pickup_internal = if not project.debug.state then false else false
 	project.debug.show_signal_internal = if not project.debug.state then false else false
 	project.debug.show_ikr6legs_solver_path = if not project.debug.state then false else false
-	project.debug.register_ikr6legs_self = if not project.debug.state then false else false
 	project.debug.show_reference_internal = if not project.debug.state then false else false
 end
 
@@ -119,6 +118,13 @@ do --game
 
 	project.game = {}
 	project.game.server = RunService:IsServer()
+
+	--[==[
+		"Первородные объекты", то бишь классы, то бишь объекты из которых потом создаются
+		множества других объектов поменьше, - будут обрабатываться также как и их дети, то есть
+		будут зарегистрированы в рабочих обработчиках
+	]==]
+	project.game.smalltalk_like = false
 
 	project.game.signal = {}
 

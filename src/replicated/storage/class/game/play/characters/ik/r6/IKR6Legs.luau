@@ -2,7 +2,7 @@
 const Reference = require("@game/ReplicatedStorage/class/common/Reference")
 const Maybe = require("@game/ReplicatedStorage/class/common/gc/Maybe")
 const Disposable = require("@game/ReplicatedStorage/class/core/Disposable")
-const R6Foot = require("@game/ReplicatedStorage/class/game/play/characters/ik/r6/R6Foot")
+const IKR6Foot = require("@game/ReplicatedStorage/class/game/play/characters/ik/r6/IKR6Foot")
 const Converter = require("@game/ReplicatedStorage/class/service/Converter")
 const SecurityRNG = require("@game/ReplicatedStorage/class/service/SecurityRNG")
 const IKR6Info = require("@game/ReplicatedStorage/class/struct/game/IKR6Info")
@@ -11,7 +11,10 @@ const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/Conn
 const OperationVariant = require("@game/ReplicatedStorage/enums/descriptor/OperationVariant")
 const ReferenceNotification = require("@game/ReplicatedStorage/enums/notification/ReferenceNotification")
 const IKLegsState = require("@game/ReplicatedStorage/enums/state/IKLegsState")
+const ctags = require("@game/ReplicatedStorage/static/ctags")
+const ctype = require("@game/ReplicatedStorage/static/ctype")
 const declare = require("@game/ReplicatedStorage/static/declare")
+const ftype = require("@game/ReplicatedStorage/static/ftype")
 const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
@@ -21,31 +24,31 @@ const class : ikr6legs = Disposable:new {
     current_idle_time = 0,
     last_work_time = 0,
 
-    get_humanoid = function (self: ikr6legs) : reference<Humanoid?>
+    get_humanoid = ftype:write(function (self: ikr6legs) : reference<Humanoid?>
         return private.maybe_humanoid:enactment(self, Reference)
-    end,
+    end, Reference.type, "ikr6legs"),
 
-    get_torso = function (self: ikr6legs) : reference<BasePart?>
+    get_torso = ftype:write(function (self: ikr6legs) : reference<BasePart?>
         return private.maybe_torso:enactment(self, Reference)
-    end,
+    end, Reference.type, "ikr6legs"),
 
-    get_left_leg = function (self: ikr6legs) : r6foot
-        return private.maybe_left_legs:enactment(self, R6Foot)
-    end,
+    get_left_leg = ftype:write(function (self: ikr6legs) : ikr6foot
+        return private.maybe_left_legs:enactment(self, IKR6Foot)
+    end, IKR6Foot.type, "ikr6legs"),
 
-    get_right_leg = function (self: ikr6legs) : r6foot
-        return private.maybe_right_legs:enactment(self, R6Foot)
-    end,
+    get_right_leg = ftype:write(function (self: ikr6legs) : ikr6foot
+        return private.maybe_right_legs:enactment(self, IKR6Foot)
+    end, IKR6Foot.type, "ikr6legs"),
 
-    get_info = function (self: ikr6legs) : ikr6info
+    get_info = ftype:write(function (self: ikr6legs) : ikr6info
         return self:get <<ikr6info>> (private.info_key)
-    end,
+    end, IKR6Info.type, "ikr6legs"),
 
-    set_info = function (self: ikr6legs, new: ikr6info): ()
+    set_info = ftype:write(function (self: ikr6legs, new: ikr6info): ()
         self:set(private.info_key, new)
-    end,
+    end, declare["nil"], "ikr6legs", IKR6Info.type),
 
-    get_active_cycle_leg_pair = function (self: ikr6legs) : (r6foot, r6foot)
+    get_active_cycle_leg_pair = ftype:write(function (self: ikr6legs) : (ikr6foot, ikr6foot)
         const left_leg = self:get_left_leg()
         if left_leg.current then 
             return left_leg, self:get_right_leg()
@@ -58,25 +61,15 @@ const class : ikr6legs = Disposable:new {
         end
 
         return left_leg, right_leg
-    end,
+    end, ftype:var(IKR6Foot.type), "ikr6legs"),
 
-    is_initiated = function (self: ikr6legs) : boolean
+    is_initiated = ftype:write(function (self: ikr6legs) : boolean
         return private.maybe_left_legs:exist(self) and private.maybe_right_legs:exist(self)
-    end,
+    end, declare.boolean, "ikr6legs"),
 
-    is_active = function (self: ikr6legs) : boolean
+    is_active = ftype:write(function (self: ikr6legs) : boolean
         return private.active[self] or false
-    end,
-
-    is_fallback = function (self: ikr6legs) : boolean
-        const left_leg, right_leg = self:get_left_leg(), self:get_right_leg()
-
-        if left_leg.fallback and right_leg.fallback then
-            return true
-        end
-
-        return false
-    end
+    end, declare.boolean, "ikr6legs")
 }
 
 do
@@ -103,8 +96,8 @@ do
     private.active = setmetatable({} :: {[ikr6legs]: boolean?}, declare.tables.__mode_ks)
     private.maybe_humanoid = Maybe:new() :: maybe<reference<Humanoid?>, ikr6legs>
     private.maybe_torso = Maybe:new() :: maybe<reference<BasePart?>, ikr6legs>
-    private.maybe_left_legs = Maybe:new() :: maybe<r6foot, ikr6legs>
-    private.maybe_right_legs = Maybe:new() :: maybe<r6foot, ikr6legs>
+    private.maybe_left_legs = Maybe:new() :: maybe<ikr6foot, ikr6legs>
+    private.maybe_right_legs = Maybe:new() :: maybe<ikr6foot, ikr6legs>
     private.signal = project.game.signal.postphysic
 
     private.register_new = function (new: ikr6legs)
@@ -231,7 +224,7 @@ do
 	        return workspace:Raycast(a0, a1, private.rayparams)
         end
         
-        private.get_step_raycast_data = function (raw: raw, info: leginfo, predicted: vector, state: enumitem_iklegs_state) : (vector, vector)
+        private.get_step_raycast_data = function (raw: raw, info: ikr6leginfo, predicted: vector, state: enumitem_iklegs_state) : (vector, vector)
             const up = raw.torso.rotation.up
             const down = -up
 
@@ -245,49 +238,49 @@ do
                 horizontal_direction = raw.torso.rotation.front
             end
 
-            const origin = predicted + up * info.raycast_up       
-            const forward = if state == IKLegsState.Stepping then info.step_forward elseif state == IKLegsState.Planted then info.stand_forward elseif state == IKLegsState.Settling then info.idle_step_forward else 1     
-            const direction = horizontal_direction * forward + down * (info.raycast_up + info.raycast_down)
+            const origin = predicted + up * info.leg_raycast_up       
+            const forward = if state == IKLegsState.Stepping then info.leg_step_forward elseif state == IKLegsState.Planted then info.leg_stand_forward elseif state == IKLegsState.Settling then info.leg_idle_step_forward else 1     
+            const direction = horizontal_direction * forward + down * (info.leg_raycast_up + info.leg_raycast_down)
 
             return origin, direction
         end
 
-        private.is_step_blocked = function (raw: raw, foot: r6foot, info: leginfo, predicted: vector): boolean
+        private.is_step_blocked = function (raw: raw, foot: ikr6foot, info: ikr6leginfo, predicted: vector): boolean
             const move_length = vector.magnitude(raw.move_dir)
             if move_length <= 1e-5 then return false end
 
             const direction = raw.move_dir / move_length
             const up = raw.torso.rotation.up
-            const obstacle_origin = predicted + up * info.step_obstacle_height
-            const obstacle = private.raycast(obstacle_origin, direction * info.step_block_distance)
+            const obstacle_origin = predicted + up * info.leg_step_obstacle_height
+            const obstacle = private.raycast(obstacle_origin, direction * info.limb_block_distance)
             if not obstacle then return false end
 
             const normal, position = Converter:to_vector(obstacle.Normal, obstacle.Position)
             if math.abs(vector.dot(normal, up)) > 0.5 then return false end
 
-            const top_origin = position + direction * (info.leg_size.z * 0.5 + 0.05) + up * (info.step_max_height + 0.05)
-            const top_result = private.raycast(top_origin, -up * (info.step_max_height + 0.15))
+            const top_origin = position + direction * (info.limb_size.z * 0.5 + 0.05) + up * (info.leg_step_max_height + 0.05)
+            const top_result = private.raycast(top_origin, -up * (info.leg_step_max_height + 0.15))
             if not top_result then return true end
 
             const top_normal, top_position = Converter:to_vector(top_result.Normal, top_result.Position)
             if vector.dot(top_normal, up) < 0.7 then return true end
 
             const height = vector.dot(top_position - predicted, up)
-            return height > info.step_max_height
+            return height > info.leg_step_max_height
         end
     end
 
     do -- leg utility layer
-        private.foot_update = function (raw: raw, foot: r6foot, info: leginfo, raycast_result: RaycastResult)
+        private.foot_update = function (raw: raw, foot: ikr6foot, info: ikr6leginfo, raycast_result: RaycastResult)
             foot.hit_normal, foot.hit_position = Converter:to_vector(raycast_result.Normal, raycast_result.Position)
             foot.up_direction = raw.torso.rotation.up
             foot.fallback_basis = Basis:to_basis(foot:get_reference():get_instance().CFrame)
         end
 
-        private.update_foot_anchor = function(raw: raw,foot: r6foot, info: leginfo)
+        private.update_foot_anchor = function(raw: raw,foot: ikr6foot, info: ikr6leginfo)
             const previous_lateral_position = foot.lateral_position
             foot.from = raw.torso.position
-            foot.lateral_position = raw.torso.position + vector.create(0, -raw.size.y / 2, 0) + raw.torso.rotation.right * info.leg_diff
+            foot.lateral_position = raw.torso.position + vector.create(0, -raw.size.y / 2, 0) + raw.torso.rotation.right * info.limb_diff
             
             const delta = foot.lateral_position - previous_lateral_position
             const up = raw.torso.rotation.up
@@ -296,34 +289,34 @@ do
             foot.accumulated_distance += vector.magnitude(planar_delta)
         end
 
-        private.should_step = function(raw: raw, foot: r6foot, info: leginfo): boolean
-            const contact = foot:get_target_contact()
+        private.should_step = function(raw: raw, foot: ikr6foot, info: ikr6leginfo): boolean
+            const contact = foot:get_limb_contact()
             const up = raw.torso.rotation.up
 
             const error_scale = (foot.lateral_position - contact) - up * vector.dot((foot.lateral_position - contact), up)
             const error_distance = vector.magnitude(error_scale)
 
-            return error_distance >= info.step_distance_trigger_at or foot.accumulated_distance >= info.step_distance_trigger_at
+            return error_distance >= info.limb_distance_trigger_at or foot.accumulated_distance >= info.limb_distance_trigger_at
         end
 
-        private.get_step_speed = function (raw: raw, info: leginfo): number
-            return info.step_speed_min + (info.step_speed_max - info.step_speed_min) *
+        private.get_step_speed = function (raw: raw, info: ikr6leginfo): number
+            return info.limb_movement_speed_min + (info.limb_movement_speed_max - info.limb_movement_speed_min) *
                 math.clamp(
-                    (vector.magnitude(raw.horizont_linear_vel) - info.step_velocity_min) / -- speed
-                    math.max(info.step_velocity_max - info.step_velocity_min, 0.001), -- factor
+                    (vector.magnitude(raw.horizont_linear_vel) - info.limb_movement_velocity_min) / -- speed
+                    math.max(info.limb_movement_velocity_max - info.limb_movement_velocity_min, 0.001), -- factor
                     0, 1
                 )
         end
 
-        private.get_settle_speed = function (raw: raw, info: leginfo) : number
-            return info.settle_speed_min + (info.settle_speed_max - info.settle_speed_min) * raw.speed_factor
+        private.get_settle_speed = function (raw: raw, info: ikr6leginfo) : number
+            return info.limb_orientation_speed_min + (info.limb_orientation_speed_max - info.limb_orientation_speed_min) * raw.speed_factor
         end
     end
 
     do -- leg placement layer
-        private.step = function (raw: raw, foot: r6foot, info: leginfo, override: enumitem_iklegs_state?): (basis?, boolean)
-            const prediction_factor = raw.speed_factor ^ info.leg_prediction_curve
-            const prediction_time = info.leg_prediction_time_min + (info.leg_prediction_time_max - info.leg_prediction_time_min) * prediction_factor
+        private.step = function (raw: raw, foot: ikr6foot, info: ikr6leginfo, override: enumitem_iklegs_state?): (basis?, boolean)
+            const prediction_factor = raw.speed_factor ^ info.limb_prediction_curve
+            const prediction_time = info.limb_prediction_time_min + (info.limb_prediction_time_max - info.limb_prediction_time_min) * prediction_factor
             const predicted_bottom = foot.lateral_position + raw.horizont_linear_vel * prediction_time
 
             if private.is_step_blocked(raw, foot, info, predicted_bottom) then
@@ -341,22 +334,22 @@ do
 
             private.foot_update(raw, foot, info, raycast_result)
 
-            const face = foot:get_foot_facing(raw.move_dir,raw.torso.rotation.front)
-            const knee = foot:get_knee_pos(face,raw.torso.rotation.front)
+            const face = foot:get_limb_facing(raw.move_dir,raw.torso.rotation.front)
+            const knee = foot:get_limb_pole(face,raw.torso.rotation.front)
 
-            return foot:get_leg_basis(raw.torso, knee, face), false
+            return foot:get_limb_basis(raw.torso, knee, face), false
         end
 
-        private.stand = function (raw: raw, foot: r6foot, info: leginfo, override: enumitem_iklegs_state?) : basis?
+        private.stand = function (raw: raw, foot: ikr6foot, info: ikr6leginfo, override: enumitem_iklegs_state?) : basis?
             const raycast_origin, raycast_direction = private.get_step_raycast_data(raw, info, foot.lateral_position, override or IKLegsState.Planted)
             const raycast_result = private.raycast(raycast_origin, raycast_direction)
             if not raycast_result then return nil end
 
             private.foot_update(raw, foot, info, raycast_result)
 
-            const knee = foot:get_knee_pos(vector.zero, raw.torso.rotation.front)
-            const foot_facing_direction = foot:get_foot_facing(vector.zero, raw.torso.rotation.front)
-            const leg_placement = foot:get_leg_basis(raw.torso, knee, foot_facing_direction)
+            const knee = foot:get_limb_pole(vector.zero, raw.torso.rotation.front)
+            const foot_facing_direction = foot:get_limb_facing(vector.zero, raw.torso.rotation.front)
+            const leg_placement = foot:get_limb_basis(raw.torso, knee, foot_facing_direction)
 
             return leg_placement
         end
@@ -365,10 +358,10 @@ do
 
     do -- solver utility layer
 
-        private.solver_begin_step = function (foot: r6foot, new_target: basis, info: leginfo)
+        private.solver_begin_step = function (foot: ikr6foot, new_target: basis, info: ikr6leginfo)
             foot.fallback = false
             foot.target = new_target
-            foot.hit_position = new_target.position - new_target.rotation.up * (info.leg_size.y * 0.5)
+            foot.hit_position = new_target.position - new_target.rotation.up * (info.limb_size.y * 0.5)
 
             const foot_state_machine = foot:get_states()
             foot_state_machine:set_state(false, IKLegsState.Planted, IKLegsState.Settling)
@@ -394,71 +387,83 @@ do
             return true
         end
 
-        private.solver_begin_leg_fallback = function (r6foot: r6foot) : ()
-            r6foot.fallback = true
+        private.solver_begin_leg_fallback = function (ikr6foot: ikr6foot) : ()
+            ikr6foot.fallback = true
 
-            const origin = r6foot:get_reference():get_instance()
+            const origin = ikr6foot:get_reference():get_instance()
             const fallback = origin.CFrame
             const fallback_basis = Basis:to_basis(fallback)
 
-            const state_machine = r6foot:get_states()
+            const state_machine = ikr6foot:get_states()
 
-            r6foot.fallback_basis = fallback_basis
-            r6foot.target = fallback_basis
-            r6foot.hit_position = r6foot:get_target_contact()
-            r6foot.hit_normal = fallback_basis.rotation.up
+            ikr6foot.fallback_basis = fallback_basis
+            ikr6foot.target = fallback_basis
+            ikr6foot.hit_position = ikr6foot:get_limb_contact()
+            ikr6foot.hit_normal = fallback_basis.rotation.up
 
-            r6foot:get_fake_leg():get_instance().CFrame = fallback
+            ikr6foot:get_fake():get_instance().CFrame = fallback
 
             state_machine:set_state(false, IKLegsState.Settling, IKLegsState.Stepping)
             state_machine:set_state(true, IKLegsState.Planted)
         end
 
-        private.solver_begin_fallback = function (ikr6legs: ikr6legs)
-            const left_leg, right_leg = ikr6legs:get_left_leg(), ikr6legs:get_right_leg()
+        private.solver_independent_foot = function (raw: raw, foot: ikr6foot): ()
+            if foot.fallback then return end
 
-            if left_leg.fallback then
-                private.solver_begin_leg_fallback(left_leg)
+            const state_machine = foot:get_states()
+            if not state_machine:get_state(IKLegsState.Planted) then return end
+
+            const info = foot:get_info()
+            if not private.should_step(raw, foot, info) then return end
+
+            const target, blocked = private.step(raw, foot, info)
+            if blocked then return end
+
+            if target then
+                private.solver_begin_step(foot, target, info)
+                return
             end
 
-            if right_leg.fallback then
-                private.solver_begin_leg_fallback(right_leg)
-            end
+            private.solver_begin_leg_fallback(foot)
         end
 
-        private.solver_leg_fallback = function (r6foot: r6foot) : ()
-            const origin = r6foot:get_reference():get_instance()
+        private.solver_leg_fallback = function (ikr6foot: ikr6foot, info: ikr6leginfo, delta: number) : ()
+            const origin: BasePart = ikr6foot:get_reference():get_instance()
             const fallback = origin.CFrame
             const fallback_basis = Basis:to_basis(fallback)
 
-            const state_machine = r6foot:get_states()
-            const fake_leg = r6foot:get_fake_leg():get_instance()
+            const state_machine = ikr6foot:get_states()
+            const fake_leg = ikr6foot:get_fake():get_instance()
 
             state_machine:set_state(false, IKLegsState.Settling, IKLegsState.Stepping)
             state_machine:set_state(true, IKLegsState.Planted)
 
-            r6foot.fallback_basis = fallback_basis
-            r6foot.target = fallback_basis
-            r6foot.hit_position = r6foot:get_target_contact()
+            ikr6foot.fallback_basis = fallback_basis
+            ikr6foot.target = fallback_basis
+            ikr6foot.hit_position = ikr6foot:get_limb_contact()
 
-            fake_leg.CFrame = fallback
+            fake_leg.CFrame = fake_leg.CFrame:Lerp(fallback, 1 - math.exp(-info.limb_fallback_speed * delta))
         end
 
-        private.solver_fallback = function (ikr6legs: ikr6legs) : ()
-            if project.debug.state and	project.debug.show_ikr6legs_solver_path then
-                project.console_out "solver fallback"
-            end
+        private.solver_recover_fallback = function (raw: raw,foot: ikr6foot): ()
+            if not foot.fallback then return end
 
-            for _, r6foot in {ikr6legs:get_left_leg(), ikr6legs:get_right_leg()} do
-                private.solver_leg_fallback(r6foot)
+            const info = foot:get_info()
+            if not private.should_step(raw, foot, info) then return end
+
+            const target, blocked = private.step(raw, foot, info)
+            if blocked then return end
+
+            if target then
+                private.solver_begin_step(foot, target, info)
             end
         end
 
-        private.solver_foot_stepping = function (raw: raw, r6foot: r6foot, info: leginfo, fake_leg: BasePart, delta: number)
+        private.solver_foot_stepping = function (raw: raw, ikr6foot: ikr6foot, info: ikr6leginfo, fake_leg: BasePart, delta: number)
             const alpha = 1 - math.exp(-private.get_step_speed(raw, info) * delta)
 
             const current = Basis:to_basis(fake_leg.CFrame)
-            const target = r6foot.target
+            const target = ikr6foot.target
             const next_basis = current:slerp(target, alpha)
             const offset = target.position - next_basis.position
             const horizontal = vector.create(offset.x, 0, offset.z)
@@ -471,8 +476,8 @@ do
             return
         end
 
-        private.solver_foot_settling = function (raw: raw, r6foot: r6foot, info: leginfo, fake_leg: BasePart, delta: number)
-            fake_leg.CFrame = fake_leg.CFrame:Lerp(Basis:to_cframe(r6foot.target), 1 - math.exp(-private.get_settle_speed(raw, info) * delta))
+        private.solver_foot_settling = function (raw: raw, ikr6foot: ikr6foot, info: ikr6leginfo, fake_leg: BasePart, delta: number)
+            fake_leg.CFrame = fake_leg.CFrame:Lerp(Basis:to_cframe(ikr6foot.target), 1 - math.exp(-private.get_settle_speed(raw, info) * delta))
             return
         end
 
@@ -481,19 +486,19 @@ do
                 project.console_out "foots"
             end
 
-            for _, r6foot in {ikr6legs:get_left_leg(), ikr6legs:get_right_leg()} do
-                if not r6foot.enabled then continue end
+            for _, ikr6foot in {ikr6legs:get_left_leg(), ikr6legs:get_right_leg()} do
+                if not ikr6foot.enabled then continue end
 
-                const info = r6foot:get_info()
-                const state_machine = r6foot:get_states()
-                const fake_leg = r6foot:get_fake_leg():get_instance()
+                const info = ikr6foot:get_info()
+                const state_machine = ikr6foot:get_states()
+                const fake_leg = ikr6foot:get_fake():get_instance()
 
-                private.update_foot_anchor(raw, r6foot, info)
+                private.update_foot_anchor(raw, ikr6foot, info)
 
                 if state_machine:get_state(IKLegsState.Stepping) then
-                    private.solver_foot_stepping(raw, r6foot, info, fake_leg, delta)
+                    private.solver_foot_stepping(raw, ikr6foot, info, fake_leg, delta)
                     
-                    if r6foot:is_step_finished() then
+                    if ikr6foot:is_moving_finished() then
                         state_machine:set_state(false, IKLegsState.Stepping)
                         state_machine:set_state(true, IKLegsState.Settling)
                     end
@@ -501,45 +506,45 @@ do
                     continue
                 end
 
-                if r6foot.fallback then
-                    private.solver_leg_fallback(r6foot)
+                if ikr6foot.fallback then
+                    private.solver_leg_fallback(ikr6foot, info, delta)
                     continue
                 end
 
-                r6foot.target = r6foot:get_plant_target()
+                ikr6foot.target = ikr6foot:get_limb_target()
 
                 if state_machine:get_state(IKLegsState.Settling) then
-                    private.solver_foot_settling(raw, r6foot, info, fake_leg, delta)
+                    private.solver_foot_settling(raw, ikr6foot, info, fake_leg, delta)
 
-                    if r6foot:is_settle_finished() then
+                    if ikr6foot:is_orientation_finished() then
                         state_machine:set_state(false, IKLegsState.Settling, IKLegsState.Stepping)
                         state_machine:set_state(true, IKLegsState.Planted)
 
-                        r6foot.accumulated_distance = 0
+                        ikr6foot.accumulated_distance = 0
                     end
 
                     continue
                 end
 
-                fake_leg.CFrame = fake_leg.CFrame:Lerp(Basis:to_cframe(r6foot.target), 1 - math.exp(-info.planted_speed * delta))
+                fake_leg.CFrame = fake_leg.CFrame:Lerp(Basis:to_cframe(ikr6foot.target), 1 - math.exp(-info.limb_planted_speed * delta))
             end
         end
     end
 
-    private.solver_to_idle = function (raw: raw, r6foot: r6foot)
+    private.solver_to_idle = function (raw: raw, ikr6foot: ikr6foot)
         if project.debug.state and	project.debug.show_ikr6legs_solver_path then
             project.console_out "move to idle"
         end
 
-        const state_machine = r6foot:get_states()
-        const info = r6foot:get_info()
+        const state_machine = ikr6foot:get_states()
+        const info = ikr6foot:get_info()
 
         if state_machine:get_state(IKLegsState.Planted) then
-            const target = private.stand(raw, r6foot, info, IKLegsState.Planted)
+            const target = private.stand(raw, ikr6foot, info, IKLegsState.Planted)
 
             if target then
-                r6foot.target = target
-                r6foot.hit_position = r6foot:get_target_contact()
+                ikr6foot.target = target
+                ikr6foot.hit_position = ikr6foot:get_limb_contact()
             end
         end
     end
@@ -601,7 +606,7 @@ do
             private.mark_unactive(ik)
 
             if project.debug.state then
-                project.console_out_error('this solver has no humanoid, skip')
+                project.console_out ('this solver has no humanoid, skip')
             end
 
             return
@@ -612,7 +617,7 @@ do
             private.mark_unactive(ik) 
 
             if project.debug.state then
-                project.console_out_error('this solver has no torso, skip')
+                project.console_out ('this solver has no torso, skip')
             end
 
             return
@@ -624,51 +629,71 @@ do
 
         
         ik.current_idle_time = if raw.is_moving then 0 else ik.current_idle_time + delta
-        if ik:is_fallback() then
-            private.solver_fallback(ik)
-        else
-            private.solver_foot(raw, ik, delta)
-        end
+
+
+        private.solver_foot(raw, ik, delta)
+
+        const left_leg = ik:get_left_leg()
+        const right_leg = ik:get_right_leg()
+
+        private.solver_recover_fallback(raw, left_leg)
+        private.solver_recover_fallback(raw, right_leg)
 
         if not raw.is_moving and ik.current_idle_time >= info.idle_time then
-            private.solver_to_idle(raw, ik:get_left_leg())
-            private.solver_to_idle(raw, ik:get_right_leg())
+            private.solver_to_idle(raw, left_leg)
+            private.solver_to_idle(raw, right_leg)
+        end
+
+        const left_fallback = left_leg.fallback
+        const right_fallback = right_leg.fallback
+
+        if left_fallback and right_fallback then
+            return
+        end
+
+        if left_fallback ~= right_fallback then
+            const independent = if left_fallback then right_leg else left_leg
+            const fallback = if left_fallback then left_leg else right_leg
+
+            independent.current = true
+            fallback.current = false
+
+            private.solver_independent_foot(raw, independent)
+            return
         end
 
         const active, other = ik:get_active_cycle_leg_pair()
         if not active:get_states():get_state(IKLegsState.Planted) then return end
+
         const other_info = other:get_info()
         if not private.should_step(raw, other, other_info) then return end
+
         const target, blocked = private.step(raw, other, other_info)
-        
+
         if blocked then
-            private.solver_begin_idle_step(raw, ik) 
+            private.solver_begin_idle_step(raw, ik)
             return
         end
 
         if not target then
-            if private.solver_begin_idle_step(raw, ik) then
-                return
-            end
-
             private.solver_begin_leg_fallback(other)
             return
-        else
-            private.solver_begin_step(other, target, other_info)
         end
+
+        private.solver_begin_step(other, target, other_info)
 
         active.current = false
         other.current = true
     end
 
     private.signal:Connect(private.world_solver)
-    
-    if project.debug.state and project.debug.register_ikr6legs_self then
-        project.console_out "class ikr6legs registered in work cycle"
+
+    ctype:read(class):write_tag(ctags.immersiveness, ctags.inverse_kinematic, ctags.solver, ctags.class, ctags.game)
+    class:host(private.register_new)
+
+    if project.game.smalltalk_like then
         private.register_new(class)
     end
 end
-
-class:host(private.register_new)
 
 return class
