@@ -101,7 +101,7 @@ const class: object = {
 	end, ftype:opt("object"), "object", declare.anyt),
 
 	iden = ftype:write(function(self: object) : unknown
-		return private.identity[table.find(private.identity, self) or 0] or nil
+		return private.identity[self] or nil
 	end, ftype:or_opt(declare.number, declare.string), "object")
 }
 
@@ -244,7 +244,7 @@ do --private_region
 
 	function private.bootload_new(new: object, parent: object?)
 		const gen_iden = private.generator(new)	
-		private.identity[gen_iden] = new
+		private.identity[new] = gen_iden
 		private.ever[new] = parent
 		private.lazyget_cached(new, parent)
 		

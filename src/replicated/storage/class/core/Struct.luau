@@ -13,7 +13,7 @@ const class: struct = object:new({
 
     clone = ftype:write(function (self: struct, change: {[unknown]: unknown}?) : any
         const base = self:base <<struct>>("struct")
-        const reconv = {}
+        const reconv = table.clone(self)
 
         if change then
 

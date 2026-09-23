@@ -2,6 +2,7 @@
 const Observer = require("@game/ReplicatedStorage/class/core/Observer")
 const SecurityRNG = require("@game/ReplicatedStorage/class/service/SecurityRNG")
 const OperationVariant = require("@game/ReplicatedStorage/enums/descriptor/OperationVariant")
+const object = require("@game/ReplicatedStorage/object")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const ftype = require("@game/ReplicatedStorage/static/ftype")
 const project = require("@game/ReplicatedStorage/static/project")
@@ -22,18 +23,22 @@ const class: maybe = (Observer :: observer<enumitem_operation_variant>):new({
 		return that
 	end, declare.anyt, "maybe", declare.anyt, declare["function"]),
 
-	enactment = function (self: maybe, it: unknown, of: object) : object
-		if not project.assert(self:that(of, "object"), "unexpected obhect", true) then return of end
-
-		const stored = private.get(self)
-		const new = of:new():as(of.type)
-		if stored[it] == nil then
-			stored[it] = new
-			self:notificate(OperationVariant.New, it, new)
+	enactment = ftype:write(function (self: maybe, it: unknown, of: object) : object
+		if not project.assert(self:that(of, "object"), "unexpected obhect", true) then
+			return of
 		end
 
-		return new
-	end,
+		const stored = private.get(self)
+		local current = stored[it]
+
+		if current == nil then
+			current = of:new()
+			stored[it] = current
+			self:notificate(OperationVariant.New, it, current)
+		end
+
+		return current :: any
+	end, object.type, "maybe", declare.anyt, object.type),
 
 	exist = ftype:write(function(self: maybe, it: unknown): boolean
 		return private.get(self)[it] ~= nil

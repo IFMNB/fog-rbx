@@ -1,38 +1,45 @@
 --!strict
 const Struct = require("@game/ReplicatedStorage/class/core/Struct")
 
+-- TODO
+-- planted_speed min/max
+-- step_speed min/max
+
 const class: leginfo = Struct:new({
 	type = "leginfo",
-	step_use_torso_alpha = 0,
 
+	step_use_torso_alpha = 0.05,
 	step_block_distance = 0.45,
 	step_max_height = 0.65,
 	step_obstacle_height = 0.12,
-
-	step_speed_min = 5,
+	step_speed_min = 1,
 	step_speed_max = 80,
-
+	step_forward = 0.1,
 	step_velocity_min = 0,
-	step_velocity_max = 32,
+	step_velocity_max = 36,
+	step_distance_trigger_at = 0.15,
 
 	settle_speed_min = 10,
-	settle_speed_max = 150,
+	settle_speed_max = 70,
 
 	planted_speed = 50,
-
-	leg_follow_speed = 15,
-	leg_rotation_inverse_coefficient = 0.5,
-
-	leg_prediction_time_min = 0.01,
-	leg_prediction_time_max = 0.1,
-	leg_prediction_curve = 1.1,
-
-	step_forward = 0.1,
 	stand_forward = 0.1,
+
+	leg_size = vector.create(1, 2,1),
+	leg_create_origin_clone = true,
+	leg_follow_speed = 10,
+	leg_rotation_inverse_coefficient = 0.5,
+	leg_diff = 0.64,
+	leg_prediction_time_min = 0.01,
+	leg_prediction_time_max = 0.15,
+	leg_prediction_curve = 1.15,
+
 	idle_step_forward = 0,
-	idle_time = 0.35,
 
 	foot_settle_angle = math.rad(2),
+
+	raycast_up = 2,
+    raycast_down = 3
 })
 
 return class

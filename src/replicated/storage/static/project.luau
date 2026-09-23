@@ -1,4 +1,5 @@
 --!nolint
+
 const declare = require("@game/ReplicatedStorage/static/declare")
 const project = {}
 
@@ -49,13 +50,21 @@ do -- debug
 	]==]
 	project.debug.state = true
 
-	project.debug.show_created_objects = if project.debug.state then false else false
-	project.debug.show_notifications_path = if project.debug.state then false else false
-	project.debug.show_channel_send_actions = if project.debug.state then false else false
-	project.debug.show_maids_releasing = if project.debug.state then false else false
-	project.debug.show_channel_internal = if project.debug.state then false else false
-	project.debug.show_pickup_internal = if project.debug.state then false else false
-	project.debug.show_signal_internal = if project.debug.state then false else false
+	--[==[
+		Для обычных `project.console.out()` будет трассировка стэка
+	]==]
+	project.debug.trace_messages = true
+
+	project.debug.show_created_objects = if not project.debug.state then false else false
+	project.debug.show_notifications_path = if not project.debug.state then false else false
+	project.debug.show_channel_send_actions = if not project.debug.state then false else false
+	project.debug.show_maids_releasing = if not project.debug.state then false else false
+	project.debug.show_channel_internal = if not project.debug.state then false else false
+	project.debug.show_pickup_internal = if not project.debug.state then false else false
+	project.debug.show_signal_internal = if not project.debug.state then false else false
+	project.debug.show_ikr6legs_solver_path = if not project.debug.state then false else false
+	project.debug.register_ikr6legs_self = if not project.debug.state then false else false
+	project.debug.show_reference_internal = if not project.debug.state then false else false
 end
 
 do -- object
@@ -106,7 +115,18 @@ do -- geometry
 end
 
 do --game
+	const RunService = game:GetService("RunService")
+
 	project.game = {}
+	project.game.server = RunService:IsServer()
+
+	project.game.signal = {}
+
+	project.game.signal.render = if not project.game.server then RunService.PreRender else nil
+	project.game.signal.frame = RunService.Heartbeat
+	project.game.signal.prephysic = RunService.PreSimulation
+	project.game.signal.postphysic = RunService.PostSimulation
+	project.game.signal.preanim = RunService.PreAnimation
 end
 
 type console_out_type = never
@@ -118,15 +138,10 @@ type console_out_type = never
 ]=]
 function project.console_out_error(...: unknown): console_out_type
 	if project.debug.state then
-		warn("error ", debug.traceback(), ...)
-
-		if not coroutine.isyieldable() then
-			error "cannot close current coroutine, so we just trying to KILL IT"
-		else
-			coroutine.yield()
-		end
+		warn("error :", ...)
+		error("emergency closure")
 	else
-		warn("error ", debug.traceback())
+		warn("error :", debug.traceback())
 	end
 
 	return nil :: console_out_type
@@ -152,15 +167,19 @@ end
 	В разработке появление сообщений такого рода нежелательно, хотя и не критично
 ]=]
 function project.console_out (...): console_out_type
-	if project.debug then
+	if project.debug.state then
 		print(...)
+
+		if project.debug.trace_messages then
+			warn(debug.traceback())
+		end
 	end
 
 	return nil :: console_out_type
 end
 
 do
-	if project.debug then
+	if project.debug.state then
 		_G.fg_debug = {}
 	end
 end

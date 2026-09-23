@@ -19,13 +19,25 @@ const class: reference = Observer:new({
 		const connection = private.connections[self]
 		private.stored[self] = to
 
+		if project.debug.state and project.debug.show_reference_internal then
+			project.console_out("new stored", to)
+		end
+
 		if connection then
+			if project.debug.state and project.debug.show_reference_internal then
+				project.console_out("previous connection detected and removed")
+			end
+
 			connection:Disconnect()
 			private.connections[self] = nil
 		end
 
 		if typeof(to) == "Instance" then
 			const that = to :: Instance
+
+			if project.debug.state and project.debug.show_reference_internal then
+				project.console_out("detected instance, setup new destroy connection")
+			end
 
 			private.connections[self] = that.Destroying:Once(function()
 				self:notificate(ReferenceNotification.DestroyedInstance )
@@ -59,7 +71,7 @@ const class: reference = Observer:new({
 })
 
 do
-	private.frozen = table.freeze({ __mode = "ks" })
+	private.frozen = declare.tables.__mode_ks
 	private.stored = setmetatable({} :: { [reference]: Instance }, private.frozen)
 	private.connections = setmetatable({} :: { [reference]: RBXScriptConnection }, private.frozen)
 end

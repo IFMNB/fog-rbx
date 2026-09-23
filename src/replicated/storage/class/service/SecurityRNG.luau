@@ -3,6 +3,7 @@ const Service = require("@game/ReplicatedStorage/class/core/Service")
 const Cryptography = require("@game/ReplicatedStorage/dependency/Cryptography")
 
 const class: securityrng = Service:new {
+    type = "securityrng",
     seed = os.clock() :: number, 
     
     get_hash_sha256 = function (self: securityrng, element: string) : string

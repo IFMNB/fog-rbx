@@ -10,7 +10,7 @@ const private = {}
 const class : pointer = object:new {
     type = "pointer",
     set_point = ftype:write(function <Y> (self: pointer, to: Y, hard: boolean?): ()
-        if project.assert(private.points_set[self], "cannot reload existed point, ") then return end
+        if project.assert(private.points_set[self] == nil, "cannot reload existed Pointer to new value, abort") then return end
         private.points_set[self] = true
 
         if hard then

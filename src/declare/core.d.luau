@@ -134,13 +134,14 @@ export type pointer<T = unknown> = construct<{
 }, object>
 
 --[==[
-    Represents a typed path to an object
+    Represents a typed path to an Instance
 
     A path stores a textual representation of a target and can resolve that path back to an object of type T
 ]==]
-export type path<T = object> = construct<{
-	read set_path: (self: path<T>, to: T) -> (),
-	read get_path: (self: path<T>) -> string,
+export type path<T = Instance> = construct<{
+    absolute_path: string,
+
+	read set_path: (self: path<T>, to: T|string) -> (),
 	read get_object: (self: path<T>) -> T?,
 }, object>
 
@@ -167,17 +168,7 @@ export type observer<T = enumitem | enumobject> = construct<
 		read subscription_set_mode: (self: observer<T>, to: enumitem_connection_variant, ...pointer) -> (),
 		read subscription_get_mode: (self: observer<T>, ...pointer) -> ...enumitem_connection_variant,
 		read notificate: (self: observer<T>, notification: observer_on<T>, ...unknown) -> (),
-
-        --[==[
-            Получить из внутреннего приватного хранилища объекта какое-либо значение по `label`
-        ]==]
-		read get: <Y>(self: observer<T>, label: any) -> Y,
-
-        --[==[
-            Установить во внутреннее приватное хранилище объекта какое-либо значение по `label`
-        ]==]
-		read set: <Y>(self: observer<T>, label: any, to: Y) -> (),
-	},
+	} & private_storage<observer<T>>,
 	object
 >
 
@@ -219,7 +210,7 @@ export type disposable = construct<{
         Connects an outside observer to the moment of release
     ]==]
     read watch: <T> (self: disposable, ...(self: disposable) -> ()) -> ()
-}, object>
+} & private_storage<disposable>, object>
 
 
 
@@ -372,9 +363,6 @@ export type statemachine <T = enumitem> = construct<{
 
 
 
-
-
-
 -- Component
 
 
@@ -466,29 +454,6 @@ export type world = construct<{
     read set_grid_size: (self: world, to: number) -> (),
 } & collidable<world>, observer>
 
---[==[
-    Объект, представляющий набор информации для геометрических фигур
-]==]
-export type rayinfo = construct<{
-    --[==[
-        Первый попавшийся объект будет возвращен, и только он
-    ]==]
-    read only_one_output: boolean,
-    
-    --[==[
-        Рейкаст будет создаваться не только в локальном пространстве, но и в
-        пространстве игры, в которой работает
-    ]==]
-    read engine_hit: boolean,
-
-    --[==[
-        Попадание будет создавать `world:volumecast()` для всех, в кого
-        оно было зарегистрировано. Если `self.only_one_output`, то это
-        свойство его игнорирует, - будут возвращены все кто попал в `world:volemucast()`
-    ]==]
-    read volume_hit: boolean,
-    
-}, struct>
 
 
 
@@ -684,36 +649,9 @@ export type character = construct<{
 --[==[
     Объект, представляющий логического персонажа R6
 
-    Объект всегда гарантирует существование R6 объектов
-    в роблокс иерархии, иначе просто не получится присвоить референс
-    на модель, к которой он обращается
-
-    Обладает собственным функционалом для процедурной
-    генерации и управлением частями тела R6
 ]==]
 export type char6 = construct<{
 
-    --[==[
-        Вернет текущий пресет `leginfo`, который использует IK решатель
-    ]==]
-    read get_ik_leginfo: (self: char6) -> leginfo,
-    --[==[
-        Установит текущий пресет `leginfo` на указанный
-
-        Изменения будут приведены в действие мгновенно, со следующего кадра
-        решатель будет использовать новую информацию
-    ]==]
-    read set_ik_leginfo: (self: char6, new: leginfo) -> (),
-    
-    --[==[
-        Вернет текущее состояние IK решателя для ног
-    ]==]
-    read is_ik_legs_active: (self: char6) -> boolean,
-
-    --[==[
-        Установить новое состояние для IK решателя ног
-    ]==]
-    read set_ik_legs_active: (self: char6, to: boolean) -> (),
 
     --[==[
         Гарантированно вернет Humanoid
@@ -769,6 +707,211 @@ observer<enumitem_ability_notification>>
 
 
 
+
+-- Game IK 
+
+
+--[==[
+    Объект, представляющий самостоятельный buildin ik решатель для ног r6 рига
+
+    Он полностью предоставляет собственное поведение и автоматизирован относительно
+    алгоритмической сложности для пользователей
+]==]
+export type ikr6legs = construct<{
+    --[==[
+        Текущее время ожидания хотя-бы какого-либо движения
+    ]==]
+    current_idle_time: number,
+
+    --[==[
+        Последний раз когда этот объект был обработан был N время назад
+    ]==]
+    last_work_time: number,
+
+    --[==[
+        Референс на `Humanoid`, из которого берутся `move_direction` и некоторые
+        другие дополнительные данные для выборки поведения решателя
+    ]==]
+    read get_humanoid: (self: ikr6legs) -> reference<Humanoid?>,
+
+    --[==[
+        Референс на торс, от которого работают `r6foot`
+    ]==]
+    read get_torso: (self: ikr6legs) -> reference<BasePart?>,
+
+    --[==[
+        Вернет текущую обрабатываемую ногу, которая находится в рабочей фазе,
+        а также текущую неактивную ногу, которая ждет своей фазы
+    ]==]
+    read get_active_cycle_leg_pair: (self: ikr6legs) -> (r6foot, r6foot),
+
+    --[==[
+        Объект левой ноги, которым управляет этот решатель на автоматическом
+        уровне
+    ]==]
+    read get_left_leg: (self: ikr6legs) -> r6foot,
+
+    --[==[
+        Объект не обрабатывается если не подходит по условиям, таким как отсутствие `Humanoid`
+        или `Torso`
+
+        В общем случае это состояние активности работы объекта за текущий кадр, - был ли он
+        обработан?
+    ]==]
+    read is_active: (self: ikr6legs) -> boolean,
+
+    --[==[
+        Объект правой ноги, которым управляет этот решатель на автоматическом
+        уровне
+    ]==]
+    read get_right_leg: (self: ikr6legs) -> r6foot,
+
+    --[==[
+        Если обе ноги не смогли получить `hit_position` и `hit_normal` то вернется `true`,
+        поскольку обе ноги не были правильно обработаны и были возвращены к `fallback` состоянию
+    ]==]
+    read is_fallback: (self: ikr6legs) -> boolean
+} & initiable<ikr6legs> & informable<ikr6legs, ikr6info> & switchable, disposable>
+
+--[==[
+    Объект, представляющий несамостоятельную ik r6 ногу, которая к тому же является фейком
+
+    Управление и реализация самой ноги доверяется решателю, которому нога принадлежит
+]==]
+export type r6foot = construct<{
+    --[==[
+        Исходная точка от которой проводятся вычисления,
+        по умолчанию является bottom torso позицией
+    ]==]
+    from: vector,
+
+    -- position - RaycastResult.Position 
+    -- normal - RaycastResult.Normal
+
+    --[==[
+        Позиция ноги, вычисленная на основании `from` с учетом `leginfo.leg_diff`
+    ]==]
+    lateral_position: vector,
+        
+    --[==[
+        Аккумулированное движение ноги
+
+        Используется в качестве способа противостоять бесконечной ориентации или случаев,
+        когда положение ног обрабатывается физически некорректно из-за игнорирования всего
+        пути ноги
+    ]==]
+    accumulated_distance: number,
+
+    --[==[
+        Целевая координата к которой должна стремиться нога
+    ]==]
+    target: basis,
+
+    --[==[
+        Вычисленная точка попадания, куда должна по идее встать нога, то есть
+        контактная поверхность
+
+        Вычисляется на стороне управляющего кода, пусть эта точка и принадлежит
+        объекту `r6foot`
+    ]==]
+    hit_position: vector,
+    
+    --[==[
+        Метка для решателя, обозначающая что сейчас обрабатывается шаг этой ноги
+    ]==]
+    current: boolean,
+
+    --[==[
+        Вычисленная нормаль по точке попадания, определяющая как именно должна стать нога
+
+        Вычисляется на стороне управляющего кода, пусть эта точка и принадлежит
+        объекту `r6foot`
+    ]==]
+    hit_normal: vector,
+
+    --[==[
+        Направление вверх, ориентирующее положение и поворот в пространстве для методов объекта
+    ]==]
+    up_direction: vector,
+
+    --[==[
+        Если операции для подсчета положения ноги не пройдут успешно, то нога встанет
+        в указанный `basis`
+    ]==]
+    fallback_basis: basis,
+
+    --[==[
+        Если конкретно эта нога не смогла получить свои `hit_position` и `hit_normal`, то она вернется
+        к `fallback_basis`. Старая информация не будет затерта до следующего раза, только успешные операции
+        затирают старые данные
+    ]==]
+    fallback: boolean,
+
+    --[==[
+        Кэшируемый результат предыдущего подсчета положения ноги
+    ]==]
+    current_leg_basis: basis,
+
+    --[==[
+        Будет ли показываться фейковая нога заместо настоящей? Не влияет на расчеты
+    ]==]
+    read is_visible: (self: r6foot) -> boolean,
+
+    --[==[
+        Установить видимость для фейковой ноги
+    ]==]
+    read set_visible: (self: r6foot, to: boolean) -> (),
+
+    --[==[
+        На основе текущих данных можно проверить, добралась ли нога до целевой позиции сейчас
+        или нет
+    ]==]
+    read is_step_finished: (self: r6foot) -> boolean,
+
+    --[==[
+        На основе текущих данных можно проверить, закончила ли перемещаться сейчас нога или нет
+    ]==]
+    read is_settle_finished: (self: r6foot) -> boolean,
+
+    --[==[
+        Возвращает `self.hit_position` с учетом отката во времени
+
+        Это нужно для `solver_fallback` операций
+    ]==]
+    read get_target_contact: (self: r6foot) -> vector,
+
+    --[==[
+        Метод рассчитывает положение колена в пространстве для ноги, чтобы в будущем она
+        была наклонена относительно этого колена и `from` при дальнейших
+        операциях
+    ]==]
+    read get_knee_pos: (self: r6foot, with_move_direction: vector, with_face_direction: vector) -> vector,
+
+    --[==[
+        Получает направление куда должна смотреть нога с учетом направления движения и направления,
+        куда смотрит остальное тело
+
+        Если третьего аргумента нет, то направление ноги будет совпадать с направлением движения
+    ]==]
+    read get_foot_facing: (self: r6foot, with_move_direction: vector, with_main_look_direction: vector?) -> vector,
+
+    --[==[
+        Вычисляет целевой `basis` ноги в состоянии planted/settling, то есть куда должна быть поставлена нога,
+        когда её стопа уже находится в точке контакта с поверхностью.
+    ]==]
+    read get_plant_target: (self: r6foot) -> basis,
+
+    --[==[
+        Метод рассчитывает положение самой ноги в пространстве
+    ]==]
+    read get_leg_basis: (self: r6foot, coordinate: basis, knee: vector, foot_facing_direction: vector) -> basis,
+
+    --[==[
+        У этого объекта поведением задано управлять ненастоящей ногой, чтобы не мешать
+        другим операциям и объектам и не вызывать какие-либо другие эффекты
+    ]==]
+    read get_fake_leg: (self: r6foot) -> reference<BasePart>
+}  & initiable<r6foot> & switchable & informable<r6foot, leginfo> & referenceable<r6foot, BasePart> & stateable<r6foot, enumitem_iklegs_state>, disposable>
 
 
 
@@ -893,6 +1036,30 @@ export type abilityinfo = construct<{
 
 }, struct>
 
+export type ikr6info = construct<{
+	--[==[
+		Время отсутствия движения перед переходом в idle-логику.
+
+		После достижения этого времени выполняется обновление
+		целевых положений обеих стоящих ног через `stand`.
+	]==]
+	read idle_time: number,
+
+    --[==[
+        Время между которыми `world_solver` IK проводит обновление этого конкретного
+        решателя
+
+        Недостаточное время будет пропущено, а указывается свойство в герцах. Рассчет
+        нужного времени будет проведен самостоятельно
+    ]==]
+    read update_hertz: number,
+
+    --[==[
+        Игнорировать `update_hertz`?
+    ]==]
+    read ignore_hertz_limit: boolean
+}, struct>
+
 --[==[
 	Объект, предоставляющий информацию для IK решателя `char6`,
 	в частности информацию для поведения IK ног.
@@ -908,6 +1075,35 @@ export type leginfo = construct<{
 		направление корпуса.
 	]]
 	read step_use_torso_alpha: number,
+
+    --[==[
+        Насколько выше предполагаемой точки положения ноги начать поиск поверхности? 
+        Это позволяет не промахнуться, если персонаж находится над землёй, ступенькой или другой поверхностью
+    ]==]
+    read raycast_up: number,
+
+    --[==[
+        Насколько ниже предполагаемой точки положения ноги продолжить поиск поверхности?
+        Это позволяет находить землю под ногой, даже если она находится заметно ниже ожидаемого положения
+    ]==]
+    read raycast_down: number,
+
+    --[==[
+        Если нет, то будет использоваться `Part` с обычными параметрами `r6` ноги
+
+        Поле сработает только 1 раз при создании `fake_leg` части
+    ]==]
+    read leg_create_origin_clone: boolean,
+
+    --[==[
+        Величина смещения от края `torso` к его центру
+    ]==]
+    read leg_diff: number,
+
+    --[==[
+        Размер ноги, под который будут проводиться вычисления
+    ]==]
+    read leg_size: vector,
 
 	--[[
 		Максимальное расстояние вперед от точки постановки ноги,
@@ -937,6 +1133,13 @@ export type leginfo = construct<{
 		а не для непосредственного поиска поверхности стопы.
 	]]
 	read step_obstacle_height: number,
+
+    --[==[
+        При пересечении этого порога через `accumulated_motion` будет вызван метод
+        для решения шага, так как фактическая дистанция движения ноги уже слишком
+        большая чтобы игнорировать ее
+    ]==]
+    read step_distance_trigger_at: number,
 
 	--[[
 		Минимальная скорость перемещения стопы во время фазы
@@ -1085,14 +1288,6 @@ export type leginfo = construct<{
 	read idle_step_forward: number,
 
 	--[[
-		Время отсутствия движения перед переходом в idle-логику.
-
-		После достижения этого времени выполняется обновление
-		целевых положений обеих стоящих ног через `stand`.
-	]]
-	read idle_time: number,
-
-	--[[
 		Максимально допустимая угловая ошибка между текущей
 		ориентацией стопы и нормалью/ориентацией рассчитанной
 		опорной поверхности во время `settling`.
@@ -1145,6 +1340,29 @@ export type characterinfo = construct<{
 },struct>
 
 
+--[==[
+    Объект, представляющий набор информации для геометрических фигур
+]==]
+export type rayinfo = construct<{
+    --[==[
+        Первый попавшийся объект будет возвращен, и только он
+    ]==]
+    read only_one_output: boolean,
+    
+    --[==[
+        Рейкаст будет создаваться не только в локальном пространстве, но и в
+        пространстве игры, в которой работает
+    ]==]
+    read engine_hit: boolean,
+
+    --[==[
+        Попадание будет создавать `world:volumecast()` для всех, в кого
+        оно было зарегистрировано. Если `self.only_one_output`, то это
+        свойство его игнорирует, - будут возвращены все кто попал в `world:volemucast()`
+    ]==]
+    read volume_hit: boolean,
+    
+}, struct>
 
 
 
@@ -1410,7 +1628,46 @@ export type directions = construct<vector_operations<directions, directions> & a
 export type basis = construct<{
     read orthonormalize: (self: basis) -> basis,
     read euler_angles: (self: basis) -> ...number,
-    read components: (self: basis) -> ...number,
+
+    read get_components: (self: basis)
+    -> (number, number, number,
+        number, number, number,
+        number, number, number,
+        number, number, number),
+
+    read from_components: (self: basis,
+        position_x: number?, position_y: number?, position_z: number?,
+        rotation_right_x: number?, rotation_right_y: number?, rotation_right_z: number?,
+        rotation_up_x: number?, rotation_up_y: number?, rotation_up_z: number?,
+        rotation_front_x: number?, rotation_front_y: number?, rotation_front_z: number?)
+    -> basis,
+
+    read from_matrix: (self: basis,
+        position: vector?,
+        rotation_right: vector?, rotation_up: vector?, rotation_front: vector?)
+    -> basis,
+
+    read basis_to_world: (self: basis, ...basis) -> ...basis,
+    read basis_to_local: (self: basis, ...basis) -> ...basis,
+    read direction_to_world: (self: basis, ...vector) -> ...vector,
+    read direction_to_local: (self: basis, ...vector) -> ...vector,
+    read point_to_world: (self: basis, ...vector) -> ...vector,
+    read point_to_local: (self: basis, ...vector) -> ...vector,
+
+    read multiple_basis: (self: basis, ...basis) -> basis,
+    read divide_basis: (self: basis, ...basis) -> basis,
+    read append_basis: (self: basis, ...basis) -> basis,
+    read substract_basis: (self: basis, ...basis) -> basis,
+    read slerp: (self: basis, to: basis, alpha: number) -> basis,
+
+    read to_basis: (self: basis, ...CFrame) -> ...basis,
+    read to_cframe: (self: basis, ...basis) -> ...CFrame,
+
+    --[==[
+        Особый случай инвертирования `basis` относительно его компонентов,
+        то есть с учетом афинного преобразования
+    ]==]
+    read inverse_basis: (self: basis) -> basis
 } & positioned & rotateable, geovolume<basis>>
 
 --[==[
@@ -1520,6 +1777,38 @@ export type securityrng = construct<{
 	read get_hash_sha256: (self: securityrng, element: string) -> string,
 	read get_hash_blake3: (self: securityrng, element: string) -> string,
 	read get_uid: (self: securityrng) -> string,
+}, service>
+
+--[==[
+    Сервис для преобразования эквивалентных друг другу объектов по схеме
+    туда-обратно
+
+    Утилитарный сервис, чтобы соединить Roblox специфику с собственными объектами
+]==]
+export type converter = construct<{
+
+    read to_vector: (self: converter, ...Vector3) -> ...vector,
+    read to_vector3: (self: converter, ...vector) -> ...Vector3
+}, service>
+
+--[==[
+    Сервис для удаленного запуска функционала на другой машине
+]==]
+export type remotecall = construct<{
+
+}, service>
+
+--[==[
+    Сервис для запуска предопределенных скриптов и модулей в параллельном режиме
+]==]
+export type parallel = construct<{
+    read get_worker: (self: parallel) -> ...Actor,
+
+    --[==[
+        Запускает нового работника, который будет параллельно выполнять свои задачи
+    ]==]
+    read add_worker: (self: parallel, ...Script|LocalScript|string|path) -> Actor,
+    read rem_worker: (self: parallel, ...Actor) -> ()
 }, service>
 
 export type charregistry = construct<{
@@ -1655,6 +1944,14 @@ export type enum_controller_state = construct<{
 	read Pause: enumitem_controller_state,
 	read Reset: enumitem_controller_state,
 }, enumobject>
+
+export type enumitem_iklegs_state = enumitem<enum_iklegs_state>
+export type enum_iklegs_state = construct<{
+	read Planted: enumitem_iklegs_state,
+    read Stepping: enumitem_iklegs_state,
+    read Settling: enumitem_iklegs_state,
+}, enumobject>
+
 
 export type enumitem_operation_variant = enumitem<enum_operation_variant>
 export type enum_operation_variant = construct<{
@@ -1886,6 +2183,18 @@ export type referenceable<T = unknown, U = unknown> = {
 export type reloadable<T = unknown, U... = ()> = {
     read reload: (self: T, U...) -> ()
 }
+export type private_storage <T = unknown> = {
+
+        --[==[
+            Получить из внутреннего приватного хранилища объекта какое-либо значение по `label`
+        ]==]
+		read get: <Y>(self: T, label: any) -> Y,
+
+        --[==[
+            Установить во внутреннее приватное хранилище объекта какое-либо значение по `label`
+        ]==]
+		read set: <Y>(self: T, label: any, to: Y) -> (),
+}
 
 export type switchable = {
     enabled: boolean
@@ -2086,6 +2395,9 @@ export type vector_operations<T=unknown,U... = ()> = {
     read to_basis: (self: T) -> basis,
     read to_vector: (self: T) -> vector
 }
+--[==[
+    Интерфейс гарантирует наличие позиции как поля
+]==]
 export type positioned<T=vector> = {
 
     --[==[
@@ -2096,6 +2408,18 @@ export type positioned<T=vector> = {
     ]==]
     position: T
 }
+
+--[==[
+    Интерфейс гарантирует наличие нормали как поля
+]==]
+export type normal  <T = vector> = {
+    --[==[
+        Направление, указывающее в сторону куда смотрит фейс (полигон) относительно
+        геометрии, в которую попадает рейкаст или для которой нормаль была сформирована
+    ]==]
+    normal: T
+}
+
 export type axisable<T = unknown> = {
     --[==[
         Направление оси по `X`
@@ -2172,6 +2496,19 @@ export type normals<T=unknown, U=vector> = {
     ]==]
     read get_normal_interpolated: (self: T) -> U,
 }
+
+--[==[
+    У объекта есть инициализация смотря по его контексту
+]==]
+export type initiable<T = unknown> = {
+    
+    --[==[
+        Объект готов к работе и имеет все зависимости подключенными,
+        либо нет
+    ]==]
+    read is_initiated: (self: T) -> boolean
+}
+
 export type stateable<T = unknown, U = enumitem> = {
     --[==[
         Возвращает автомат состояний у этого объекта, с которым он неразрывно связан

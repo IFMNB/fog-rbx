@@ -25,16 +25,27 @@ const class = object:new ({
 		const list = {...}
 		const dest = private.watch[self]
 		table.move(list, 1, #list, #dest + 1, dest)
-	end, declare["nil"], "disposable", declare["function"])
+	end, declare["nil"], "disposable", declare["function"]),
+
+
+    get = function <Y> (self: disposable, label: unknown) : Y
+		return private.shadow_space[self][label]
+    end,
+
+    set = function <Y> (self: disposable, label: unknown, to: Y) : ()
+		private.shadow_space[self][label] = to
+    end 
 })
 
 class:host(function(new: disposable)
+	private.shadow_space[new] = {}
 	private.objects[new:iden()] = new
 	private.watch[new] = {}
 end)
 
 do
-	private.meta = table.freeze { __mode = "ks"}
+	private.meta = declare.tables.__mode_ks
+	private.shadow_space = setmetatable({} :: { [disposable]: { [any]: any } }, private.meta)
 	private.objects = {} :: { [unknown]: disposable }
 	private.watch = setmetatable({} :: {[disposable]: {(disposable) -> ()}}, private.meta)
 	private.free = function (that: disposable)
