@@ -1,16 +1,15 @@
 --!strict
-const Reference = require("@game/ReplicatedStorage/class/common/Reference")
 const Maybe = require("@game/ReplicatedStorage/class/common/gc/Maybe")
-const Disposable = require("@game/ReplicatedStorage/class/core/Disposable")
 const IKR6Foot = require("@game/ReplicatedStorage/class/game/play/characters/ik/r6/IKR6Foot")
-const Converter = require("@game/ReplicatedStorage/class/service/Converter")
-const SecurityRNG = require("@game/ReplicatedStorage/class/service/SecurityRNG")
+const IKR6Solver = require("@game/ReplicatedStorage/class/game/play/characters/ik/r6/IKR6Solver")
 const IKR6Info = require("@game/ReplicatedStorage/class/struct/game/IKR6Info")
 const Basis = require("@game/ReplicatedStorage/class/struct/geometry/Basis")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
-const OperationVariant = require("@game/ReplicatedStorage/enums/descriptor/OperationVariant")
 const ReferenceNotification = require("@game/ReplicatedStorage/enums/notification/ReferenceNotification")
 const IKLegsState = require("@game/ReplicatedStorage/enums/state/IKLegsState")
+const engine = require("@game/ReplicatedStorage/platform/engine")
+const instance = require("@game/ReplicatedStorage/platform/instance")
+const worldspace = require("@game/ReplicatedStorage/platform/worldspace")
 const ctags = require("@game/ReplicatedStorage/static/ctags")
 const ctype = require("@game/ReplicatedStorage/static/ctype")
 const declare = require("@game/ReplicatedStorage/static/declare")
@@ -18,19 +17,11 @@ const ftype = require("@game/ReplicatedStorage/static/ftype")
 const project = require("@game/ReplicatedStorage/static/project")
 
 const private = {}
-const class : ikr6legs = Disposable:new {
+const class : ikr6legs = IKR6Solver:new {
     type = "ikr6legs",
     enabled = false,
     current_idle_time = 0,
     last_work_time = 0,
-
-    get_humanoid = ftype:write(function (self: ikr6legs) : reference<Humanoid?>
-        return private.maybe_humanoid:enactment(self, Reference)
-    end, Reference.type, "ikr6legs"),
-
-    get_torso = ftype:write(function (self: ikr6legs) : reference<BasePart?>
-        return private.maybe_torso:enactment(self, Reference)
-    end, Reference.type, "ikr6legs"),
 
     get_left_leg = ftype:write(function (self: ikr6legs) : ikr6foot
         return private.maybe_left_legs:enactment(self, IKR6Foot)
@@ -39,14 +30,6 @@ const class : ikr6legs = Disposable:new {
     get_right_leg = ftype:write(function (self: ikr6legs) : ikr6foot
         return private.maybe_right_legs:enactment(self, IKR6Foot)
     end, IKR6Foot.type, "ikr6legs"),
-
-    get_info = ftype:write(function (self: ikr6legs) : ikr6info
-        return self:get <<ikr6info>> (private.info_key)
-    end, IKR6Info.type, "ikr6legs"),
-
-    set_info = ftype:write(function (self: ikr6legs, new: ikr6info): ()
-        self:set(private.info_key, new)
-    end, declare["nil"], "ikr6legs", IKR6Info.type),
 
     get_active_cycle_leg_pair = ftype:write(function (self: ikr6legs) : (ikr6foot, ikr6foot)
         const left_leg = self:get_left_leg()
@@ -91,16 +74,45 @@ do
     private.rayparams.ExcludeInstances = {}
 
     private.default_ikr6info = IKR6Info:new()
-    private.info_key = SecurityRNG:get_hash_blake3("ikr6legs_info_key")
     private.list = setmetatable({} :: {ikr6legs}, declare.tables.__mode_vs)
     private.active = setmetatable({} :: {[ikr6legs]: boolean?}, declare.tables.__mode_ks)
-    private.maybe_humanoid = Maybe:new() :: maybe<reference<Humanoid?>, ikr6legs>
-    private.maybe_torso = Maybe:new() :: maybe<reference<BasePart?>, ikr6legs>
     private.maybe_left_legs = Maybe:new() :: maybe<ikr6foot, ikr6legs>
     private.maybe_right_legs = Maybe:new() :: maybe<ikr6foot, ikr6legs>
-    private.signal = project.game.signal.postphysic
+    private.signal = engine.postphysic
 
     private.register_new = function (new: ikr6legs)
+            const humanoid_reference = new:get_humanoid()
+
+            humanoid_reference:subscribe({ReferenceNotification.NewInstance, ReferenceNotification.ChangedInstance}, ConnectionVariant.Ever, function ()
+                if not humanoid_reference:is_instance_exists() then return end
+                const humanoid = humanoid_reference:get_instance() :: Humanoid
+
+                if not new:get_info().prebuild_fake then return end
+
+                const left_leg = new:get_left_leg()
+                if not left_leg:is_initiated() then
+                    const limb_part = instance.humanoid.get_limb_of(humanoid, Enum.Limb.LeftLeg)
+                    left_leg:get_reference():set_instance(limb_part)
+                end
+        
+                const right_leg = new:get_right_leg()
+                if not right_leg:is_initiated() then
+                    const limb_part = instance.humanoid.get_limb_of(humanoid, Enum.Limb.RightLeg)
+                    right_leg:get_reference():set_instance(limb_part)
+                end
+
+                if project.debug.state then
+                    if right_leg:is_initiated() or left_leg:is_initiated() then
+                        project.console_out("the humanoid changes for the already initialized ikr6legs, the limbs will not change")
+                    end
+
+                    if project.debug.show_ikr6legs_solver_path then
+                        project.console_out("new humanoid setup")
+                    end
+                end
+            end
+        )
+
         new:set_info(private.default_ikr6info)
         new:watch(private.free_legs)
 
@@ -120,56 +132,6 @@ do
         end)
     end
 
-    private.get_limb_of = function (humanoid: Humanoid, limb: Enum.Limb) : BasePart
-        const parent = project.assert(humanoid.Parent, "cannot find parent of humanoid, crit", true) :: Instance
-        const model = project.assert(parent:IsA("Model") and parent, "expected humanoid parent as a model, crit", true) :: Model
-
-        for _, v in model:GetChildren() do
-            if v:IsA("BasePart") and humanoid:GetLimb(v) == limb then
-                return v
-            end
-        end
-
-        return project.console_out_error(`cannot find limb {limb.Name} in {model:GetFullName()}, crit fail`)
-    end
-
-    private.maybe_humanoid:subscribe(OperationVariant.New, ConnectionVariant.Ever, function (ikr6legs: ikr6legs, new_reference: reference<Humanoid?>)
-        new_reference:subscribe({ReferenceNotification.NewInstance, ReferenceNotification.ChangedInstance}, ConnectionVariant.Ever, function ()
-            const var = new_reference:get_instance() :: Instance
-            if var ~= nil and not var:IsA("Humanoid") then
-                new_reference:set_instance(nil)
-                project.console_out ("no other objects are allowed for this ikr6legs reference to humanoid, aborted")
-                return
-            elseif var == nil then
-                return
-            end
-
-            const humanoid = var :: Humanoid
-
-            const left_leg = ikr6legs:get_left_leg()
-            if not left_leg:is_initiated() then
-                const limb_part = private.get_limb_of(humanoid, Enum.Limb.LeftLeg)
-                left_leg:get_reference():set_instance(limb_part)
-            end
-    
-            const right_leg = ikr6legs:get_right_leg()
-            if not right_leg:is_initiated() then
-                const limb_part = private.get_limb_of(humanoid, Enum.Limb.RightLeg)
-                right_leg:get_reference():set_instance(limb_part)
-            end
-
-            if project.debug.state then
-                if right_leg:is_initiated() or left_leg:is_initiated() then
-                    project.console_out("the humanoid changes for the already initialized ikr6legs, the limbs will not change")
-                end
-
-                if project.debug.show_ikr6legs_solver_path then
-                    project.console_out("new humanoid setup")
-                end
-            end
-        end)
-    end)
-
     do -- global utility layer
         private.modify_params = function (with: Instance): ()
             private.rayparams.ExcludeInstances = {with}
@@ -180,7 +142,7 @@ do
         end
         
         private.create_raw = function (torso: BasePart, humanoid: Humanoid) : raw
-            const dir, lin, size = Converter:to_vector(humanoid.MoveDirection, torso.AssemblyLinearVelocity, torso.Size)
+            const dir, lin, size = worldspace.to_vector(humanoid.MoveDirection, torso.AssemblyLinearVelocity, torso.Size)
             const hor_lin_vel = vector.create(lin.x, 0, lin.z)
 
             return table.freeze {
@@ -218,12 +180,6 @@ do
 
 
     do -- leg world checks layer
-        private.raycast = function (origin: vector, direction: vector): RaycastResult?
-	        const safe_origin = origin + direction * 0.01
-            const a0, a1 = Converter:to_vector3(safe_origin, direction)
-	        return workspace:Raycast(a0, a1, private.rayparams)
-        end
-        
         private.get_step_raycast_data = function (raw: raw, info: ikr6leginfo, predicted: vector, state: enumitem_iklegs_state) : (vector, vector)
             const up = raw.torso.rotation.up
             const down = -up
@@ -252,17 +208,17 @@ do
             const direction = raw.move_dir / move_length
             const up = raw.torso.rotation.up
             const obstacle_origin = predicted + up * info.leg_step_obstacle_height
-            const obstacle = private.raycast(obstacle_origin, direction * info.limb_block_distance)
+            const obstacle = worldspace.raycast(obstacle_origin, direction * info.limb_block_distance, private.rayparams)
             if not obstacle then return false end
 
-            const normal, position = Converter:to_vector(obstacle.Normal, obstacle.Position)
+            const normal, position = worldspace.to_vector(obstacle.Normal, obstacle.Position)
             if math.abs(vector.dot(normal, up)) > 0.5 then return false end
 
             const top_origin = position + direction * (info.limb_size.z * 0.5 + 0.05) + up * (info.leg_step_max_height + 0.05)
-            const top_result = private.raycast(top_origin, -up * (info.leg_step_max_height + 0.15))
+            const top_result = worldspace.raycast(top_origin, -up * (info.leg_step_max_height + 0.15), private.rayparams)
             if not top_result then return true end
 
-            const top_normal, top_position = Converter:to_vector(top_result.Normal, top_result.Position)
+            const top_normal, top_position = worldspace.to_vector(top_result.Normal, top_result.Position)
             if vector.dot(top_normal, up) < 0.7 then return true end
 
             const height = vector.dot(top_position - predicted, up)
@@ -272,7 +228,7 @@ do
 
     do -- leg utility layer
         private.foot_update = function (raw: raw, foot: ikr6foot, info: ikr6leginfo, raycast_result: RaycastResult)
-            foot.hit_normal, foot.hit_position = Converter:to_vector(raycast_result.Normal, raycast_result.Position)
+            foot.hit_normal, foot.hit_position = worldspace.to_vector(raycast_result.Normal, raycast_result.Position)
             foot.up_direction = raw.torso.rotation.up
             foot.fallback_basis = Basis:to_basis(foot:get_reference():get_instance().CFrame)
         end
@@ -324,7 +280,7 @@ do
             end
 
             const raycast_origin, raycast_direction = private.get_step_raycast_data(raw, info, predicted_bottom, override or IKLegsState.Stepping)
-            const raycast_result = private.raycast(raycast_origin, raycast_direction)
+            const raycast_result = worldspace.raycast(raycast_origin, raycast_direction, private.rayparams)
             if not raycast_result then
                 foot.fallback = true
                 return nil, false
@@ -342,7 +298,7 @@ do
 
         private.stand = function (raw: raw, foot: ikr6foot, info: ikr6leginfo, override: enumitem_iklegs_state?) : basis?
             const raycast_origin, raycast_direction = private.get_step_raycast_data(raw, info, foot.lateral_position, override or IKLegsState.Planted)
-            const raycast_result = private.raycast(raycast_origin, raycast_direction)
+            const raycast_result = worldspace.raycast(raycast_origin, raycast_direction, private.rayparams)
             if not raycast_result then return nil end
 
             private.foot_update(raw, foot, info, raycast_result)

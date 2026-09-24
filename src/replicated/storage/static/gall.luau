@@ -1,4 +1,5 @@
 --!strict
+-- deprecated
 
 export type fg_G = {
     read name: "fg_G",

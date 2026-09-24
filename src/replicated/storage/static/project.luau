@@ -114,10 +114,8 @@ do -- geometry
 end
 
 do --game
-	const RunService = game:GetService("RunService")
 
 	project.game = {}
-	project.game.server = RunService:IsServer()
 
 	--[==[
 		"Первородные объекты", то бишь классы, то бишь объекты из которых потом создаются
@@ -125,14 +123,6 @@ do --game
 		будут зарегистрированы в рабочих обработчиках
 	]==]
 	project.game.smalltalk_like = false
-
-	project.game.signal = {}
-
-	project.game.signal.render = if not project.game.server then RunService.PreRender else nil
-	project.game.signal.frame = RunService.Heartbeat
-	project.game.signal.prephysic = RunService.PreSimulation
-	project.game.signal.postphysic = RunService.PostSimulation
-	project.game.signal.preanim = RunService.PreAnimation
 end
 
 type console_out_type = never

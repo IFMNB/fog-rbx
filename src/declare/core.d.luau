@@ -712,12 +712,9 @@ observer<enumitem_ability_notification>>
 
 
 --[==[
-    Объект, представляющий самостоятельный buildin ik решатель для ног r6 рига
-
-    Он полностью предоставляет собственное поведение и автоматизирован относительно
-    алгоритмической сложности для пользователей
+    Объект, предоставляющий несамостоятельную базу для IK R6 решателей
 ]==]
-export type ikr6legs = construct<{
+export type ikr6solver = construct<{
     --[==[
         Текущее время ожидания хотя-бы какого-либо движения
     ]==]
@@ -732,24 +729,38 @@ export type ikr6legs = construct<{
         Референс на `Humanoid`, из которого берутся `move_direction` и некоторые
         другие дополнительные данные для выборки поведения решателя
     ]==]
-    read get_humanoid: (self: ikr6legs) -> reference<Humanoid?>,
+    read get_humanoid: (self: ikr6solver) -> reference<Humanoid?>,
 
     --[==[
         Референс на торс, от которого работают `ikr6foot`
     ]==]
-    read get_torso: (self: ikr6legs) -> reference<BasePart?>,
+    read get_torso: (self: ikr6solver) -> reference<BasePart?>,
+}  & informable<ikr6solver, ikr6info> & switchable, disposable>
 
+--[==[
+    Объект, представляющий самостоятельный buildin ik решатель для ног r6 рига
+
+    Он полностью предоставляет собственное поведение и автоматизирован относительно
+    алгоритмической сложности для пользователей
+]==]
+export type ikr6legs = construct<{
     --[==[
-        Вернет текущую обрабатываемую ногу, которая находится в рабочей фазе,
-        а также текущую неактивную ногу, которая ждет своей фазы
+        Объект правой ноги, которым управляет этот решатель на автоматическом
+        уровне
     ]==]
-    read get_active_cycle_leg_pair: (self: ikr6legs) -> (ikr6foot, ikr6foot),
+    read get_right_leg: (self: ikr6legs) -> ikr6foot,
 
     --[==[
         Объект левой ноги, которым управляет этот решатель на автоматическом
         уровне
     ]==]
     read get_left_leg: (self: ikr6legs) -> ikr6foot,
+
+    --[==[
+        Вернет текущую обрабатываемую ногу, которая находится в рабочей фазе,
+        а также текущую неактивную ногу, которая ждет своей фазы
+    ]==]
+    read get_active_cycle_leg_pair: (self: ikr6legs) -> (ikr6foot, ikr6foot),
 
     --[==[
         Объект не обрабатывается если не подходит по условиям, таким как отсутствие `Humanoid`
@@ -759,13 +770,7 @@ export type ikr6legs = construct<{
         обработан?
     ]==]
     read is_active: (self: ikr6legs) -> boolean,
-
-    --[==[
-        Объект правой ноги, которым управляет этот решатель на автоматическом
-        уровне
-    ]==]
-    read get_right_leg: (self: ikr6legs) -> ikr6foot,
-} & initiable<ikr6legs> & informable<ikr6legs, ikr6info> & switchable, disposable>
+} & initiable<ikr6legs>, ikr6solver>
 
 --[==[
     Объект, представляющий реализацию односуставной IK конечности, будь бы это нога,
@@ -1058,7 +1063,12 @@ export type ikr6info = construct<{
     --[==[
         Игнорировать `ikr6info.update_hertz`?
     ]==]
-    read ignore_hertz_limit: boolean
+    read ignore_hertz_limit: boolean,
+
+    --[==[
+        IK решатель сделает пребилд конечностей от полученного humanoid
+    ]==]
+    read prebuild_fake: boolean
 }, struct>
 
 
@@ -1787,18 +1797,6 @@ export type securityrng = construct<{
 }, service>
 
 --[==[
-    Сервис для преобразования эквивалентных друг другу объектов по схеме
-    туда-обратно
-
-    Утилитарный сервис, чтобы соединить Roblox специфику с собственными объектами
-]==]
-export type converter = construct<{
-
-    read to_vector: (self: converter, ...Vector3) -> ...vector,
-    read to_vector3: (self: converter, ...vector) -> ...Vector3
-}, service>
-
---[==[
     Сервис для удаленного запуска функционала на другой машине
 ]==]
 export type remotecall = construct<{
@@ -1817,33 +1815,6 @@ export type parallel = construct<{
     read add_worker: (self: parallel, ...Script|LocalScript|string|path) -> Actor,
     read rem_worker: (self: parallel, ...Actor) -> ()
 }, service>
-
-export type charregistry = construct<{
-    read get_character: (self: charregistry, of: profile) -> character?,
-    read set_character: (self: charregistry, of: profile, to: character?) -> (),
-
-    --[==[
-        Профиль игрока связан с персонажем, если конечно это было, поэтому
-        получить игрока к которому принадлежит этот персонаж можно при помощи
-        этого сервиса
-    ]==]
-    read get_profile: (self: charregistry, of: character) -> profile?,
-    
-    --[==[
-        Позволяет назначить этого персонажа данному игроку
-    ]==]
-    read set_profile: (self: charregistry, of: character, to: profile?) -> (),
-
-    --[==[
-        Проверяет, является ли указанный объект тем, что принадлежит хотя бы одному персонажу
-    ]==]
-    read is_character: (self: charregistry, ...Humanoid|Model|BasePart ) -> ...boolean,
-}, service>
-
-
-
-
-
 
 
 

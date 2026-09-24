@@ -12,6 +12,6 @@ return table.freeze {
 
     immersiveness = "immersiveness" :: "immersiveness",
     inverse_kinematic = "inverse_kinematics" :: "immersiveness",
-    solver = "solver" :: "solver"
-
+    solver = "solver" :: "solver",
+    template = "template" :: "template"
 }

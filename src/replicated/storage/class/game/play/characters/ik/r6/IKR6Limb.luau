@@ -3,17 +3,19 @@ const Reference = require("@game/ReplicatedStorage/class/common/Reference")
 const StateMachine = require("@game/ReplicatedStorage/class/common/StateMachine")
 const Maybe = require("@game/ReplicatedStorage/class/common/gc/Maybe")
 const Disposable = require("@game/ReplicatedStorage/class/core/Disposable")
-const Converter = require("@game/ReplicatedStorage/class/service/Converter")
 const SecurityRNG = require("@game/ReplicatedStorage/class/service/SecurityRNG")
 const IKR6LimbInfo = require("@game/ReplicatedStorage/class/struct/game/ik/IKR6LimbInfo")
 const Basis = require("@game/ReplicatedStorage/class/struct/geometry/Basis")
 const ConnectionVariant = require("@game/ReplicatedStorage/enums/descriptor/ConnectionVariant")
 const ReferenceNotification = require("@game/ReplicatedStorage/enums/notification/ReferenceNotification")
+const engine = require("@game/ReplicatedStorage/platform/engine")
+const worldspace = require("@game/ReplicatedStorage/platform/worldspace")
 const ctags = require("@game/ReplicatedStorage/static/ctags")
 const ctype = require("@game/ReplicatedStorage/static/ctype")
 const declare = require("@game/ReplicatedStorage/static/declare")
 const ftype = require("@game/ReplicatedStorage/static/ftype")
 const project = require("@game/ReplicatedStorage/static/project")
+const ReferenceBasePart = require("@game/ReplicatedStorage/templates/class/reference/ReferenceBasePart")
 
 const private = {}
 const class : ikr6limb = Disposable:new {
@@ -38,7 +40,7 @@ const class : ikr6limb = Disposable:new {
 
     is_orientation_finished = ftype:write(function (self: ikr6limb) : boolean
         const fake_leg = self:get_fake():get_instance()
-        const current_up = Converter:to_vector(fake_leg.CFrame.UpVector)
+        const current_up = worldspace.to_vector(fake_leg.CFrame.UpVector)
         const target_up = self.target.rotation.up
         const up_dot = math.clamp(vector.dot(current_up, target_up), -1, 1)
 
@@ -47,10 +49,10 @@ const class : ikr6limb = Disposable:new {
 
     is_moving_finished = ftype:write (function (self: ikr6limb) : boolean
         const fake_leg = self:get_fake():get_instance()
-        const position_delta = self.target.position - Converter:to_vector(fake_leg.Position)
+        const position_delta = self.target.position - worldspace.to_vector(fake_leg.Position)
         if vector.magnitude(position_delta) > 0.05 then return false end
 
-        const current_up = Converter:to_vector(fake_leg.CFrame.UpVector)
+        const current_up = worldspace.to_vector(fake_leg.CFrame.UpVector)
         const target_up = self.target.rotation.up
 
         return math.acos(math.clamp(vector.dot(current_up, target_up), -1, 1)) <= math.rad(5)
@@ -67,7 +69,7 @@ const class : ikr6limb = Disposable:new {
             const fake_leg_reference = self:get_fake()
             const instance_of_fake_leg = fake_leg_reference:get_instance()
 
-            if project.game.server then
+            if engine.is_server then
                 instance_of_fake_leg.Transparency = .5
             else
                 instance_of_fake_leg.LocalTransparencyModifier = .5
@@ -88,7 +90,7 @@ const class : ikr6limb = Disposable:new {
         const half_height = self:get_info().limb_size.y * 0.5
         const contact = self.hit_position
         const out_point = self.lateral_position
-        local up = Converter:to_vector(fake_leg.CFrame.UpVector)
+        local up = worldspace.to_vector(fake_leg.CFrame.UpVector)
 
         for _ = 1, 2 do
             const center = contact + up * half_height
@@ -251,7 +253,7 @@ do
     end
 
     private.create_new_reference = function (self: ikr6limb) : reference<BasePart>
-        const reference = Reference:new()
+        const reference = ReferenceBasePart:new()
         const info = self:get_info()
         const reference_of_origin = self:get_reference()
 
@@ -262,11 +264,11 @@ do
                 new = reference_of_origin:get_instance():Clone()
             else
                 new = Instance.new "Part"
-                new.Size = Converter:to_vector3(info.limb_size)
+                new.Size = worldspace.to_vector3(info.limb_size)
             end
         else
             new = Instance.new "Part"
-            new.Size = Converter:to_vector3(info.limb_size)
+            new.Size = worldspace.to_vector3(info.limb_size)
         end
 
         new.CFrame = reference_of_origin:get_instance().CFrame
@@ -300,7 +302,7 @@ do
 
         local changed_first_transparency = false
 
-        if project.game.server then
+        if engine.is_server then
             new:GetPropertyChangedSignal("Transparency"):Connect(function(...)
                 local changed_cancelled = false
 
@@ -355,7 +357,7 @@ do
         end
 
         if changed_first_transparency then
-            if project.game.server then
+            if engine.is_server then
                 for _, v in baseparts_list do
                     v.Transparency = new.Transparency
                 end
@@ -381,7 +383,7 @@ do
 
         const origin_instance = reference_of_origin:get_instance()
         const origin_basis = Basis:to_basis(origin_instance.CFrame)
-        const position, up = Converter:to_vector(origin_instance.Position, origin_instance.CFrame.UpVector)
+        const position, up = worldspace.to_vector(origin_instance.Position, origin_instance.CFrame.UpVector)
 
         self.hit_position = position - up * (info.limb_size.y * 0.5)
         self.target = origin_basis
